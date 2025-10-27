@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ArrowLeftRight, Star, Trash2, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,7 +45,7 @@ export const TranslationInterface = () => {
     }
   }, []);
 
-  const handleConsent = (agreed: boolean) => {
+  const handleConsent = useCallback((agreed: boolean) => {
     localStorage.setItem('dataCollectionConsent', agreed ? 'true' : 'false');
     setShowConsentDialog(false);
     
@@ -58,37 +58,36 @@ export const TranslationInterface = () => {
         description: "피드백 기능이 제한됩니다. 번역은 정상적으로 이용 가능합니다.",
       });
     }
-  };
+  }, []);
 
-  const hasConsent = () => {
+  const hasConsent = useCallback(() => {
     return localStorage.getItem('dataCollectionConsent') === 'true';
-  };
+  }, []);
 
-  const fetchRecentTranslations = () => {
+  const fetchRecentTranslations = useCallback(() => {
     const stored = localStorage.getItem('translations');
     if (stored) {
       const translations = JSON.parse(stored);
       setRecentTranslations(translations.slice(0, 3));
     }
-  };
+  }, []);
 
-  const saveToLocalStorage = (translation: Translation) => {
+  const saveToLocalStorage = useCallback((translation: Translation) => {
     const stored = localStorage.getItem('translations');
     const translations = stored ? JSON.parse(stored) : [];
     translations.unshift(translation);
     localStorage.setItem('translations', JSON.stringify(translations));
-  };
+  }, []);
 
-  const swapLanguages = () => {
+  const swapLanguages = useCallback(() => {
     setSourceLang(targetLang);
     setTargetLang(sourceLang);
-    // Keep sourceText as is - don't swap content
     setTargetText("");
-  };
+  }, [sourceLang, targetLang]);
 
-  const handleTranslate = async () => {
+  const handleTranslate = useCallback(async () => {
     if (!sourceText.trim()) {
-      toast.error("Please enter text to translate");
+      toast.error("텍스트를 입력해주세요");
       return;
     }
 
@@ -110,7 +109,6 @@ export const TranslationInterface = () => {
         return;
       }
 
-      // Default: Natural/idiomatic translation (의역)
       const translation = data.translation;
       const literalTranslation = data.literalTranslation || "";
       const sourceRomanization = data.sourceRomanization || "";
@@ -118,7 +116,6 @@ export const TranslationInterface = () => {
       
       setTargetText(translation);
 
-      // Save to localStorage instead of database
       const newTranslation: Translation = {
         id: crypto.randomUUID(),
         source_text: sourceText,
@@ -139,13 +136,13 @@ export const TranslationInterface = () => {
       fetchRecentTranslations();
     } catch (error) {
       console.error("Translation error:", error);
-      toast.error("Translation failed. Please try again.");
+      toast.error("번역 실패. 다시 시도해주세요.");
     } finally {
       setIsTranslating(false);
     }
-  };
+  }, [sourceText, sourceLang, targetLang, saveToLocalStorage, fetchRecentTranslations]);
 
-  const toggleFavorite = (id: string, currentFavorite: boolean) => {
+  const toggleFavorite = useCallback((id: string, currentFavorite: boolean) => {
     const stored = localStorage.getItem('translations');
     if (stored) {
       const translations = JSON.parse(stored);
@@ -153,27 +150,25 @@ export const TranslationInterface = () => {
         t.id === id ? { ...t, is_favorite: !currentFavorite } : t
       );
       localStorage.setItem('translations', JSON.stringify(updated));
-      toast.success(currentFavorite ? "Removed from favorites" : "Added to favorites");
       fetchRecentTranslations();
     }
-  };
+  }, [fetchRecentTranslations]);
 
-  const getLangLabel = (lang: string) => {
+  const getLangLabel = useCallback((lang: string) => {
     return lang === "ko" ? "한국어" : "日本語";
-  };
+  }, []);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = useCallback((id: string) => {
     const stored = localStorage.getItem('translations');
     if (stored) {
       const translations = JSON.parse(stored);
       const filtered = translations.filter((t: Translation) => t.id !== id);
       localStorage.setItem('translations', JSON.stringify(filtered));
-      toast.success("Deleted");
       fetchRecentTranslations();
     }
-  };
+  }, [fetchRecentTranslations]);
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = useCallback(() => {
     if (selectedIds.size === 0) return;
 
     const stored = localStorage.getItem('translations');
@@ -181,27 +176,29 @@ export const TranslationInterface = () => {
       const translations = JSON.parse(stored);
       const filtered = translations.filter((t: Translation) => !selectedIds.has(t.id));
       localStorage.setItem('translations', JSON.stringify(filtered));
-      toast.success(`Deleted ${selectedIds.size} items`);
+      toast.success(`${selectedIds.size}개 삭제됨`);
       setSelectedIds(new Set());
       fetchRecentTranslations();
     }
-  };
+  }, [selectedIds, fetchRecentTranslations]);
 
-  const toggleSelect = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
-  };
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
+      return newSelected;
+    });
+  }, []);
 
-  const toggleLiteral = (id: string) => {
+  const toggleLiteral = useCallback((id: string) => {
     setShowLiteral(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  }, []);
 
-  const handleFeedback = async (translation: Translation, feedbackType: 'positive' | 'negative') => {
+  const handleFeedback = useCallback(async (translation: Translation, feedbackType: 'positive' | 'negative') => {
     if (!hasConsent()) {
       toast.error("피드백 제한", {
         description: "데이터 수집에 동의하셔야 피드백을 제출할 수 있습니다.",
@@ -227,7 +224,7 @@ export const TranslationInterface = () => {
       console.error('Error submitting feedback:', error);
       toast.error("피드백 제출 중 오류가 발생했습니다.");
     }
-  };
+  }, [hasConsent]);
 
   return (
     <>
@@ -262,85 +259,75 @@ export const TranslationInterface = () => {
 
       <div className="min-h-screen bg-background flex flex-col">
       {/* Main Translation Area */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
-        <div className="w-full max-w-4xl space-y-6">
+      <main className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-3xl space-y-5">
           {/* Language Selector */}
-          <div className="flex items-center justify-center gap-4">
-            <div className="px-4 py-2 rounded-lg bg-card border border-border">
-              <span className="text-lg font-medium text-foreground">
-                {getLangLabel(sourceLang)}
-              </span>
-            </div>
+          <div className="flex items-center justify-center gap-3">
+            <button className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted">
+              {getLangLabel(sourceLang)}
+            </button>
             
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={swapLanguages}
-              className="rounded-full h-10 w-10 hover:rotate-180 transition-transform duration-300"
+              className="rounded-full h-9 w-9 hover:rotate-180 transition-all duration-300"
             >
               <ArrowLeftRight className="h-4 w-4" />
             </Button>
             
-            <div className="px-4 py-2 rounded-lg bg-card border border-border">
-              <span className="text-lg font-medium text-foreground">
-                {getLangLabel(targetLang)}
-              </span>
-            </div>
+            <button className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted">
+              {getLangLabel(targetLang)}
+            </button>
           </div>
 
           {/* Translation Boxes */}
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Source Text */}
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Enter text to translate..."
-                value={sourceText}
-                onChange={(e) => setSourceText(e.target.value)}
-                className="min-h-[200px] resize-none text-base"
-                autoFocus
-              />
-            </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <Textarea
+              placeholder="텍스트 입력..."
+              value={sourceText}
+              onChange={(e) => setSourceText(e.target.value)}
+              className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-card shadow-sm rounded-2xl p-4 focus-visible:ring-1"
+              autoFocus
+            />
 
-            {/* Target Text */}
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Translation will appear here..."
-                value={targetText}
-                readOnly
-                className="min-h-[200px] resize-none text-base bg-muted"
-              />
-            </div>
+            <Textarea
+              placeholder="번역 결과..."
+              value={targetText}
+              readOnly
+              className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4"
+            />
           </div>
 
           {/* Translate Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center pt-1">
             <Button
               onClick={handleTranslate}
               disabled={isTranslating || !sourceText.trim()}
               size="lg"
-              className="px-8"
+              className="px-10 py-2.5 rounded-full shadow-sm font-medium"
             >
-              {isTranslating ? "Translating..." : "Translate"}
+              {isTranslating ? "번역 중..." : "번역하기"}
             </Button>
           </div>
         </div>
       </main>
 
-      {/* Recent Translations - Minimal Display */}
+      {/* Recent Translations */}
       {recentTranslations.length > 0 && (
-        <aside className="border-t border-border bg-card">
-          <div className="max-w-4xl mx-auto p-4 space-y-2">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-muted-foreground">Recent</h3>
+        <aside className="border-t bg-muted/20">
+          <div className="max-w-3xl mx-auto px-4 py-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">최근 기록</h3>
               {selectedIds.size > 0 && (
                 <Button
-                  variant="destructive"
+                  variant="ghost"
                   size="sm"
                   onClick={handleBulkDelete}
-                  className="h-8"
+                  className="h-7 px-3 text-xs text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Delete ({selectedIds.size})
+                  <Trash2 className="h-3 w-3 mr-1.5" />
+                  삭제 ({selectedIds.size})
                 </Button>
               )}
             </div>
@@ -348,74 +335,67 @@ export const TranslationInterface = () => {
               {recentTranslations.map((t) => (
                 <div
                   key={t.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors group"
+                  className="flex items-start gap-3 p-3.5 rounded-xl bg-card hover:shadow-sm transition-all group"
                 >
                   <Checkbox
                     checked={selectedIds.has(t.id)}
                     onCheckedChange={() => toggleSelect(t.id)}
-                    className="mt-1"
+                    className="mt-0.5"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <span>{getLangLabel(t.source_lang)}</span>
-                      <span>→</span>
-                      <span>{getLangLabel(t.target_lang)}</span>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="space-y-1">
+                      <p className="text-[15px] text-foreground leading-relaxed">{t.source_text}</p>
+                      {t.source_romanization && (
+                        <p className="text-xs text-muted-foreground/60 italic">{t.source_romanization}</p>
+                      )}
                     </div>
-                    <p className="text-sm text-foreground truncate">{t.source_text}</p>
-                    {t.source_romanization && (
-                      <p className="text-xs text-muted-foreground/70 italic truncate">{t.source_romanization}</p>
-                    )}
-                    <div className="mt-1 space-y-2">
-                      <p className="text-sm text-muted-foreground">{t.target_text}</p>
+                    <div className="space-y-1">
+                      <p className="text-[15px] text-muted-foreground leading-relaxed">{t.target_text}</p>
                       {t.target_romanization && (
-                        <p className="text-xs text-muted-foreground/70 italic">{t.target_romanization}</p>
-                      )}
-                      
-                      {/* Feedback buttons directly under translation */}
-                      <div className="flex items-center gap-2 pt-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleFeedback(t, 'positive')}
-                          className="h-8 px-3 text-xs"
-                        >
-                          <ThumbsUp className="h-3 w-3 mr-1.5" />
-                          좋아요
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleFeedback(t, 'negative')}
-                          className="h-8 px-3 text-xs"
-                        >
-                          <ThumbsDown className="h-3 w-3 mr-1.5" />
-                          어색해요
-                        </Button>
-                      </div>
-
-                      {/* Literal translation toggle below feedback */}
-                      {t.literal_translation && (
-                        <div className="pt-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleLiteral(t.id)}
-                            className="h-6 px-2 text-xs"
-                          >
-                            {showLiteral[t.id] ? "Hide" : "Show"} Literal translation
-                          </Button>
-                          {showLiteral[t.id] && (
-                            <div className="pl-3 border-l-2 border-border mt-1">
-                              <p className="text-xs text-muted-foreground/90 italic">
-                                Literal: {t.literal_translation}
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                        <p className="text-xs text-muted-foreground/60 italic">{t.target_romanization}</p>
                       )}
                     </div>
+                      
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFeedback(t, 'positive')}
+                        className="h-7 px-2.5 text-xs hover:bg-muted"
+                      >
+                        <ThumbsUp className="h-3 w-3 mr-1" />
+                        좋아요
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFeedback(t, 'negative')}
+                        className="h-7 px-2.5 text-xs hover:bg-muted"
+                      >
+                        <ThumbsDown className="h-3 w-3 mr-1" />
+                        어색해요
+                      </Button>
+                      {t.literal_translation && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleLiteral(t.id)}
+                          className="h-7 px-2.5 text-xs hover:bg-muted"
+                        >
+                          {showLiteral[t.id] ? "직역 숨기기" : "직역 보기"}
+                        </Button>
+                      )}
+                    </div>
+
+                    {showLiteral[t.id] && t.literal_translation && (
+                      <div className="pl-3 border-l-2 border-muted mt-2">
+                        <p className="text-xs text-muted-foreground italic leading-relaxed">
+                          {t.literal_translation}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-0.5 shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -423,7 +403,7 @@ export const TranslationInterface = () => {
                       onClick={() => toggleFavorite(t.id, t.is_favorite)}
                     >
                       <Star
-                        className={`h-4 w-4 ${
+                        className={`h-4 w-4 transition-colors ${
                           t.is_favorite
                             ? "fill-accent text-accent"
                             : "text-muted-foreground group-hover:text-foreground"
@@ -433,10 +413,10 @@ export const TranslationInterface = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
                       onClick={() => handleDelete(t.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>

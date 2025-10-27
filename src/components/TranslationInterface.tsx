@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeftRight, Star, Trash2, AlertCircle } from "lucide-react";
+import { ArrowLeftRight, Star, Trash2, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -302,13 +302,37 @@ export const TranslationInterface = () => {
                     {t.source_romanization && (
                       <p className="text-xs text-muted-foreground/70 italic truncate">{t.source_romanization}</p>
                     )}
-                    <div className="mt-1 space-y-1">
-                      <p className="text-sm text-muted-foreground truncate">{t.target_text}</p>
+                    <div className="mt-1 space-y-2">
+                      <p className="text-sm text-muted-foreground">{t.target_text}</p>
                       {t.target_romanization && (
-                        <p className="text-xs text-muted-foreground/70 italic truncate">{t.target_romanization}</p>
+                        <p className="text-xs text-muted-foreground/70 italic">{t.target_romanization}</p>
                       )}
+                      
+                      {/* Feedback buttons directly under translation */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleFeedback(t)}
+                          className="h-8 px-3 text-xs"
+                        >
+                          <ThumbsUp className="h-3 w-3 mr-1.5" />
+                          좋아요
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleFeedback(t)}
+                          className="h-8 px-3 text-xs"
+                        >
+                          <ThumbsDown className="h-3 w-3 mr-1.5" />
+                          어색해요
+                        </Button>
+                      </div>
+
+                      {/* Literal translation toggle below feedback */}
                       {t.literal_translation && (
-                        <>
+                        <div className="pt-1">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -318,23 +342,14 @@ export const TranslationInterface = () => {
                             {showLiteral[t.id] ? "Hide" : "Show"} Literal translation
                           </Button>
                           {showLiteral[t.id] && (
-                            <div className="pl-3 border-l-2 border-border">
+                            <div className="pl-3 border-l-2 border-border mt-1">
                               <p className="text-xs text-muted-foreground/90 italic">
                                 Literal: {t.literal_translation}
                               </p>
                             </div>
                           )}
-                        </>
+                        </div>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleFeedback(t)}
-                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        This translation feels off
-                      </Button>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

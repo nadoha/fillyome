@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Translation {
   id: string;
@@ -31,11 +32,37 @@ export const TranslationInterface = () => {
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
+  const [showConsentDialog, setShowConsentDialog] = useState(false);
 
   // Fetch recent translations from localStorage on mount
   useEffect(() => {
     fetchRecentTranslations();
+    
+    // 동의 여부 확인
+    const consent = localStorage.getItem('dataCollectionConsent');
+    if (consent === null) {
+      setShowConsentDialog(true);
+    }
   }, []);
+
+  const handleConsent = (agreed: boolean) => {
+    localStorage.setItem('dataCollectionConsent', agreed ? 'true' : 'false');
+    setShowConsentDialog(false);
+    
+    if (agreed) {
+      toast.success("동의 완료", {
+        description: "서비스 개선을 위한 데이터 수집에 동의하셨습니다.",
+      });
+    } else {
+      toast.info("동의 거부", {
+        description: "피드백 기능이 제한됩니다. 번역은 정상적으로 이용 가능합니다.",
+      });
+    }
+  };
+
+  const hasConsent = () => {
+    return localStorage.getItem('dataCollectionConsent') === 'true';
+  };
 
   const fetchRecentTranslations = () => {
     const stored = localStorage.getItem('translations');
@@ -175,20 +202,65 @@ export const TranslationInterface = () => {
   };
 
   const handleFeedback = async (translation: Translation, feedbackType: 'positive' | 'negative') => {
-    // Send feedback to database for analysis purposes
-    await supabase
-      .from("translation_feedback")
-      .insert({
-        translation_id: translation.id,
-        source_text: translation.source_text,
-        natural_translation: translation.target_text,
-        literal_translation: translation.literal_translation,
+    if (!hasConsent()) {
+      toast.error("피드백 제한", {
+        description: "데이터 수집에 동의하셔야 피드백을 제출할 수 있습니다.",
       });
-    toast.success(feedbackType === 'positive' ? "피드백 감사합니다!" : "피드백이 전송되었습니다");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("translation_feedback")
+        .insert({
+          translation_id: translation.id,
+          source_text: translation.source_text,
+          natural_translation: translation.target_text,
+          literal_translation: translation.literal_translation,
+          feedback_type: feedbackType,
+        });
+
+      if (error) throw error;
+
+      toast.success(feedbackType === 'positive' ? "피드백 감사합니다!" : "피드백이 전송되었습니다");
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      toast.error("피드백 제출 중 오류가 발생했습니다.");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <>
+      <AlertDialog open={showConsentDialog} onOpenChange={setShowConsentDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>데이터 수집 및 이용 동의</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                번역 서비스 개선 및 AI 학습을 위해 다음 데이터를 수집합니다:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>번역 요청 원문 및 번역 결과</li>
+                <li>사용자 피드백 (좋아요/어색해요)</li>
+                <li>서비스 이용 기록</li>
+              </ul>
+              <p className="text-sm">
+                동의하지 않으셔도 번역 기능은 정상적으로 이용 가능하나, 피드백 제출이 제한됩니다.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => handleConsent(false)}>
+              동의하지 않음
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConsent(true)}>
+              동의함
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="min-h-screen bg-background flex flex-col">
       {/* Main Translation Area */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-4xl space-y-6">
@@ -373,6 +445,7 @@ export const TranslationInterface = () => {
           </div>
         </aside>
       )}
-    </div>
+      </div>
+    </>
   );
 };

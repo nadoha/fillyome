@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDictionary } from "@/hooks/useDictionary";
 import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
+import { TranslationResultBox } from "./TranslationResultBox";
 import { RecentTranslationItem } from "./RecentTranslationItem";
 import { LanguageSelector } from "./LanguageSelector";
 import { ThemeToggle } from "./ThemeToggle";
@@ -33,6 +34,7 @@ export const TranslationInterface = () => {
   const { t, i18n } = useTranslation();
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
+  const [literalTranslation, setLiteralTranslation] = useState("");
   const [sourceRomanization, setSourceRomanization] = useState("");
   const [targetRomanization, setTargetRomanization] = useState("");
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
@@ -129,11 +131,12 @@ export const TranslationInterface = () => {
       }
 
       const translation = data.translation;
-      const literalTranslation = data.literalTranslation || "";
+      const literal = data.literalTranslation || "";
       const srcRomanization = data.sourceRomanization || "";
       const tgtRomanization = data.targetRomanization || "";
       
       setTargetText(translation);
+      setLiteralTranslation(literal);
       setSourceRomanization(srcRomanization);
       setTargetRomanization(tgtRomanization);
 
@@ -146,7 +149,7 @@ export const TranslationInterface = () => {
         is_favorite: false,
         source_romanization: srcRomanization,
         target_romanization: tgtRomanization,
-        literal_translation: literalTranslation,
+        literal_translation: literal,
         created_at: new Date().toISOString(),
         content_classification: 'safe',
         masked_source_text: null,
@@ -204,6 +207,7 @@ export const TranslationInterface = () => {
   useEffect(() => {
     if (!sourceText.trim() || sourceText.trim().length < 2) {
       setTargetText("");
+      setLiteralTranslation("");
       setSourceRomanization("");
       setTargetRomanization("");
       return;
@@ -427,14 +431,34 @@ export const TranslationInterface = () => {
                 romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
               />
               
-              <TranslationBox
-                value={targetText}
+              <TranslationResultBox
+                naturalTranslation={targetText}
+                literalTranslation={literalTranslation}
+                romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
                 onCopy={() => handleCopy(targetText)}
                 onSpeak={() => handleSpeak(targetText, targetLang)}
                 onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
+                onFeedback={(type) => {
+                  if (targetText) {
+                    handleFeedback({
+                      id: crypto.randomUUID(),
+                      source_text: sourceText,
+                      target_text: targetText,
+                      source_lang: sourceLang,
+                      target_lang: targetLang,
+                      is_favorite: false,
+                      created_at: new Date().toISOString(),
+                      content_classification: 'safe',
+                      masked_source_text: null,
+                      masked_target_text: null,
+                      source_romanization: sourceRomanization,
+                      target_romanization: targetRomanization,
+                      literal_translation: literalTranslation
+                    }, type);
+                  }
+                }}
                 placeholder={`${t("translate")}...`}
                 isTranslating={isTranslating}
-                romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
               />
             </div>
             

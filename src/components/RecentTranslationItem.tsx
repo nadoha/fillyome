@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { Copy, Volume2, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { memo, useState } from "react";
+import { Copy, Volume2, Trash2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -43,19 +43,22 @@ export const RecentTranslationItem = memo(({
   noRomanization = false,
   t
 }: RecentTranslationItemProps) => {
+  const [showSourceRom, setShowSourceRom] = useState(false);
+  const [showTargetRom, setShowTargetRom] = useState(false);
+
   return (
-    <div className="flex items-start gap-2 p-2.5 rounded-lg bg-card/50 hover:bg-card transition-colors group">
+    <div className="flex items-start gap-2 p-3 rounded-lg bg-card/50 hover:bg-card transition-colors group">
       <Checkbox
         checked={isSelected}
         onCheckedChange={onToggleSelect}
         className="mt-0.5"
       />
-      <div className="flex-1 min-w-0 space-y-2">
-        {/* Source */}
-        <div className="space-y-0.5">
+      <div className="flex-1 min-w-0 space-y-3">
+        {/* Source - Smaller, Secondary */}
+        <div className="space-y-1">
           <div className="flex items-start gap-1.5 group/text">
             <p 
-              className="text-base text-foreground/90 leading-relaxed flex-1 select-text"
+              className="text-sm text-muted-foreground leading-relaxed flex-1 select-text"
               onMouseUp={(e) => onTextSelect(e, translation.source_lang, translation.source_text)}
             >
               {translation.source_text}
@@ -70,15 +73,28 @@ export const RecentTranslationItem = memo(({
             </div>
           </div>
           {!noRomanization && translation.source_romanization && (
-            <p className="text-xs text-muted-foreground/50 italic">{translation.source_romanization}</p>
+            <div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSourceRom(!showSourceRom)}
+                className="h-5 px-1.5 text-xs text-muted-foreground/70 hover:text-muted-foreground -ml-1.5"
+              >
+                {showSourceRom ? <ChevronUp className="h-2.5 w-2.5 mr-0.5" /> : <ChevronDown className="h-2.5 w-2.5 mr-0.5" />}
+                Rom
+              </Button>
+              {showSourceRom && (
+                <p className="text-xs text-muted-foreground/60 italic ml-2">{translation.source_romanization}</p>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Target */}
-        <div className="space-y-0.5">
+        {/* Target - Larger, Primary */}
+        <div className="space-y-2">
           <div className="flex items-start gap-1.5 group/text">
             <p 
-              className="text-base text-primary/80 leading-relaxed font-medium flex-1 select-text"
+              className="text-base text-foreground leading-relaxed font-medium flex-1 select-text"
               onMouseUp={(e) => onTextSelect(e, translation.target_lang, translation.target_text)}
             >
               {translation.target_text}
@@ -92,42 +108,72 @@ export const RecentTranslationItem = memo(({
               </Button>
             </div>
           </div>
+
+          {/* Target Romanization - Collapsible */}
           {!noRomanization && translation.target_romanization && (
-            <p className="text-xs text-muted-foreground/50 italic">{translation.target_romanization}</p>
+            <div className="pt-1 border-t border-border/20">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowTargetRom(!showTargetRom)}
+                className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2"
+              >
+                {showTargetRom ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+                Romanization
+              </Button>
+              {showTargetRom && (
+                <div className="mt-1 pl-2 border-l-2 border-border/40">
+                  <p className="text-xs text-muted-foreground/70 italic">{translation.target_romanization}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Literal Translation - Collapsible */}
+          {translation.literal_translation && (
+            <div className="pt-1 border-t border-border/20">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleLiteral}
+                className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2"
+              >
+                {showLiteral ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+                Literal translation
+              </Button>
+              {showLiteral && (
+                <div className="mt-1 pl-2 border-l-2 border-primary/30 bg-primary/5 rounded-r py-1.5 pr-2">
+                  <p 
+                    className="text-sm text-foreground/70 leading-relaxed select-text"
+                    onMouseUp={(e) => onTextSelect(e, translation.target_lang, translation.literal_translation || "")}
+                  >
+                    {translation.literal_translation}
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
-
-        {/* Literal */}
-        {translation.literal_translation && (
-          <div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleLiteral}
-              className="h-6 px-2 text-xs"
-            >
-              {showLiteral ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-              {t("literal")}
-            </Button>
-            {showLiteral && (
-              <div className="mt-1 pl-2 border-l border-primary/20 bg-primary/5 -ml-2 py-1.5 pr-2">
-                <p 
-                  className="text-sm text-foreground/70 leading-relaxed select-text"
-                  onMouseUp={(e) => onTextSelect(e, translation.target_lang, translation.literal_translation || "")}
-                >
-                  {translation.literal_translation}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
           
-        {/* Feedback */}
-        <div className="flex items-center gap-1.5 pt-0.5">
-          <Button variant="ghost" size="sm" onClick={() => onFeedback('positive')} className="h-6 px-2 text-xs">
+        {/* Feedback - Visually Separated */}
+        <div className="pt-2 border-t border-border/20 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground mr-0.5">How's this?</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => onFeedback('positive')} 
+            className="h-6 px-2 text-xs hover:bg-green-500/10 hover:text-green-600"
+          >
+            <ThumbsUp className="h-3 w-3 mr-1" />
             {t("good")}
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => onFeedback('negative')} className="h-6 px-2 text-xs">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => onFeedback('negative')} 
+            className="h-6 px-2 text-xs hover:bg-orange-500/10 hover:text-orange-600"
+          >
+            <ThumbsDown className="h-3 w-3 mr-1" />
             {t("feelsOff")}
           </Button>
         </div>

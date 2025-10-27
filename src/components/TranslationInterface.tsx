@@ -54,7 +54,7 @@ export const TranslationInterface = () => {
   const swapLanguages = () => {
     setSourceLang(targetLang);
     setTargetLang(sourceLang);
-    setSourceText(targetText);
+    // Keep sourceText as is - don't swap content
     setTargetText("");
   };
 

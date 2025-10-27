@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           is_favorite: boolean
+          literal_translation: string | null
           masked_source_text: string | null
           masked_target_text: string | null
           source_lang: string
@@ -34,6 +35,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_favorite?: boolean
+          literal_translation?: string | null
           masked_source_text?: string | null
           masked_target_text?: string | null
           source_lang: string
@@ -48,6 +50,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_favorite?: boolean
+          literal_translation?: string | null
           masked_source_text?: string | null
           masked_target_text?: string | null
           source_lang?: string

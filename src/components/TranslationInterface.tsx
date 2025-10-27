@@ -19,6 +19,7 @@ interface Translation {
   masked_target_text: string | null;
   source_romanization: string | null;
   target_romanization: string | null;
+  literal_translation: string | null;
 }
 
 export const TranslationInterface = () => {
@@ -29,6 +30,7 @@ export const TranslationInterface = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
 
   // Fetch recent translations on mount
   useEffect(() => {
@@ -81,6 +83,7 @@ export const TranslationInterface = () => {
       }
 
       const translation = data.translation;
+      const literalTranslation = data.literalTranslation || "";
       const sourceRomanization = data.sourceRomanization || "";
       const targetRomanization = data.targetRomanization || "";
       
@@ -97,6 +100,7 @@ export const TranslationInterface = () => {
           is_favorite: false,
           source_romanization: sourceRomanization,
           target_romanization: targetRomanization,
+          literal_translation: literalTranslation,
         });
 
       if (insertError) {
@@ -174,6 +178,10 @@ export const TranslationInterface = () => {
       newSelected.add(id);
     }
     setSelectedIds(newSelected);
+  };
+
+  const toggleLiteral = (id: string) => {
+    setShowLiteral(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -282,10 +290,31 @@ export const TranslationInterface = () => {
                     {t.source_romanization && (
                       <p className="text-xs text-muted-foreground/70 italic truncate">{t.source_romanization}</p>
                     )}
-                    <p className="text-sm text-muted-foreground truncate mt-1">{t.target_text}</p>
-                    {t.target_romanization && (
-                      <p className="text-xs text-muted-foreground/70 italic truncate">{t.target_romanization}</p>
-                    )}
+                    <div className="mt-1 space-y-1">
+                      <p className="text-sm text-muted-foreground truncate">{t.target_text}</p>
+                      {t.target_romanization && (
+                        <p className="text-xs text-muted-foreground/70 italic truncate">{t.target_romanization}</p>
+                      )}
+                      {t.literal_translation && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleLiteral(t.id)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            {showLiteral[t.id] ? "Hide" : "Show"} Literal translation
+                          </Button>
+                          {showLiteral[t.id] && (
+                            <div className="pl-3 border-l-2 border-border">
+                              <p className="text-xs text-muted-foreground/90 italic">
+                                Literal: {t.literal_translation}
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <Button

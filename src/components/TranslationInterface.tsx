@@ -14,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDictionary } from "@/hooks/useDictionary";
+import { DictionarySheet } from "./DictionarySheet";
 
 interface Translation {
   id: string;
@@ -41,6 +43,9 @@ export const TranslationInterface = () => {
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
+  const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
+  
+  const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
 
   const fetchRecentTranslations = useCallback(() => {
     const stored = localStorage.getItem('translations');
@@ -246,6 +251,46 @@ export const TranslationInterface = () => {
     }
   }, []);
 
+  const handleWordTap = useCallback((event: React.MouseEvent<HTMLDivElement>, text: string, lang: string) => {
+    const target = event.target as HTMLElement;
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+
+    // If there's a selection, use it; otherwise extract word from click position
+    let word = selectedText;
+    
+    if (!word && target.textContent) {
+      const clickX = event.clientX;
+      const clickY = event.clientY;
+      const range = document.caretRangeFromPoint(clickX, clickY);
+      
+      if (range) {
+        const textNode = range.startContainer;
+        const offset = range.startOffset;
+        const textContent = textNode.textContent || "";
+        
+        // Extract word at cursor position
+        let start = offset;
+        let end = offset;
+        
+        while (start > 0 && /\S/.test(textContent[start - 1])) start--;
+        while (end < textContent.length && /\S/.test(textContent[end])) end++;
+        
+        word = textContent.slice(start, end).trim();
+      }
+    }
+
+    if (word && word.length > 0) {
+      setIsDictionaryOpen(true);
+      lookupWord(word, lang, text);
+    }
+  }, [lookupWord]);
+
+  const closeDictionary = useCallback(() => {
+    setIsDictionaryOpen(false);
+    resetDictionary();
+  }, [resetDictionary]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header with App Language Selector */}
@@ -337,12 +382,17 @@ export const TranslationInterface = () => {
             </div>
 
             <div className="relative">
-              <Textarea
-                placeholder={t("translate") + "..."}
-                value={targetText}
-                readOnly
-                className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4 pr-20"
-              />
+              <div 
+                className="min-h-[180px] text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4 pr-20 cursor-text select-text"
+                onClick={(e) => targetText && handleWordTap(e, targetText, targetLang)}
+                style={{ 
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  userSelect: 'text'
+                }}
+              >
+                {targetText || <span className="text-muted-foreground">{t("translate")}...</span>}
+              </div>
               {isTranslating && (
                 <div className="absolute top-2 right-2 text-xs text-muted-foreground flex items-center gap-1.5">
                   <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -407,7 +457,12 @@ export const TranslationInterface = () => {
                     {/* Source text with romanization */}
                     <div className="space-y-0.5">
                       <div className="flex items-start gap-2 group/text">
-                        <p className="text-[15px] text-foreground leading-relaxed flex-1">{translation.source_text}</p>
+                        <p 
+                          className="text-[15px] text-foreground leading-relaxed flex-1 cursor-pointer hover:text-primary transition-colors"
+                          onClick={(e) => handleWordTap(e, translation.source_text, translation.source_lang)}
+                        >
+                          {translation.source_text}
+                        </p>
                         <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
                           <Button
                             variant="ghost"
@@ -435,7 +490,12 @@ export const TranslationInterface = () => {
                     {/* Natural translation with romanization */}
                     <div className="space-y-0.5">
                       <div className="flex items-start gap-2 group/text">
-                        <p className="text-[15px] text-primary/90 leading-relaxed font-medium flex-1">{translation.target_text}</p>
+                        <p 
+                          className="text-[15px] text-primary/90 leading-relaxed font-medium flex-1 cursor-pointer hover:text-primary transition-colors"
+                          onClick={(e) => handleWordTap(e, translation.target_text, translation.target_lang)}
+                        >
+                          {translation.target_text}
+                        </p>
                         <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
                           <Button
                             variant="ghost"
@@ -528,6 +588,15 @@ export const TranslationInterface = () => {
           </div>
         </aside>
       )}
+
+      {/* Dictionary Sheet */}
+      <DictionarySheet
+        isOpen={isDictionaryOpen}
+        onClose={closeDictionary}
+        word={currentWord}
+        entry={currentEntry}
+        isLoading={isDictionaryLoading}
+      />
     </div>
   );
 };

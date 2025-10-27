@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ArrowLeftRight, Trash2, ChevronDown, ChevronUp, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { franc } from "franc-min";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -40,6 +41,32 @@ export const TranslationInterface = () => {
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
+
+  // Auto-detect language and set source/target languages
+  useEffect(() => {
+    if (sourceText.trim().length < 3) return;
+
+    const detectTimer = setTimeout(() => {
+      const detected = franc(sourceText);
+      
+      // Map franc language codes to our codes
+      let detectedLang: "ko" | "ja" | "en" | null = null;
+      if (detected === "kor") detectedLang = "ko";
+      else if (detected === "jpn") detectedLang = "ja";
+      else if (detected === "eng") detectedLang = "en";
+
+      if (detectedLang && detectedLang !== sourceLang) {
+        setSourceLang(detectedLang);
+        
+        // Auto-set target language based on detected source
+        if (detectedLang === "ko") setTargetLang("en");
+        else if (detectedLang === "ja") setTargetLang("ko");
+        else if (detectedLang === "en") setTargetLang("ko");
+      }
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(detectTimer);
+  }, [sourceText, sourceLang]);
 
   // Fetch recent translations from localStorage on mount
   useEffect(() => {

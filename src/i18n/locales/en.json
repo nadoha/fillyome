@@ -12,5 +12,6 @@
   "feelsOff": "👎 Feels off",
   "delete": "Delete",
   "bulkDelete": "Delete Selected",
-  "noHistory": "No translation history"
+  "noHistory": "No translation history",
+  "copied": "Copied!"
 }

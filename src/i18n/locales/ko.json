@@ -12,5 +12,6 @@
   "feelsOff": "👎 Feels off",
   "delete": "삭제",
   "bulkDelete": "선택 삭제",
-  "noHistory": "번역 기록이 없습니다"
+  "noHistory": "번역 기록이 없습니다",
+  "copied": "복사됨!"
 }

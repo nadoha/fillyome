@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeftRight, Trash2, ChevronDown, ChevronUp, Globe } from "lucide-react";
+import { ArrowLeftRight, Trash2, ChevronDown, ChevronUp, Globe, Copy, Volume2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { franc } from "franc-min";
 import { Button } from "@/components/ui/button";
@@ -224,6 +224,28 @@ export const TranslationInterface = () => {
     }
   }, []);
 
+  const handleCopy = useCallback((text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(t("copied"));
+  }, [t]);
+
+  const handleSpeak = useCallback((text: string, lang: string) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Set language based on lang parameter
+      if (lang === 'ko') utterance.lang = 'ko-KR';
+      else if (lang === 'ja') utterance.lang = 'ja-JP';
+      else if (lang === 'en') utterance.lang = 'en-US';
+      
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      toast.error("Text-to-speech not supported");
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header with App Language Selector */}
@@ -284,25 +306,67 @@ export const TranslationInterface = () => {
 
           {/* Translation Boxes */}
           <div className="grid md:grid-cols-2 gap-3">
-            <Textarea
-              placeholder={t("enterText")}
-              value={sourceText}
-              onChange={(e) => setSourceText(e.target.value)}
-              className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-card shadow-sm rounded-2xl p-4 focus-visible:ring-1"
-              autoFocus
-            />
+            <div className="relative">
+              <Textarea
+                placeholder={t("enterText")}
+                value={sourceText}
+                onChange={(e) => setSourceText(e.target.value)}
+                className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-card shadow-sm rounded-2xl p-4 pr-20 focus-visible:ring-1"
+                autoFocus
+              />
+              {sourceText && (
+                <div className="absolute top-3 right-3 flex gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full hover:bg-primary/10"
+                    onClick={() => handleCopy(sourceText)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full hover:bg-primary/10"
+                    onClick={() => handleSpeak(sourceText, sourceLang)}
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
 
             <div className="relative">
               <Textarea
                 placeholder={t("translate") + "..."}
                 value={targetText}
                 readOnly
-                className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4"
+                className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4 pr-20"
               />
               {isTranslating && (
                 <div className="absolute top-2 right-2 text-xs text-muted-foreground flex items-center gap-1.5">
                   <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   {t("translating")}
+                </div>
+              )}
+              {!isTranslating && targetText && (
+                <div className="absolute top-3 right-3 flex gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full hover:bg-primary/10"
+                    onClick={() => handleCopy(targetText)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full hover:bg-primary/10"
+                    onClick={() => handleSpeak(targetText, targetLang)}
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
             </div>
@@ -342,7 +406,27 @@ export const TranslationInterface = () => {
                   <div className="flex-1 min-w-0 space-y-2.5">
                     {/* Source text with romanization */}
                     <div className="space-y-0.5">
-                      <p className="text-[15px] text-foreground leading-relaxed">{translation.source_text}</p>
+                      <div className="flex items-start gap-2 group/text">
+                        <p className="text-[15px] text-foreground leading-relaxed flex-1">{translation.source_text}</p>
+                        <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-full hover:bg-primary/10"
+                            onClick={() => handleCopy(translation.source_text)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-full hover:bg-primary/10"
+                            onClick={() => handleSpeak(translation.source_text, translation.source_lang)}
+                          >
+                            <Volume2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                       {translation.source_romanization && (
                         <p className="text-xs text-muted-foreground/60 italic">{translation.source_romanization}</p>
                       )}
@@ -350,7 +434,27 @@ export const TranslationInterface = () => {
 
                     {/* Natural translation with romanization */}
                     <div className="space-y-0.5">
-                      <p className="text-[15px] text-primary/90 leading-relaxed font-medium">{translation.target_text}</p>
+                      <div className="flex items-start gap-2 group/text">
+                        <p className="text-[15px] text-primary/90 leading-relaxed font-medium flex-1">{translation.target_text}</p>
+                        <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-full hover:bg-primary/10"
+                            onClick={() => handleCopy(translation.target_text)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-full hover:bg-primary/10"
+                            onClick={() => handleSpeak(translation.target_text, translation.target_lang)}
+                          >
+                            <Volume2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                       {translation.target_romanization && (
                         <p className="text-xs text-muted-foreground/60 italic">{translation.target_romanization}</p>
                       )}

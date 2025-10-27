@@ -281,18 +281,30 @@ export const TranslationInterface = () => {
 
   const handleFeedback = useCallback(async (translation: Translation, feedbackType: 'positive' | 'negative') => {
     try {
-      const { error } = await supabase
+      console.log('Submitting feedback:', {
+        translation_id: translation.id,
+        source_text: translation.source_text,
+        natural_translation: translation.target_text,
+        literal_translation: translation.literal_translation,
+        feedback_type: feedbackType,
+      });
+
+      const { data, error } = await supabase
         .from("translation_feedback")
         .insert({
-          translation_id: translation.id,
           source_text: translation.source_text,
           natural_translation: translation.target_text,
           literal_translation: translation.literal_translation,
           feedback_type: feedbackType,
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
+      console.log('Feedback submitted successfully:', data);
       toast.success(feedbackType === 'positive' ? t("feedbackThanks") : t("feedbackReceived"));
     } catch (error) {
       console.error('Feedback submission failed:', error);

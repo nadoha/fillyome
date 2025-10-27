@@ -69,8 +69,16 @@ export const TranslationInterface = () => {
   const saveToLocalStorage = useCallback((translation: Translation) => {
     const stored = localStorage.getItem('translations');
     const translations = stored ? JSON.parse(stored) : [];
-    translations.unshift(translation);
-    localStorage.setItem('translations', JSON.stringify(translations));
+    
+    // Remove duplicates with same source text and language pair
+    const filtered = translations.filter((t: Translation) => 
+      !(t.source_text === translation.source_text && 
+        t.source_lang === translation.source_lang && 
+        t.target_lang === translation.target_lang)
+    );
+    
+    filtered.unshift(translation);
+    localStorage.setItem('translations', JSON.stringify(filtered));
   }, []);
 
   // Save language pair to localStorage and update recent pairs

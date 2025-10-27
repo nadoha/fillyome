@@ -351,13 +351,19 @@ export const TranslationInterface = () => {
           {/* Translation Boxes */}
           <div className="grid md:grid-cols-2 gap-3">
             <div className="relative">
-              <Textarea
-                placeholder={t("enterText")}
-                value={sourceText}
-                onChange={(e) => setSourceText(e.target.value)}
-                className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-card shadow-sm rounded-2xl p-4 pr-20 focus-visible:ring-1"
-                autoFocus
-              />
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                onInput={(e) => setSourceText(e.currentTarget.textContent || "")}
+                className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-card shadow-sm rounded-2xl p-4 pr-20 focus-visible:ring-1 focus:outline-none overflow-auto"
+                style={{ 
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}
+                data-placeholder={t("enterText")}
+              >
+                {sourceText ? renderClickableText(sourceText, sourceLang, sourceText) : null}
+              </div>
               {sourceText && (
                 <div className="absolute top-3 right-3 flex gap-1.5">
                   <Button
@@ -536,7 +542,7 @@ export const TranslationInterface = () => {
                         {showLiteral[translation.id] && (
                           <div className="mt-2 pl-3 border-l-2 border-primary/20 bg-primary/5 -ml-3 py-2 pr-3">
                             <p className="text-xs text-foreground/80 leading-relaxed">
-                              {translation.literal_translation}
+                              {renderClickableText(translation.literal_translation || "", translation.target_lang, translation.literal_translation || "")}
                             </p>
                           </div>
                         )}

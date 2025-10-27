@@ -40,7 +40,8 @@ serve(async (req) => {
       ja: "Japanese"
     };
 
-    const systemPrompt = `You are a professional translator. Translate the given text from ${langNames[sourceLang]} to ${langNames[targetLang]}. 
+    // Step 1: Translate
+    const translationPrompt = `You are a professional translator. Translate the given text from ${langNames[sourceLang]} to ${langNames[targetLang]}. 
     
 Rules:
 - Provide ONLY the translation, no explanations or additional text
@@ -48,7 +49,7 @@ Rules:
 - Keep proper nouns in their original form unless commonly translated
 - Preserve formatting if any`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const translationResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -57,14 +58,14 @@ Rules:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: translationPrompt },
           { role: "user", content: text }
         ],
       }),
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
+    if (!translationResponse.ok) {
+      if (translationResponse.status === 429) {
         console.error("Rate limit exceeded");
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), 
@@ -74,7 +75,7 @@ Rules:
           }
         );
       }
-      if (response.status === 402) {
+      if (translationResponse.status === 402) {
         console.error("Payment required");
         return new Response(
           JSON.stringify({ error: "Translation credits exhausted. Please add credits." }), 
@@ -85,8 +86,8 @@ Rules:
         );
       }
       
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      const errorText = await translationResponse.text();
+      console.error("AI gateway error:", translationResponse.status, errorText);
       return new Response(
         JSON.stringify({ error: "Translation failed" }), 
         { 
@@ -96,8 +97,8 @@ Rules:
       );
     }
 
-    const data = await response.json();
-    const translation = data.choices?.[0]?.message?.content;
+    const translationData = await translationResponse.json();
+    const translation = translationData.choices?.[0]?.message?.content;
 
     if (!translation) {
       console.error("No translation in response");
@@ -110,12 +111,74 @@ Rules:
       );
     }
 
+    // Step 2: Classify content
+    const classificationPrompt = `Analyze this text and classify it as one of: safe, offensive, sexual.
+    
+Text: "${text}"
+
+Respond with ONLY one word: safe, offensive, or sexual`;
+
+    const classificationResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "You are a content classifier. Respond with only one word." },
+          { role: "user", content: classificationPrompt }
+        ],
+      }),
+    });
+
+    let contentClassification = "safe";
+    if (classificationResponse.ok) {
+      const classificationData = await classificationResponse.json();
+      const classification = classificationData.choices?.[0]?.message?.content?.trim().toLowerCase();
+      if (classification === "offensive" || classification === "sexual") {
+        contentClassification = classification;
+      }
+    }
+
+    // Step 3: Create masked versions if needed
+    const maskText = (text: string): string => {
+      if (contentClassification === "safe") return text;
+      
+      // Simple masking: replace words with ***
+      const offensivePatterns = [
+        /\b(fuck|shit|damn|ass|bitch|bastard|dick|cock|pussy|cunt)\b/gi,
+        /\b(sex|sexual|sexy|porn|xxx)\b/gi,
+        /씨발|개새끼|병신|좆|섹스/gi,
+        /セックス|エロ|ファック/gi
+      ];
+      
+      let masked = text;
+      offensivePatterns.forEach(pattern => {
+        masked = masked.replace(pattern, (match) => {
+          return match[0] + '*'.repeat(Math.max(match.length - 2, 1)) + match[match.length - 1];
+        });
+      });
+      
+      return masked;
+    };
+
+    const maskedSourceText = maskText(text);
+    const maskedTargetText = maskText(translation);
+
     return new Response(
-      JSON.stringify({ translation }), 
+      JSON.stringify({ 
+        translation,
+        contentClassification,
+        maskedSourceText,
+        maskedTargetText
+      }), 
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
+
   } catch (error) {
     console.error("Translation error:", error);
     return new Response(

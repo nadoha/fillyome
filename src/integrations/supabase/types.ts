@@ -16,27 +16,36 @@ export type Database = {
     Tables: {
       translations: {
         Row: {
+          content_classification: string | null
           created_at: string
           id: string
           is_favorite: boolean
+          masked_source_text: string | null
+          masked_target_text: string | null
           source_lang: string
           source_text: string
           target_lang: string
           target_text: string
         }
         Insert: {
+          content_classification?: string | null
           created_at?: string
           id?: string
           is_favorite?: boolean
+          masked_source_text?: string | null
+          masked_target_text?: string | null
           source_lang: string
           source_text: string
           target_lang: string
           target_text: string
         }
         Update: {
+          content_classification?: string | null
           created_at?: string
           id?: string
           is_favorite?: boolean
+          masked_source_text?: string | null
+          masked_target_text?: string | null
           source_lang?: string
           source_text?: string
           target_lang?: string

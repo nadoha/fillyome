@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { ArrowLeftRight, Star } from "lucide-react";
+import { ArrowLeftRight, Star, Trash2, Eye, EyeOff, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -13,6 +14,9 @@ interface Translation {
   target_lang: string;
   is_favorite: boolean;
   created_at: string;
+  content_classification: string;
+  masked_source_text: string | null;
+  masked_target_text: string | null;
 }
 
 export const TranslationInterface = () => {
@@ -22,6 +26,9 @@ export const TranslationInterface = () => {
   const [targetLang, setTargetLang] = useState<"ko" | "ja">("ja");
   const [isTranslating, setIsTranslating] = useState(false);
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
+  const [safeMode, setSafeMode] = useState(true);
+  const [showOriginal, setShowOriginal] = useState<Record<string, boolean>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Fetch recent translations on mount
   useEffect(() => {
@@ -74,6 +81,10 @@ export const TranslationInterface = () => {
       }
 
       const translation = data.translation;
+      const contentClassification = data.contentClassification || "safe";
+      const maskedSourceText = data.maskedSourceText || sourceText;
+      const maskedTargetText = data.maskedTargetText || translation;
+      
       setTargetText(translation);
 
       // Auto-save to database
@@ -85,6 +96,9 @@ export const TranslationInterface = () => {
           source_lang: sourceLang,
           target_lang: targetLang,
           is_favorite: false,
+          content_classification: contentClassification,
+          masked_source_text: maskedSourceText,
+          masked_target_text: maskedTargetText,
         });
 
       if (insertError) {
@@ -119,6 +133,63 @@ export const TranslationInterface = () => {
 
   const getLangLabel = (lang: string) => {
     return lang === "ko" ? "한국어" : "日本語";
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from("translations")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting translation:", error);
+      toast.error("Failed to delete");
+    } else {
+      toast.success("Deleted");
+      fetchRecentTranslations();
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const { error } = await supabase
+      .from("translations")
+      .delete()
+      .in("id", Array.from(selectedIds));
+
+    if (error) {
+      console.error("Error deleting translations:", error);
+      toast.error("Failed to delete selected items");
+    } else {
+      toast.success(`Deleted ${selectedIds.size} items`);
+      setSelectedIds(new Set());
+      fetchRecentTranslations();
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleShowOriginal = (id: string) => {
+    setShowOriginal(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const getDisplayText = (translation: Translation, isSource: boolean) => {
+    const shouldMask = safeMode && translation.content_classification !== "safe" && !showOriginal[translation.id];
+    
+    if (isSource) {
+      return shouldMask && translation.masked_source_text ? translation.masked_source_text : translation.source_text;
+    } else {
+      return shouldMask && translation.masked_target_text ? translation.masked_target_text : translation.target_text;
+    }
   };
 
   return (
@@ -192,36 +263,94 @@ export const TranslationInterface = () => {
       {recentTranslations.length > 0 && (
         <aside className="border-t border-border bg-card">
           <div className="max-w-4xl mx-auto p-4 space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">Recent</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Recent</h3>
+              <div className="flex items-center gap-2">
+                {selectedIds.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    className="h-8"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete ({selectedIds.size})
+                  </Button>
+                )}
+                <Button
+                  variant={safeMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSafeMode(!safeMode)}
+                  className="h-8"
+                >
+                  <Shield className="h-3 w-3 mr-1" />
+                  {safeMode ? "Safe Mode ON" : "Safe Mode OFF"}
+                </Button>
+              </div>
+            </div>
             <div className="space-y-2">
               {recentTranslations.map((t) => (
                 <div
                   key={t.id}
                   className="flex items-start gap-3 p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors group"
                 >
+                  <Checkbox
+                    checked={selectedIds.has(t.id)}
+                    onCheckedChange={() => toggleSelect(t.id)}
+                    className="mt-1"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                       <span>{getLangLabel(t.source_lang)}</span>
                       <span>→</span>
                       <span>{getLangLabel(t.target_lang)}</span>
+                      {t.content_classification !== "safe" && (
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-destructive/10 text-destructive">
+                          {t.content_classification}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-foreground truncate">{t.source_text}</p>
-                    <p className="text-sm text-muted-foreground truncate">{t.target_text}</p>
+                    <p className="text-sm text-foreground truncate">{getDisplayText(t, true)}</p>
+                    <p className="text-sm text-muted-foreground truncate">{getDisplayText(t, false)}</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    onClick={() => toggleFavorite(t.id, t.is_favorite)}
-                  >
-                    <Star
-                      className={`h-4 w-4 ${
-                        t.is_favorite
-                          ? "fill-accent text-accent"
-                          : "text-muted-foreground group-hover:text-foreground"
-                      }`}
-                    />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {t.content_classification !== "safe" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => toggleShowOriginal(t.id)}
+                      >
+                        {showOriginal[t.id] ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => toggleFavorite(t.id, t.is_favorite)}
+                    >
+                      <Star
+                        className={`h-4 w-4 ${
+                          t.is_favorite
+                            ? "fill-accent text-accent"
+                            : "text-muted-foreground group-hover:text-foreground"
+                        }`}
+                      />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(t.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

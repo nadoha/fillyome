@@ -42,37 +42,6 @@ export const TranslationInterface = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
 
-  // Auto-detect language and set source/target languages
-  useEffect(() => {
-    if (sourceText.trim().length < 3) return;
-
-    const detectTimer = setTimeout(() => {
-      const detected = franc(sourceText);
-      
-      // Map franc language codes to our codes
-      let detectedLang: "ko" | "ja" | "en" | null = null;
-      if (detected === "kor") detectedLang = "ko";
-      else if (detected === "jpn") detectedLang = "ja";
-      else if (detected === "eng") detectedLang = "en";
-
-      if (detectedLang && detectedLang !== sourceLang) {
-        setSourceLang(detectedLang);
-        
-        // Auto-set target language based on detected source
-        if (detectedLang === "ko") setTargetLang("en");
-        else if (detectedLang === "ja") setTargetLang("ko");
-        else if (detectedLang === "en") setTargetLang("ko");
-      }
-    }, 500); // Debounce for 500ms
-
-    return () => clearTimeout(detectTimer);
-  }, [sourceText, sourceLang]);
-
-  // Fetch recent translations from localStorage on mount
-  useEffect(() => {
-    fetchRecentTranslations();
-  }, []);
-
   const fetchRecentTranslations = useCallback(() => {
     const stored = localStorage.getItem('translations');
     if (stored) {
@@ -96,7 +65,6 @@ export const TranslationInterface = () => {
 
   const handleTranslate = useCallback(async () => {
     if (!sourceText.trim()) {
-      toast.error(t("enterText"));
       return;
     }
 
@@ -149,7 +117,52 @@ export const TranslationInterface = () => {
     } finally {
       setIsTranslating(false);
     }
-  }, [sourceText, sourceLang, targetLang, saveToLocalStorage, fetchRecentTranslations, t]);
+  }, [sourceText, sourceLang, targetLang, saveToLocalStorage, fetchRecentTranslations]);
+
+  // Auto-detect language and set source/target languages
+  useEffect(() => {
+    if (sourceText.trim().length < 3) return;
+
+    const detectTimer = setTimeout(() => {
+      const detected = franc(sourceText);
+      
+      // Map franc language codes to our codes
+      let detectedLang: "ko" | "ja" | "en" | null = null;
+      if (detected === "kor") detectedLang = "ko";
+      else if (detected === "jpn") detectedLang = "ja";
+      else if (detected === "eng") detectedLang = "en";
+
+      if (detectedLang && detectedLang !== sourceLang) {
+        setSourceLang(detectedLang);
+        
+        // Auto-set target language based on detected source
+        if (detectedLang === "ko") setTargetLang("en");
+        else if (detectedLang === "ja") setTargetLang("ko");
+        else if (detectedLang === "en") setTargetLang("ko");
+      }
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(detectTimer);
+  }, [sourceText, sourceLang]);
+
+  // Auto-translate when text or languages change
+  useEffect(() => {
+    if (!sourceText.trim() || sourceText.trim().length < 2) {
+      setTargetText("");
+      return;
+    }
+
+    const translateTimer = setTimeout(() => {
+      handleTranslate();
+    }, 1000); // Wait 1 second after user stops typing
+
+    return () => clearTimeout(translateTimer);
+  }, [sourceText, sourceLang, targetLang, handleTranslate]);
+
+  // Fetch recent translations from localStorage on mount
+  useEffect(() => {
+    fetchRecentTranslations();
+  }, [fetchRecentTranslations]);
 
 
 
@@ -279,24 +292,20 @@ export const TranslationInterface = () => {
               autoFocus
             />
 
-            <Textarea
-              placeholder={t("translate") + "..."}
-              value={targetText}
-              readOnly
-              className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4"
-            />
-          </div>
-
-          {/* Translate Button */}
-          <div className="flex justify-center pt-1">
-            <Button
-              onClick={handleTranslate}
-              disabled={isTranslating || !sourceText.trim()}
-              size="lg"
-              className="px-10 py-2.5 rounded-full shadow-sm font-medium"
-            >
-              {isTranslating ? t("translating") : t("translate")}
-            </Button>
+            <div className="relative">
+              <Textarea
+                placeholder={t("translate") + "..."}
+                value={targetText}
+                readOnly
+                className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4"
+              />
+              {isTranslating && (
+                <div className="absolute top-2 right-2 text-xs text-muted-foreground flex items-center gap-1.5">
+                  <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  {t("translating")}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

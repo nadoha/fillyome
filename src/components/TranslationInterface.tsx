@@ -345,7 +345,7 @@ export const TranslationInterface = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b border-border/30 bg-card/20 backdrop-blur-sm sticky top-0 z-10 animate-slide-up">
-        <div className="max-w-3xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-foreground">Translate</h1>
           <div className="flex items-center gap-2">
             <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
@@ -367,7 +367,7 @@ export const TranslationInterface = () => {
 
       {/* Main */}
       <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 animate-fade-in">
-        <div className="w-full max-w-3xl space-y-4 sm:space-y-6">
+        <div className="w-full max-w-5xl space-y-4 sm:space-y-6">
           {/* Language Selector */}
           <div className="flex items-center justify-center gap-2 sm:gap-3 animate-scale-in">
             <LanguageSelector
@@ -426,7 +426,7 @@ export const TranslationInterface = () => {
       {/* Recent */}
       {recentTranslations.length > 0 && (
         <aside className="border-t border-border/30 bg-muted/10 backdrop-blur-sm animate-slide-up">
-          <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 space-y-3">
+          <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-muted-foreground">{t("recent3")}</h3>
               {selectedIds.size > 0 && (

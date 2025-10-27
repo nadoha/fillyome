@@ -31,7 +31,7 @@ export const TranslationBox = memo(({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="min-h-[180px] resize-none text-base leading-relaxed border-0 bg-card/50 rounded-xl p-4 pr-16 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+          className="min-h-[180px] md:min-h-[240px] lg:min-h-[320px] resize-none text-base leading-relaxed border-0 bg-card/50 rounded-xl p-4 pr-16 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
           autoFocus
         />
         {value && (
@@ -61,7 +61,7 @@ export const TranslationBox = memo(({
   return (
     <div className="relative group animate-fade-in">
       <div 
-        className="min-h-[180px] text-base leading-relaxed border-0 bg-muted/30 rounded-xl p-4 pr-16 select-text transition-colors hover:bg-muted/40"
+        className="min-h-[180px] md:min-h-[240px] lg:min-h-[320px] text-base leading-relaxed border-0 bg-muted/30 rounded-xl p-4 pr-16 select-text transition-colors hover:bg-muted/40"
         style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
         onMouseUp={onTextSelect}
       >

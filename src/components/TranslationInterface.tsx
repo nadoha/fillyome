@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ArrowLeftRight, Trash2, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { franc } from "franc-min";
@@ -10,6 +10,7 @@ import { useDictionary } from "@/hooks/useDictionary";
 import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { RecentTranslationItem } from "./RecentTranslationItem";
+import { LanguageSelector } from "./LanguageSelector";
 
 interface Translation {
   id: string;
@@ -52,7 +53,7 @@ export const TranslationInterface = () => {
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
 
   // Languages that don't need romanization (use Latin alphabet)
-  const noRomanizationLangs = ['en', 'es', 'fr', 'de', 'pt', 'it', 'id', 'tr', 'vi'];
+  const noRomanizationLangs = useMemo(() => ['en', 'es', 'fr', 'de', 'pt', 'it', 'id', 'tr', 'vi'], []);
 
   const fetchRecentTranslations = useCallback(() => {
     const stored = localStorage.getItem('translations');
@@ -342,11 +343,11 @@ export const TranslationInterface = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border/30 bg-card/20 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-3 py-2 flex items-center justify-between">
-          <h1 className="text-base font-medium text-foreground">Translate</h1>
+      <header className="border-b border-border/30 bg-card/20 backdrop-blur-sm sticky top-0 z-10 animate-slide-up">
+        <div className="max-w-3xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-foreground">Translate</h1>
           <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-            <SelectTrigger className="w-[130px] h-9 border-0 bg-transparent gap-1.5 text-sm">
+            <SelectTrigger className="w-[130px] h-9 border-0 bg-transparent gap-1.5 text-sm hover:bg-accent/50 transition-colors">
               <Globe className="h-4 w-4" />
               <SelectValue />
             </SelectTrigger>
@@ -361,98 +362,42 @@ export const TranslationInterface = () => {
       </header>
 
       {/* Main */}
-      <main className="flex-1 flex items-center justify-center px-3 py-6">
-        <div className="w-full max-w-3xl space-y-3">
+      <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 animate-fade-in">
+        <div className="w-full max-w-3xl space-y-4 sm:space-y-6">
           {/* Language Selector */}
-          <div className="flex items-center justify-center gap-2">
-            <select
+          <div className="flex items-center justify-center gap-2 sm:gap-3 animate-scale-in">
+            <LanguageSelector
               value={sourceLang}
-              onChange={(e) => {
-                const newLang = e.target.value as any;
-                setSourceLang(newLang);
+              onChange={(newLang) => {
+                setSourceLang(newLang as any);
                 updateLanguagePair(newLang, targetLang);
               }}
-              className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
-            >
-              {recentLangPairs.length > 0 && (
-                <optgroup label={`${t("recent3")} (${recentLangPairs.length}/3)`}>
-                  {recentLangPairs.map((pair, idx) => (
-                    <option key={idx} value={pair.source} disabled>
-                      {t(pair.source as any)} → {t(pair.target as any)}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              <optgroup label="All Languages">
-                <option value="ko">{t("korean")}</option>
-                <option value="ja">{t("japanese")}</option>
-                <option value="en">{t("english")}</option>
-                <option value="zh">{t("chinese")}</option>
-                <option value="es">{t("spanish")}</option>
-                <option value="fr">{t("french")}</option>
-                <option value="de">{t("german")}</option>
-                <option value="pt">{t("portuguese")}</option>
-                <option value="it">{t("italian")}</option>
-                <option value="ru">{t("russian")}</option>
-                <option value="ar">{t("arabic")}</option>
-                <option value="th">{t("thai")}</option>
-                <option value="vi">{t("vietnamese")}</option>
-                <option value="id">{t("indonesian")}</option>
-                <option value="hi">{t("hindi")}</option>
-                <option value="tr">{t("turkish")}</option>
-              </optgroup>
-            </select>
+              recentPairs={recentLangPairs}
+              type="source"
+            />
             
             <Button
               variant="ghost"
               size="icon"
               onClick={swapLanguages}
-              className="h-7 w-7"
+              className="h-9 w-9 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300"
             >
-              <ArrowLeftRight className="h-3.5 w-3.5" />
+              <ArrowLeftRight className="h-4 w-4" />
             </Button>
             
-            <select
+            <LanguageSelector
               value={targetLang}
-              onChange={(e) => {
-                const newLang = e.target.value as any;
-                setTargetLang(newLang);
+              onChange={(newLang) => {
+                setTargetLang(newLang as any);
                 updateLanguagePair(sourceLang, newLang);
               }}
-              className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
-            >
-              {recentLangPairs.length > 0 && (
-                <optgroup label={`${t("recent3")} (${recentLangPairs.length}/3)`}>
-                  {recentLangPairs.map((pair, idx) => (
-                    <option key={idx} value={pair.target} disabled>
-                      {t(pair.source as any)} → {t(pair.target as any)}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              <optgroup label="All Languages">
-                <option value="ko">{t("korean")}</option>
-                <option value="ja">{t("japanese")}</option>
-                <option value="en">{t("english")}</option>
-                <option value="zh">{t("chinese")}</option>
-                <option value="es">{t("spanish")}</option>
-                <option value="fr">{t("french")}</option>
-                <option value="de">{t("german")}</option>
-                <option value="pt">{t("portuguese")}</option>
-                <option value="it">{t("italian")}</option>
-                <option value="ru">{t("russian")}</option>
-                <option value="ar">{t("arabic")}</option>
-                <option value="th">{t("thai")}</option>
-                <option value="vi">{t("vietnamese")}</option>
-                <option value="id">{t("indonesian")}</option>
-                <option value="hi">{t("hindi")}</option>
-                <option value="tr">{t("turkish")}</option>
-              </optgroup>
-            </select>
+              recentPairs={recentLangPairs}
+              type="target"
+            />
           </div>
 
           {/* Translation Boxes */}
-          <div className="grid md:grid-cols-2 gap-2">
+          <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
             <TranslationBox
               value={sourceText}
               onChange={setSourceText}
@@ -476,39 +421,44 @@ export const TranslationInterface = () => {
 
       {/* Recent */}
       {recentTranslations.length > 0 && (
-        <aside className="border-t border-border/30 bg-muted/10">
-          <div className="max-w-3xl mx-auto px-3 py-3 space-y-2">
+        <aside className="border-t border-border/30 bg-muted/10 backdrop-blur-sm animate-slide-up">
+          <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-medium text-muted-foreground">{t("recent3")}</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground">{t("recent3")}</h3>
               {selectedIds.size > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleBulkDelete}
-                  className="h-6 px-2 text-xs text-destructive"
+                  className="h-7 px-3 text-xs text-destructive hover:bg-destructive/10 transition-colors"
                 >
-                  <Trash2 className="h-3 w-3 mr-1" />
+                  <Trash2 className="h-3 w-3 mr-1.5" />
                   {t("bulkDelete")} ({selectedIds.size})
                 </Button>
               )}
             </div>
-            <div className="space-y-1.5">
-              {recentTranslations.map((translation) => (
-                <RecentTranslationItem
+            <div className="space-y-2">
+              {recentTranslations.map((translation, index) => (
+                <div 
                   key={translation.id}
-                  translation={translation}
-                  isSelected={selectedIds.has(translation.id)}
-                  showLiteral={showLiteral[translation.id] || false}
-                  onToggleSelect={() => toggleSelect(translation.id)}
-                  onToggleLiteral={() => toggleLiteral(translation.id, translation.source_lang, translation.target_lang)}
-                  onDelete={() => handleDelete(translation.id)}
-                  onCopy={handleCopy}
-                  onSpeak={handleSpeak}
-                  onTextSelect={handleTextSelection}
-                  onFeedback={(type) => handleFeedback(translation, type)}
-                  noRomanization={noRomanizationLangs.includes(translation.source_lang) && noRomanizationLangs.includes(translation.target_lang)}
-                  t={t}
-                />
+                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="animate-fade-in"
+                >
+                  <RecentTranslationItem
+                    translation={translation}
+                    isSelected={selectedIds.has(translation.id)}
+                    showLiteral={showLiteral[translation.id] || false}
+                    onToggleSelect={() => toggleSelect(translation.id)}
+                    onToggleLiteral={() => toggleLiteral(translation.id, translation.source_lang, translation.target_lang)}
+                    onDelete={() => handleDelete(translation.id)}
+                    onCopy={handleCopy}
+                    onSpeak={handleSpeak}
+                    onTextSelect={handleTextSelection}
+                    onFeedback={(type) => handleFeedback(translation, type)}
+                    noRomanization={noRomanizationLangs.includes(translation.source_lang) && noRomanizationLangs.includes(translation.target_lang)}
+                    t={t}
+                  />
+                </div>
               ))}
             </div>
           </div>

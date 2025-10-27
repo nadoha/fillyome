@@ -32,23 +32,24 @@ export const TranslationInterface = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
 
-  // Fetch recent translations on mount
+  // Fetch recent translations from localStorage on mount
   useEffect(() => {
     fetchRecentTranslations();
   }, []);
 
-  const fetchRecentTranslations = async () => {
-    const { data, error } = await supabase
-      .from("translations")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(3);
-
-    if (error) {
-      console.error("Error fetching translations:", error);
-    } else if (data) {
-      setRecentTranslations(data);
+  const fetchRecentTranslations = () => {
+    const stored = localStorage.getItem('translations');
+    if (stored) {
+      const translations = JSON.parse(stored);
+      setRecentTranslations(translations.slice(0, 3));
     }
+  };
+
+  const saveToLocalStorage = (translation: Translation) => {
+    const stored = localStorage.getItem('translations');
+    const translations = stored ? JSON.parse(stored) : [];
+    translations.unshift(translation);
+    localStorage.setItem('translations', JSON.stringify(translations));
   };
 
   const swapLanguages = () => {
@@ -90,28 +91,25 @@ export const TranslationInterface = () => {
       
       setTargetText(translation);
 
-      // Auto-save to database
-      // target_text stores the natural/idiomatic translation (의역) as default
-      const { error: insertError } = await supabase
-        .from("translations")
-        .insert({
-          source_text: sourceText,
-          target_text: translation, // Natural translation (default)
-          source_lang: sourceLang,
-          target_lang: targetLang,
-          is_favorite: false,
-          source_romanization: sourceRomanization,
-          target_romanization: targetRomanization,
-          literal_translation: literalTranslation,
-        });
-
-      if (insertError) {
-        console.error("Error saving translation:", insertError);
-        toast.error("Translation succeeded but failed to save history");
-      } else {
-        // Refresh recent translations
-        fetchRecentTranslations();
-      }
+      // Save to localStorage instead of database
+      const newTranslation: Translation = {
+        id: crypto.randomUUID(),
+        source_text: sourceText,
+        target_text: translation,
+        source_lang: sourceLang,
+        target_lang: targetLang,
+        is_favorite: false,
+        source_romanization: sourceRomanization,
+        target_romanization: targetRomanization,
+        literal_translation: literalTranslation,
+        created_at: new Date().toISOString(),
+        content_classification: 'safe',
+        masked_source_text: null,
+        masked_target_text: null,
+      };
+      
+      saveToLocalStorage(newTranslation);
+      fetchRecentTranslations();
     } catch (error) {
       console.error("Translation error:", error);
       toast.error("Translation failed. Please try again.");
@@ -120,16 +118,14 @@ export const TranslationInterface = () => {
     }
   };
 
-  const toggleFavorite = async (id: string, currentFavorite: boolean) => {
-    const { error } = await supabase
-      .from("translations")
-      .update({ is_favorite: !currentFavorite })
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error updating favorite:", error);
-      toast.error("Failed to update favorite");
-    } else {
+  const toggleFavorite = (id: string, currentFavorite: boolean) => {
+    const stored = localStorage.getItem('translations');
+    if (stored) {
+      const translations = JSON.parse(stored);
+      const updated = translations.map((t: Translation) =>
+        t.id === id ? { ...t, is_favorite: !currentFavorite } : t
+      );
+      localStorage.setItem('translations', JSON.stringify(updated));
       toast.success(currentFavorite ? "Removed from favorites" : "Added to favorites");
       fetchRecentTranslations();
     }
@@ -139,33 +135,25 @@ export const TranslationInterface = () => {
     return lang === "ko" ? "한국어" : "日本語";
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase
-      .from("translations")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error deleting translation:", error);
-      toast.error("Failed to delete");
-    } else {
+  const handleDelete = (id: string) => {
+    const stored = localStorage.getItem('translations');
+    if (stored) {
+      const translations = JSON.parse(stored);
+      const filtered = translations.filter((t: Translation) => t.id !== id);
+      localStorage.setItem('translations', JSON.stringify(filtered));
       toast.success("Deleted");
       fetchRecentTranslations();
     }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
 
-    const { error } = await supabase
-      .from("translations")
-      .delete()
-      .in("id", Array.from(selectedIds));
-
-    if (error) {
-      console.error("Error deleting translations:", error);
-      toast.error("Failed to delete selected items");
-    } else {
+    const stored = localStorage.getItem('translations');
+    if (stored) {
+      const translations = JSON.parse(stored);
+      const filtered = translations.filter((t: Translation) => !selectedIds.has(t.id));
+      localStorage.setItem('translations', JSON.stringify(filtered));
       toast.success(`Deleted ${selectedIds.size} items`);
       setSelectedIds(new Set());
       fetchRecentTranslations();
@@ -186,7 +174,8 @@ export const TranslationInterface = () => {
     setShowLiteral(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleFeedback = async (translation: Translation) => {
+  const handleFeedback = async (translation: Translation, feedbackType: 'positive' | 'negative') => {
+    // Send feedback to database for analysis purposes
     await supabase
       .from("translation_feedback")
       .insert({
@@ -195,7 +184,7 @@ export const TranslationInterface = () => {
         natural_translation: translation.target_text,
         literal_translation: translation.literal_translation,
       });
-    // Silent operation - no user notification
+    toast.success(feedbackType === 'positive' ? "피드백 감사합니다!" : "피드백이 전송되었습니다");
   };
 
   return (
@@ -315,7 +304,7 @@ export const TranslationInterface = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleFeedback(t)}
+                          onClick={() => handleFeedback(t, 'positive')}
                           className="h-8 px-3 text-xs"
                         >
                           <ThumbsUp className="h-3 w-3 mr-1.5" />
@@ -324,7 +313,7 @@ export const TranslationInterface = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleFeedback(t)}
+                          onClick={() => handleFeedback(t, 'negative')}
                           className="h-8 px-3 text-xs"
                         >
                           <ThumbsDown className="h-3 w-3 mr-1.5" />

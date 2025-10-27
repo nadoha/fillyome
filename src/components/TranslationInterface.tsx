@@ -211,7 +211,7 @@ export const TranslationInterface = () => {
 
     const translateTimer = setTimeout(() => {
       handleTranslate();
-    }, 600);
+    }, 400);
 
     return () => clearTimeout(translateTimer);
   }, [sourceText, sourceLang, targetLang, handleTranslate]);

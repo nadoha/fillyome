@@ -25,6 +25,7 @@ interface RecentTranslationItemProps {
   onSpeak: (text: string, lang: string) => void;
   onTextSelect: (e: React.MouseEvent, lang: string, text: string) => void;
   onFeedback: (type: 'positive' | 'negative') => void;
+  noRomanization?: boolean;
   t: (key: string) => string;
 }
 
@@ -39,6 +40,7 @@ export const RecentTranslationItem = memo(({
   onSpeak,
   onTextSelect,
   onFeedback,
+  noRomanization = false,
   t
 }: RecentTranslationItemProps) => {
   return (
@@ -67,7 +69,7 @@ export const RecentTranslationItem = memo(({
               </Button>
             </div>
           </div>
-          {translation.source_romanization && (
+          {!noRomanization && translation.source_romanization && (
             <p className="text-xs text-muted-foreground/50 italic">{translation.source_romanization}</p>
           )}
         </div>
@@ -90,7 +92,7 @@ export const RecentTranslationItem = memo(({
               </Button>
             </div>
           </div>
-          {translation.target_romanization && (
+          {!noRomanization && translation.target_romanization && (
             <p className="text-xs text-muted-foreground/50 italic">{translation.target_romanization}</p>
           )}
         </div>

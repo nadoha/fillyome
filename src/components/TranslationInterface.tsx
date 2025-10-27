@@ -31,8 +31,18 @@ export const TranslationInterface = () => {
   const { t, i18n } = useTranslation();
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
-  const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">("ko");
-  const [targetLang, setTargetLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">("en");
+  const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
+    const saved = localStorage.getItem('lastSourceLang');
+    return (saved as any) || "ko";
+  });
+  const [targetLang, setTargetLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
+    const saved = localStorage.getItem('lastTargetLang');
+    return (saved as any) || "en";
+  });
+  const [recentLangPairs, setRecentLangPairs] = useState<Array<{source: string, target: string}>>(() => {
+    const saved = localStorage.getItem('recentLangPairs');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isTranslating, setIsTranslating] = useState(false);
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -40,6 +50,9 @@ export const TranslationInterface = () => {
   const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
+
+  // Languages that don't need romanization (use Latin alphabet)
+  const noRomanizationLangs = ['en', 'es', 'fr', 'de', 'pt', 'it', 'id', 'tr', 'vi'];
 
   const fetchRecentTranslations = useCallback(() => {
     const stored = localStorage.getItem('translations');
@@ -56,11 +69,29 @@ export const TranslationInterface = () => {
     localStorage.setItem('translations', JSON.stringify(translations));
   }, []);
 
+  // Save language pair to localStorage and update recent pairs
+  const updateLanguagePair = useCallback((source: string, target: string) => {
+    localStorage.setItem('lastSourceLang', source);
+    localStorage.setItem('lastTargetLang', target);
+    
+    // Update recent language pairs (max 3)
+    setRecentLangPairs(prev => {
+      const newPair = { source, target };
+      const filtered = prev.filter(p => !(p.source === source && p.target === target));
+      const updated = [newPair, ...filtered].slice(0, 3);
+      localStorage.setItem('recentLangPairs', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   const swapLanguages = useCallback(() => {
-    setSourceLang(targetLang);
-    setTargetLang(sourceLang);
+    const newSource = targetLang;
+    const newTarget = sourceLang;
+    setSourceLang(newSource);
+    setTargetLang(newTarget);
     setTargetText("");
-  }, [sourceLang, targetLang]);
+    updateLanguagePair(newSource, newTarget);
+  }, [sourceLang, targetLang, updateLanguagePair]);
 
   const handleTranslate = useCallback(async () => {
     if (!sourceText.trim()) {
@@ -212,8 +243,20 @@ export const TranslationInterface = () => {
     });
   }, []);
 
-  const toggleLiteral = useCallback((id: string) => {
-    setShowLiteral(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleLiteral = useCallback((id: string, sourceLang: string, targetLang: string) => {
+    setShowLiteral(prev => {
+      const isShowing = !prev[id];
+      
+      // Track literal button clicks per language pair
+      if (isShowing) {
+        const key = `literal_clicks_${sourceLang}_${targetLang}`;
+        const current = parseInt(localStorage.getItem(key) || '0');
+        localStorage.setItem(key, String(current + 1));
+        console.log(`[Literal Tracking] ${sourceLang}→${targetLang}: ${current + 1} clicks`);
+      }
+      
+      return { ...prev, [id]: isShowing };
+    });
   }, []);
 
   const handleFeedback = useCallback(async (translation: Translation, feedbackType: 'positive' | 'negative') => {
@@ -324,25 +367,40 @@ export const TranslationInterface = () => {
           <div className="flex items-center justify-center gap-2">
             <select
               value={sourceLang}
-              onChange={(e) => setSourceLang(e.target.value as any)}
+              onChange={(e) => {
+                const newLang = e.target.value as any;
+                setSourceLang(newLang);
+                updateLanguagePair(newLang, targetLang);
+              }}
               className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
             >
-              <option value="ko">{t("korean")}</option>
-              <option value="ja">{t("japanese")}</option>
-              <option value="en">{t("english")}</option>
-              <option value="zh">{t("chinese")}</option>
-              <option value="es">{t("spanish")}</option>
-              <option value="fr">{t("french")}</option>
-              <option value="de">{t("german")}</option>
-              <option value="pt">{t("portuguese")}</option>
-              <option value="it">{t("italian")}</option>
-              <option value="ru">{t("russian")}</option>
-              <option value="ar">{t("arabic")}</option>
-              <option value="th">{t("thai")}</option>
-              <option value="vi">{t("vietnamese")}</option>
-              <option value="id">{t("indonesian")}</option>
-              <option value="hi">{t("hindi")}</option>
-              <option value="tr">{t("turkish")}</option>
+              {recentLangPairs.length > 0 && (
+                <optgroup label={`${t("recent3")} (${recentLangPairs.length}/3)`}>
+                  {recentLangPairs.map((pair, idx) => (
+                    <option key={idx} value={pair.source} disabled>
+                      {t(pair.source as any)} → {t(pair.target as any)}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="All Languages">
+                <option value="ko">{t("korean")}</option>
+                <option value="ja">{t("japanese")}</option>
+                <option value="en">{t("english")}</option>
+                <option value="zh">{t("chinese")}</option>
+                <option value="es">{t("spanish")}</option>
+                <option value="fr">{t("french")}</option>
+                <option value="de">{t("german")}</option>
+                <option value="pt">{t("portuguese")}</option>
+                <option value="it">{t("italian")}</option>
+                <option value="ru">{t("russian")}</option>
+                <option value="ar">{t("arabic")}</option>
+                <option value="th">{t("thai")}</option>
+                <option value="vi">{t("vietnamese")}</option>
+                <option value="id">{t("indonesian")}</option>
+                <option value="hi">{t("hindi")}</option>
+                <option value="tr">{t("turkish")}</option>
+              </optgroup>
             </select>
             
             <Button
@@ -356,25 +414,40 @@ export const TranslationInterface = () => {
             
             <select
               value={targetLang}
-              onChange={(e) => setTargetLang(e.target.value as any)}
+              onChange={(e) => {
+                const newLang = e.target.value as any;
+                setTargetLang(newLang);
+                updateLanguagePair(sourceLang, newLang);
+              }}
               className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
             >
-              <option value="ko">{t("korean")}</option>
-              <option value="ja">{t("japanese")}</option>
-              <option value="en">{t("english")}</option>
-              <option value="zh">{t("chinese")}</option>
-              <option value="es">{t("spanish")}</option>
-              <option value="fr">{t("french")}</option>
-              <option value="de">{t("german")}</option>
-              <option value="pt">{t("portuguese")}</option>
-              <option value="it">{t("italian")}</option>
-              <option value="ru">{t("russian")}</option>
-              <option value="ar">{t("arabic")}</option>
-              <option value="th">{t("thai")}</option>
-              <option value="vi">{t("vietnamese")}</option>
-              <option value="id">{t("indonesian")}</option>
-              <option value="hi">{t("hindi")}</option>
-              <option value="tr">{t("turkish")}</option>
+              {recentLangPairs.length > 0 && (
+                <optgroup label={`${t("recent3")} (${recentLangPairs.length}/3)`}>
+                  {recentLangPairs.map((pair, idx) => (
+                    <option key={idx} value={pair.target} disabled>
+                      {t(pair.source as any)} → {t(pair.target as any)}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="All Languages">
+                <option value="ko">{t("korean")}</option>
+                <option value="ja">{t("japanese")}</option>
+                <option value="en">{t("english")}</option>
+                <option value="zh">{t("chinese")}</option>
+                <option value="es">{t("spanish")}</option>
+                <option value="fr">{t("french")}</option>
+                <option value="de">{t("german")}</option>
+                <option value="pt">{t("portuguese")}</option>
+                <option value="it">{t("italian")}</option>
+                <option value="ru">{t("russian")}</option>
+                <option value="ar">{t("arabic")}</option>
+                <option value="th">{t("thai")}</option>
+                <option value="vi">{t("vietnamese")}</option>
+                <option value="id">{t("indonesian")}</option>
+                <option value="hi">{t("hindi")}</option>
+                <option value="tr">{t("turkish")}</option>
+              </optgroup>
             </select>
           </div>
 
@@ -427,12 +500,13 @@ export const TranslationInterface = () => {
                   isSelected={selectedIds.has(translation.id)}
                   showLiteral={showLiteral[translation.id] || false}
                   onToggleSelect={() => toggleSelect(translation.id)}
-                  onToggleLiteral={() => toggleLiteral(translation.id)}
+                  onToggleLiteral={() => toggleLiteral(translation.id, translation.source_lang, translation.target_lang)}
                   onDelete={() => handleDelete(translation.id)}
                   onCopy={handleCopy}
                   onSpeak={handleSpeak}
                   onTextSelect={handleTextSelection}
                   onFeedback={(type) => handleFeedback(translation, type)}
+                  noRomanization={noRomanizationLangs.includes(translation.source_lang) && noRomanizationLangs.includes(translation.target_lang)}
                   t={t}
                 />
               ))}

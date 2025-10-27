@@ -40,23 +40,10 @@ serve(async (req) => {
       ja: "Japanese"
     };
 
-    // DEFAULT: Natural/idiomatic translation (의역)
-    // This is the primary translation method shown to users by default
-    // Step 1: Natural (idiomatic/contextual) translation
-    const naturalPrompt = `You are a professional translator. Translate the given text from ${langNames[sourceLang]} to ${langNames[targetLang]}. 
-    
-Rules:
-- Provide ONLY the translation, no explanations or additional text
-- Use natural, idiomatic expressions that sound fluent to native speakers
-- Adapt cultural context and nuance appropriately
-- Recognize and preserve emoticons (e.g., ㅜㅜ, ㅠㅠ, ^^, etc.) in their original form
-- Understand the emotional tone conveyed by emoticons and reflect it in the translation
-- Pay close attention to context, informal speech patterns, and conversational tone
-- Translate based on the overall meaning and intention, not word-by-word
-- Keep proper nouns in their original form unless commonly translated
-- Preserve formatting if any`;
+    // OPTIMIZED: Single AI call with structured output using tool calling
+    const systemPrompt = `You are a professional translator. Translate text from ${langNames[sourceLang]} to ${langNames[targetLang]} and provide comprehensive translation data.`;
 
-    const naturalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -65,14 +52,58 @@ Rules:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: naturalPrompt },
-          { role: "user", content: text }
+          { role: "system", content: systemPrompt },
+          { 
+            role: "user", 
+            content: `Translate the following ${langNames[sourceLang]} text to ${langNames[targetLang]}:
+
+"${text}"
+
+Provide:
+1. Natural/idiomatic translation (의역) - Use natural expressions, adapt cultural context, preserve emoticons (ㅜㅜ, ^^, etc.), understand emotional tone, translate based on overall meaning
+2. Literal translation (직역) - Word-by-word, keep original structure even if unnatural
+3. Source romanization - Use ${sourceLang === "ja" ? "Hepburn romanization" : "Revised Romanization of Korean"}
+4. Target romanization - Use ${targetLang === "ja" ? "Hepburn romanization" : "Revised Romanization of Korean"}` 
+          }
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "provide_translation",
+              description: "Provide comprehensive translation data",
+              parameters: {
+                type: "object",
+                properties: {
+                  natural_translation: {
+                    type: "string",
+                    description: "Natural, idiomatic translation with cultural adaptation"
+                  },
+                  literal_translation: {
+                    type: "string",
+                    description: "Word-by-word literal translation"
+                  },
+                  source_romanization: {
+                    type: "string",
+                    description: "Romanization of source text"
+                  },
+                  target_romanization: {
+                    type: "string",
+                    description: "Romanization of translated text"
+                  }
+                },
+                required: ["natural_translation", "literal_translation", "source_romanization", "target_romanization"],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "provide_translation" } }
       }),
     });
 
-    if (!naturalResponse.ok) {
-      if (naturalResponse.status === 429) {
+    if (!response.ok) {
+      if (response.status === 429) {
         console.error("Rate limit exceeded");
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), 
@@ -82,7 +113,7 @@ Rules:
           }
         );
       }
-      if (naturalResponse.status === 402) {
+      if (response.status === 402) {
         console.error("Payment required");
         return new Response(
           JSON.stringify({ error: "Translation credits exhausted. Please add credits." }), 
@@ -93,8 +124,8 @@ Rules:
         );
       }
       
-      const errorText = await naturalResponse.text();
-      console.error("AI gateway error:", naturalResponse.status, errorText);
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
       return new Response(
         JSON.stringify({ error: "Translation failed" }), 
         { 
@@ -104,83 +135,25 @@ Rules:
       );
     }
 
-    const naturalData = await naturalResponse.json();
-    // Primary translation: Natural/idiomatic (의역 - default)
-    const translation = naturalData.choices?.[0]?.message?.content;
-
-    if (!translation) {
-      console.error("No translation in response");
-      return new Response(
-        JSON.stringify({ error: "Translation failed" }), 
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-
-    // Step 2: Literal translation (직역 - optional, shown on toggle)
-    const literalPrompt = `You are a professional translator. Provide a literal, word-for-word translation from ${langNames[sourceLang]} to ${langNames[targetLang]}. 
+    const data = await response.json();
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     
-Rules:
-- Provide ONLY the literal translation, no explanations
-- Translate as close to the original word order and structure as possible
-- Do not adapt idioms or cultural context
-- Keep the grammatical structure of the source language even if it sounds unnatural
-- This should be a direct, word-by-word rendering`;
-
-    const literalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: literalPrompt },
-          { role: "user", content: text }
-        ],
-      }),
-    });
-
-    let literalTranslation = "";
-    if (literalResponse.ok) {
-      const literalData = await literalResponse.json();
-      literalTranslation = literalData.choices?.[0]?.message?.content || "";
+    if (!toolCall?.function?.arguments) {
+      console.error("No tool call in response");
+      return new Response(
+        JSON.stringify({ error: "Translation failed" }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
-    // Step 3: Generate romanization
-    const getRomanization = async (textToRomanize: string, lang: string): Promise<string> => {
-      const romanizationSystem = lang === "ja" ? "Hepburn romanization" : "Revised Romanization of Korean";
-      const romanizationPrompt = `Convert this ${langNames[lang]} text to ${romanizationSystem}. Respond with ONLY the romanization, no explanations.
-
-Text: "${textToRomanize}"`;
-
-      const romanizationResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: "You are a romanization expert. Respond with only the romanized text." },
-            { role: "user", content: romanizationPrompt }
-          ],
-        }),
-      });
-
-      if (romanizationResponse.ok) {
-        const romanizationData = await romanizationResponse.json();
-        return romanizationData.choices?.[0]?.message?.content?.trim() || "";
-      }
-      return "";
-    };
-
-    const sourceRomanization = await getRomanization(text, sourceLang);
-    const targetRomanization = await getRomanization(translation, targetLang);
+    const translationData = JSON.parse(toolCall.function.arguments);
+    const translation = translationData.natural_translation;
+    const literalTranslation = translationData.literal_translation || "";
+    const sourceRomanization = translationData.source_romanization || "";
+    const targetRomanization = translationData.target_romanization || "";
 
     return new Response(
       JSON.stringify({ 

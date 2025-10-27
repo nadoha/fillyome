@@ -11,25 +11,37 @@ serve(async (req) => {
   }
 
   try {
-    const { word, lang, context } = await req.json();
+    const { word, lang, context, userLang } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are a concise dictionary. Provide minimal, essential information only.
-Return a JSON object with:
-- pos: part of speech (noun/verb/adj/etc)
-- definitions: array of 1-2 short definitions (max 10 words each)
-- romanization: ${lang === 'ko' ? 'Revised Romanization' : lang === 'ja' ? 'Hepburn romanization' : 'not needed for English'}
-- example: one SHORT example sentence using the word (reuse context if provided, max 15 words)
+    const langNames: Record<string, string> = {
+      ko: 'Korean',
+      ja: 'Japanese',
+      en: 'English'
+    };
 
-Keep everything minimal and concise. No extra explanations.`;
+    const userLangNames: Record<string, string> = {
+      ko: '한국어',
+      ja: '日本語',
+      en: 'English'
+    };
+
+    const systemPrompt = `You are a concise dictionary. Provide definitions in ${userLangNames[userLang] || 'English'}.
+Return a JSON object with:
+- pos: part of speech in ${userLangNames[userLang] || 'English'} (noun/verb/adj/etc)
+- definitions: array of 1-2 short definitions in ${userLangNames[userLang] || 'English'} (max 10 words each)
+- romanization: ${lang === 'ko' ? 'Revised Romanization' : lang === 'ja' ? 'Hepburn romanization' : 'not needed for English'}
+- example: one SHORT example sentence in ${langNames[lang]} using the word (reuse context if provided, max 15 words)
+
+Keep everything minimal and concise. All explanations must be in ${userLangNames[userLang] || 'English'}.`;
 
     const userPrompt = context 
-      ? `Define "${word}" (${lang}) in context: "${context}"`
-      : `Define "${word}" (${lang})`;
+      ? `Define "${word}" (${langNames[lang]}) with definitions in ${userLangNames[userLang] || 'English'} in context: "${context}"`
+      : `Define "${word}" (${langNames[lang]}) with definitions in ${userLangNames[userLang] || 'English'}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

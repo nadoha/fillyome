@@ -282,9 +282,9 @@ export const TranslationInterface = () => {
 
     if (word && word.length > 0) {
       setIsDictionaryOpen(true);
-      lookupWord(word, lang, text);
+      lookupWord(word, lang, i18n.language, text);
     }
-  }, [lookupWord]);
+  }, [lookupWord, i18n.language]);
 
   const closeDictionary = useCallback(() => {
     setIsDictionaryOpen(false);

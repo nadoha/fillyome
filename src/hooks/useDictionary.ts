@@ -47,15 +47,15 @@ export const useDictionary = () => {
     }
   }, []);
 
-  const lookupWord = useCallback(async (word: string, lang: string, context?: string) => {
+  const lookupWord = useCallback(async (word: string, lang: string, userLang: string, context?: string) => {
     setCurrentWord(word);
     setIsLoading(true);
     setCurrentEntry(null);
 
     try {
-      // Check cache first
+      // Check cache first (now includes userLang in cache key)
       const cache = getCache();
-      const cached = cache.find(e => e.word === word && e.lang === lang);
+      const cached = cache.find(e => e.word === word && e.lang === `${lang}-${userLang}`);
       
       if (cached) {
         setCurrentEntry(cached.entry);
@@ -65,16 +65,16 @@ export const useDictionary = () => {
 
       // Fetch from API
       const { data, error } = await supabase.functions.invoke("dictionary", {
-        body: { word, lang, context },
+        body: { word, lang, userLang, context },
       });
 
       if (error) throw error;
 
       setCurrentEntry(data);
 
-      // Update cache
+      // Update cache (store with combined lang key)
       const newCache: CachedEntry[] = [
-        { word, lang, entry: data, timestamp: Date.now() },
+        { word, lang: `${lang}-${userLang}`, entry: data, timestamp: Date.now() },
         ...cache
       ];
       setCache(newCache);

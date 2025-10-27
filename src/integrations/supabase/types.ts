@@ -23,8 +23,10 @@ export type Database = {
           masked_source_text: string | null
           masked_target_text: string | null
           source_lang: string
+          source_romanization: string | null
           source_text: string
           target_lang: string
+          target_romanization: string | null
           target_text: string
         }
         Insert: {
@@ -35,8 +37,10 @@ export type Database = {
           masked_source_text?: string | null
           masked_target_text?: string | null
           source_lang: string
+          source_romanization?: string | null
           source_text: string
           target_lang: string
+          target_romanization?: string | null
           target_text: string
         }
         Update: {
@@ -47,8 +51,10 @@ export type Database = {
           masked_source_text?: string | null
           masked_target_text?: string | null
           source_lang?: string
+          source_romanization?: string | null
           source_text?: string
           target_lang?: string
+          target_romanization?: string | null
           target_text?: string
         }
         Relationships: []

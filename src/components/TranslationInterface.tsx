@@ -17,6 +17,8 @@ interface Translation {
   content_classification: string;
   masked_source_text: string | null;
   masked_target_text: string | null;
+  source_romanization: string | null;
+  target_romanization: string | null;
 }
 
 export const TranslationInterface = () => {
@@ -84,6 +86,8 @@ export const TranslationInterface = () => {
       const contentClassification = data.contentClassification || "safe";
       const maskedSourceText = data.maskedSourceText || sourceText;
       const maskedTargetText = data.maskedTargetText || translation;
+      const sourceRomanization = data.sourceRomanization || "";
+      const targetRomanization = data.targetRomanization || "";
       
       setTargetText(translation);
 
@@ -99,6 +103,8 @@ export const TranslationInterface = () => {
           content_classification: contentClassification,
           masked_source_text: maskedSourceText,
           masked_target_text: maskedTargetText,
+          source_romanization: sourceRomanization,
+          target_romanization: targetRomanization,
         });
 
       if (insertError) {
@@ -311,7 +317,13 @@ export const TranslationInterface = () => {
                       )}
                     </div>
                     <p className="text-sm text-foreground truncate">{getDisplayText(t, true)}</p>
-                    <p className="text-sm text-muted-foreground truncate">{getDisplayText(t, false)}</p>
+                    {t.source_romanization && (
+                      <p className="text-xs text-muted-foreground/70 italic truncate">{t.source_romanization}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground truncate mt-1">{getDisplayText(t, false)}</p>
+                    {t.target_romanization && (
+                      <p className="text-xs text-muted-foreground/70 italic truncate">{t.target_romanization}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {t.content_classification !== "safe" && (

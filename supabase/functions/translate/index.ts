@@ -167,12 +167,46 @@ Respond with ONLY one word: safe, offensive, or sexual`;
     const maskedSourceText = maskText(text);
     const maskedTargetText = maskText(translation);
 
+    // Step 4: Generate romanization
+    const getRomanization = async (textToRomanize: string, lang: string): Promise<string> => {
+      const romanizationSystem = lang === "ja" ? "Hepburn romanization" : "Revised Romanization of Korean";
+      const romanizationPrompt = `Convert this ${langNames[lang]} text to ${romanizationSystem}. Respond with ONLY the romanization, no explanations.
+
+Text: "${textToRomanize}"`;
+
+      const romanizationResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: "You are a romanization expert. Respond with only the romanized text." },
+            { role: "user", content: romanizationPrompt }
+          ],
+        }),
+      });
+
+      if (romanizationResponse.ok) {
+        const romanizationData = await romanizationResponse.json();
+        return romanizationData.choices?.[0]?.message?.content?.trim() || "";
+      }
+      return "";
+    };
+
+    const sourceRomanization = await getRomanization(text, sourceLang);
+    const targetRomanization = await getRomanization(translation, targetLang);
+
     return new Response(
       JSON.stringify({ 
         translation,
         contentClassification,
         maskedSourceText,
-        maskedTargetText
+        maskedTargetText,
+        sourceRomanization,
+        targetRomanization
       }), 
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeftRight, Star, Trash2 } from "lucide-react";
+import { ArrowLeftRight, Star, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -184,6 +184,18 @@ export const TranslationInterface = () => {
     setShowLiteral(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handleFeedback = async (translation: Translation) => {
+    await supabase
+      .from("translation_feedback")
+      .insert({
+        translation_id: translation.id,
+        source_text: translation.source_text,
+        natural_translation: translation.target_text,
+        literal_translation: translation.literal_translation,
+      });
+    // Silent operation - no user notification
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Main Translation Area */}
@@ -314,6 +326,15 @@ export const TranslationInterface = () => {
                           )}
                         </>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFeedback(t)}
+                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        This translation feels off
+                      </Button>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

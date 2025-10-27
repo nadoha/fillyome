@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      translation_feedback: {
+        Row: {
+          created_at: string
+          id: string
+          literal_translation: string | null
+          natural_translation: string
+          source_text: string
+          translation_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          literal_translation?: string | null
+          natural_translation: string
+          source_text: string
+          translation_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          literal_translation?: string | null
+          natural_translation?: string
+          source_text?: string
+          translation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "translation_feedback_translation_id_fkey"
+            columns: ["translation_id"]
+            isOneToOne: false
+            referencedRelation: "translations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       translations: {
         Row: {
           content_classification: string | null

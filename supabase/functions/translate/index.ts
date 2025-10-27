@@ -54,18 +54,15 @@ serve(async (req) => {
       tr: "Turkish"
     };
 
-    // OPTIMIZED: Single AI call with structured output using tool calling
-    const systemPrompt = `You are a professional translator. Translate text from ${langNames[sourceLang]} to ${langNames[targetLang]} and provide comprehensive translation data.`;
+    // SPEED OPTIMIZED: Faster model + simplified prompt
+    const systemPrompt = `Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}. Use natural expressions and preserve emoticons.`;
 
-    const getRomanizationInstruction = (lang: string) => {
-      if (lang === "ja") return "Hepburn romanization";
-      if (lang === "ko") return "Revised Romanization of Korean";
-      if (lang === "zh") return "Pinyin";
-      if (lang === "ru") return "standard Romanization";
-      if (lang === "ar") return "Arabic romanization";
-      if (lang === "th") return "Thai romanization";
-      if (lang === "hi") return "Devanagari romanization";
-      return "standard romanization or leave empty if not applicable";
+    const getRomanization = (lang: string) => {
+      const map: Record<string, string> = {
+        ja: "Hepburn", ko: "RR", zh: "Pinyin", ru: "standard", 
+        ar: "standard", th: "standard", hi: "Devanagari"
+      };
+      return map[lang] || "";
     };
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -75,55 +72,32 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
-          { 
-            role: "user", 
-            content: `Translate the following ${langNames[sourceLang]} text to ${langNames[targetLang]}:
-
-"${text}"
-
-Provide:
-1. Natural/idiomatic translation (의역) - Use natural expressions, adapt cultural context, preserve emoticons (ㅜㅜ, ^^, etc.), understand emotional tone, translate based on overall meaning
-2. Literal translation (직역) - Word-by-word, keep original structure even if unnatural
-3. Source romanization - Use ${getRomanizationInstruction(sourceLang)}
-4. Target romanization - Use ${getRomanizationInstruction(targetLang)}` 
-          }
+          { role: "user", content: `"${text}"` }
         ],
         tools: [
           {
             type: "function",
             function: {
-              name: "provide_translation",
-              description: "Provide comprehensive translation data",
+              name: "translate",
+              description: "Translate text with romanization",
               parameters: {
                 type: "object",
                 properties: {
-                  natural_translation: {
-                    type: "string",
-                    description: "Natural, idiomatic translation with cultural adaptation"
-                  },
-                  literal_translation: {
-                    type: "string",
-                    description: "Word-by-word literal translation"
-                  },
-                  source_romanization: {
-                    type: "string",
-                    description: "Romanization of source text"
-                  },
-                  target_romanization: {
-                    type: "string",
-                    description: "Romanization of translated text"
-                  }
+                  translation: { type: "string" },
+                  literal: { type: "string" },
+                  source_rom: { type: "string", description: `${getRomanization(sourceLang)} romanization or empty` },
+                  target_rom: { type: "string", description: `${getRomanization(targetLang)} romanization or empty` }
                 },
-                required: ["natural_translation", "literal_translation", "source_romanization", "target_romanization"],
+                required: ["translation", "literal", "source_rom", "target_rom"],
                 additionalProperties: false
               }
             }
           }
         ],
-        tool_choice: { type: "function", function: { name: "provide_translation" } }
+        tool_choice: { type: "function", function: { name: "translate" } }
       }),
     });
 
@@ -174,11 +148,11 @@ Provide:
       );
     }
 
-    const translationData = JSON.parse(toolCall.function.arguments);
-    const translation = translationData.natural_translation;
-    const literalTranslation = translationData.literal_translation || "";
-    const sourceRomanization = translationData.source_romanization || "";
-    const targetRomanization = translationData.target_romanization || "";
+    const result = JSON.parse(toolCall.function.arguments);
+    const translation = result.translation;
+    const literalTranslation = result.literal || "";
+    const sourceRomanization = result.source_rom || "";
+    const targetRomanization = result.target_rom || "";
 
     return new Response(
       JSON.stringify({ 

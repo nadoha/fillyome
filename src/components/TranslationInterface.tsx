@@ -251,39 +251,38 @@ export const TranslationInterface = () => {
     }
   }, []);
 
-  const handleWordTap = useCallback((event: React.MouseEvent<HTMLDivElement>, text: string, lang: string) => {
-    const target = event.target as HTMLElement;
-    const selection = window.getSelection();
-    const selectedText = selection?.toString().trim();
-
-    // If there's a selection, use it; otherwise extract word from click position
-    let word = selectedText;
+  const renderClickableText = useCallback((text: string, lang: string, context: string) => {
+    // Split text into words, preserving spaces and punctuation
+    const words = text.split(/(\s+)/);
     
-    if (!word && target.textContent) {
-      const clickX = event.clientX;
-      const clickY = event.clientY;
-      const range = document.caretRangeFromPoint(clickX, clickY);
-      
-      if (range) {
-        const textNode = range.startContainer;
-        const offset = range.startOffset;
-        const textContent = textNode.textContent || "";
-        
-        // Extract word at cursor position
-        let start = offset;
-        let end = offset;
-        
-        while (start > 0 && /\S/.test(textContent[start - 1])) start--;
-        while (end < textContent.length && /\S/.test(textContent[end])) end++;
-        
-        word = textContent.slice(start, end).trim();
-      }
-    }
-
-    if (word && word.length > 0) {
-      setIsDictionaryOpen(true);
-      lookupWord(word, lang, i18n.language, text);
-    }
+    return (
+      <>
+        {words.map((word, index) => {
+          // If it's whitespace, render as-is
+          if (/^\s+$/.test(word)) {
+            return <span key={index}>{word}</span>;
+          }
+          
+          // If it's a word, make it clickable
+          return (
+            <span
+              key={index}
+              className="cursor-pointer hover:bg-muted/70 active:bg-muted rounded-sm px-0.5 -mx-0.5 transition-colors duration-150"
+              onClick={(e) => {
+                e.stopPropagation();
+                const cleanWord = word.trim().replace(/[.,!?;:'"()[\]{}]/g, '');
+                if (cleanWord) {
+                  setIsDictionaryOpen(true);
+                  lookupWord(cleanWord, lang, i18n.language, context);
+                }
+              }}
+            >
+              {word}
+            </span>
+          );
+        })}
+      </>
+    );
   }, [lookupWord, i18n.language]);
 
   const closeDictionary = useCallback(() => {
@@ -383,15 +382,13 @@ export const TranslationInterface = () => {
 
             <div className="relative">
               <div 
-                className="min-h-[180px] text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4 pr-20 cursor-text select-text"
-                onClick={(e) => targetText && handleWordTap(e, targetText, targetLang)}
+                className="min-h-[180px] text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4 pr-20"
                 style={{ 
                   whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  userSelect: 'text'
+                  wordBreak: 'break-word'
                 }}
               >
-                {targetText || <span className="text-muted-foreground">{t("translate")}...</span>}
+                {targetText ? renderClickableText(targetText, targetLang, targetText) : <span className="text-muted-foreground">{t("translate")}...</span>}
               </div>
               {isTranslating && (
                 <div className="absolute top-2 right-2 text-xs text-muted-foreground flex items-center gap-1.5">
@@ -457,11 +454,8 @@ export const TranslationInterface = () => {
                     {/* Source text with romanization */}
                     <div className="space-y-0.5">
                       <div className="flex items-start gap-2 group/text">
-                        <p 
-                          className="text-[15px] text-foreground leading-relaxed flex-1 cursor-pointer hover:text-primary transition-colors"
-                          onClick={(e) => handleWordTap(e, translation.source_text, translation.source_lang)}
-                        >
-                          {translation.source_text}
+                        <p className="text-[15px] text-foreground leading-relaxed flex-1">
+                          {renderClickableText(translation.source_text, translation.source_lang, translation.source_text)}
                         </p>
                         <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
                           <Button
@@ -490,11 +484,8 @@ export const TranslationInterface = () => {
                     {/* Natural translation with romanization */}
                     <div className="space-y-0.5">
                       <div className="flex items-start gap-2 group/text">
-                        <p 
-                          className="text-[15px] text-primary/90 leading-relaxed font-medium flex-1 cursor-pointer hover:text-primary transition-colors"
-                          onClick={(e) => handleWordTap(e, translation.target_text, translation.target_lang)}
-                        >
-                          {translation.target_text}
+                        <p className="text-[15px] text-primary/90 leading-relaxed font-medium flex-1">
+                          {renderClickableText(translation.target_text, translation.target_lang, translation.target_text)}
                         </p>
                         <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
                           <Button

@@ -1,0 +1,16 @@
+{
+  "appLanguage": "App Language",
+  "korean": "한국어",
+  "japanese": "日本語",
+  "english": "English",
+  "translate": "Translate",
+  "translating": "Translating...",
+  "enterText": "Enter text",
+  "recent3": "Recent 3",
+  "literal": "Literal",
+  "good": "👍 Good",
+  "feelsOff": "👎 Feels off",
+  "delete": "Delete",
+  "bulkDelete": "Delete Selected",
+  "noHistory": "No translation history"
+}

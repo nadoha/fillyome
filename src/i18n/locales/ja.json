@@ -1,0 +1,16 @@
+{
+  "appLanguage": "アプリ言語",
+  "korean": "한국어",
+  "japanese": "日本語",
+  "english": "English",
+  "translate": "翻訳",
+  "translating": "翻訳中...",
+  "enterText": "テキストを入力してください",
+  "recent3": "最近3件",
+  "literal": "直訳",
+  "good": "👍 Good",
+  "feelsOff": "👎 Feels off",
+  "delete": "削除",
+  "bulkDelete": "選択削除",
+  "noHistory": "翻訳履歴がありません"
+}

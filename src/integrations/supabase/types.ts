@@ -17,6 +17,7 @@ export type Database = {
       translation_feedback: {
         Row: {
           created_at: string
+          feedback_type: string
           id: string
           literal_translation: string | null
           natural_translation: string
@@ -25,6 +26,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          feedback_type?: string
           id?: string
           literal_translation?: string | null
           natural_translation: string
@@ -33,6 +35,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          feedback_type?: string
           id?: string
           literal_translation?: string | null
           natural_translation?: string

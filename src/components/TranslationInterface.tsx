@@ -1,10 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeftRight, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeftRight, Trash2, ChevronDown, ChevronUp, Globe } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Translation {
   id: string;
@@ -23,6 +31,7 @@ interface Translation {
 }
 
 export const TranslationInterface = () => {
+  const { t, i18n } = useTranslation();
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en">("ko");
@@ -60,7 +69,7 @@ export const TranslationInterface = () => {
 
   const handleTranslate = useCallback(async () => {
     if (!sourceText.trim()) {
-      toast.error("텍스트를 입력해주세요");
+      toast.error(t("enterText"));
       return;
     }
 
@@ -109,18 +118,13 @@ export const TranslationInterface = () => {
       fetchRecentTranslations();
     } catch (error) {
       console.error("Translation error:", error);
-      toast.error("번역 실패. 다시 시도해주세요.");
+      toast.error("Translation failed. Please try again.");
     } finally {
       setIsTranslating(false);
     }
-  }, [sourceText, sourceLang, targetLang, saveToLocalStorage, fetchRecentTranslations]);
+  }, [sourceText, sourceLang, targetLang, saveToLocalStorage, fetchRecentTranslations, t]);
 
 
-  const getLangLabel = useCallback((lang: string) => {
-    if (lang === "ko") return "한국어";
-    if (lang === "ja") return "日本語";
-    return "English";
-  }, []);
 
   const handleDelete = useCallback((id: string) => {
     const stored = localStorage.getItem('translations');
@@ -140,7 +144,7 @@ export const TranslationInterface = () => {
       const translations = JSON.parse(stored);
       const filtered = translations.filter((t: Translation) => !selectedIds.has(t.id));
       localStorage.setItem('translations', JSON.stringify(filtered));
-      toast.success(`${selectedIds.size}개 삭제됨`);
+      toast.success(`${selectedIds.size} deleted`);
       setSelectedIds(new Set());
       fetchRecentTranslations();
     }
@@ -182,6 +186,27 @@ export const TranslationInterface = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Header with App Language Selector */}
+      <header className="border-b border-border/40 bg-card/30 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-foreground tracking-tight">
+            Translate
+          </h1>
+          
+          <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
+            <SelectTrigger className="w-[140px] h-9 border-0 bg-card/50 hover:bg-card gap-2">
+              <Globe className="h-4 w-4" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ko">{t("korean")}</SelectItem>
+              <SelectItem value="ja">{t("japanese")}</SelectItem>
+              <SelectItem value="en">{t("english")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </header>
+
       {/* Main Translation Area */}
       <main className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-3xl space-y-5">
@@ -192,9 +217,9 @@ export const TranslationInterface = () => {
               onChange={(e) => setSourceLang(e.target.value as "ko" | "ja" | "en")}
               className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted border-0 cursor-pointer focus:ring-2 focus:ring-primary"
             >
-              <option value="ko">한국어</option>
-              <option value="ja">日本語</option>
-              <option value="en">English</option>
+              <option value="ko">{t("korean")}</option>
+              <option value="ja">{t("japanese")}</option>
+              <option value="en">{t("english")}</option>
             </select>
             
             <Button
@@ -211,16 +236,16 @@ export const TranslationInterface = () => {
               onChange={(e) => setTargetLang(e.target.value as "ko" | "ja" | "en")}
               className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted border-0 cursor-pointer focus:ring-2 focus:ring-primary"
             >
-              <option value="ko">한국어</option>
-              <option value="ja">日本語</option>
-              <option value="en">English</option>
+              <option value="ko">{t("korean")}</option>
+              <option value="ja">{t("japanese")}</option>
+              <option value="en">{t("english")}</option>
             </select>
           </div>
 
           {/* Translation Boxes */}
           <div className="grid md:grid-cols-2 gap-3">
             <Textarea
-              placeholder="텍스트 입력..."
+              placeholder={t("enterText")}
               value={sourceText}
               onChange={(e) => setSourceText(e.target.value)}
               className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-card shadow-sm rounded-2xl p-4 focus-visible:ring-1"
@@ -228,7 +253,7 @@ export const TranslationInterface = () => {
             />
 
             <Textarea
-              placeholder="번역 결과..."
+              placeholder={t("translate") + "..."}
               value={targetText}
               readOnly
               className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4"
@@ -243,7 +268,7 @@ export const TranslationInterface = () => {
               size="lg"
               className="px-10 py-2.5 rounded-full shadow-sm font-medium"
             >
-              {isTranslating ? "번역 중..." : "번역하기"}
+              {isTranslating ? t("translating") : t("translate")}
             </Button>
           </div>
         </div>
@@ -254,7 +279,7 @@ export const TranslationInterface = () => {
         <aside className="border-t bg-muted/20">
           <div className="max-w-3xl mx-auto px-4 py-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">최근 3개</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("recent3")}</h3>
               {selectedIds.size > 0 && (
                 <Button
                   variant="ghost"
@@ -263,64 +288,64 @@ export const TranslationInterface = () => {
                   className="h-7 px-3 text-xs text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-3 w-3 mr-1.5" />
-                  선택 삭제 ({selectedIds.size})
+                  {t("bulkDelete")} ({selectedIds.size})
                 </Button>
               )}
             </div>
             <div className="space-y-2">
-              {recentTranslations.map((t) => (
+              {recentTranslations.map((translation) => (
                 <div
-                  key={t.id}
+                  key={translation.id}
                   className="flex items-start gap-3 p-3.5 rounded-xl bg-card hover:shadow-sm transition-all group"
                 >
                   <Checkbox
-                    checked={selectedIds.has(t.id)}
-                    onCheckedChange={() => toggleSelect(t.id)}
+                    checked={selectedIds.has(translation.id)}
+                    onCheckedChange={() => toggleSelect(translation.id)}
                     className="mt-0.5"
                   />
                   <div className="flex-1 min-w-0 space-y-2.5">
                     {/* Source text with romanization */}
                     <div className="space-y-0.5">
-                      <p className="text-[15px] text-foreground leading-relaxed">{t.source_text}</p>
-                      {t.source_romanization && (
-                        <p className="text-xs text-muted-foreground/60 italic">{t.source_romanization}</p>
+                      <p className="text-[15px] text-foreground leading-relaxed">{translation.source_text}</p>
+                      {translation.source_romanization && (
+                        <p className="text-xs text-muted-foreground/60 italic">{translation.source_romanization}</p>
                       )}
                     </div>
 
                     {/* Natural translation with romanization */}
                     <div className="space-y-0.5">
-                      <p className="text-[15px] text-primary/90 leading-relaxed font-medium">{t.target_text}</p>
-                      {t.target_romanization && (
-                        <p className="text-xs text-muted-foreground/60 italic">{t.target_romanization}</p>
+                      <p className="text-[15px] text-primary/90 leading-relaxed font-medium">{translation.target_text}</p>
+                      {translation.target_romanization && (
+                        <p className="text-xs text-muted-foreground/60 italic">{translation.target_romanization}</p>
                       )}
                     </div>
 
                     {/* Literal translation toggle - clearly visible */}
-                    {t.literal_translation && (
+                    {translation.literal_translation && (
                       <div className="pt-1">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => toggleLiteral(t.id)}
+                          onClick={() => toggleLiteral(translation.id)}
                           className="h-8 px-3 text-xs font-medium border-primary/20 hover:bg-primary/5"
                         >
-                          {showLiteral[t.id] ? (
+                          {showLiteral[translation.id] ? (
                             <>
                               <ChevronUp className="h-3 w-3 mr-1.5" />
-                              직역 숨기기
+                              {t("literal")}
                             </>
                           ) : (
                             <>
                               <ChevronDown className="h-3 w-3 mr-1.5" />
-                              직역 보기
+                              {t("literal")}
                             </>
                           )}
                         </Button>
                         
-                        {showLiteral[t.id] && (
+                        {showLiteral[translation.id] && (
                           <div className="mt-2 pl-3 border-l-2 border-primary/20 bg-primary/5 -ml-3 py-2 pr-3">
                             <p className="text-xs text-foreground/80 leading-relaxed">
-                              {t.literal_translation}
+                              {translation.literal_translation}
                             </p>
                           </div>
                         )}
@@ -332,18 +357,18 @@ export const TranslationInterface = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleFeedback(t, 'positive')}
+                        onClick={() => handleFeedback(translation, 'positive')}
                         className="h-8 px-3 text-xs hover:bg-green-500/10"
                       >
-                        👍 Good
+                        {t("good")}
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleFeedback(t, 'negative')}
+                        onClick={() => handleFeedback(translation, 'negative')}
                         className="h-8 px-3 text-xs hover:bg-orange-500/10"
                       >
-                        👎 Feels off
+                        {t("feelsOff")}
                       </Button>
                     </div>
                   </div>
@@ -353,7 +378,7 @@ export const TranslationInterface = () => {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={() => handleDelete(t.id)}
+                    onClick={() => handleDelete(translation.id)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>

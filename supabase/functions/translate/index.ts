@@ -49,6 +49,10 @@ Rules:
 - Provide ONLY the translation, no explanations or additional text
 - Use natural, idiomatic expressions that sound fluent to native speakers
 - Adapt cultural context and nuance appropriately
+- Recognize and preserve emoticons (e.g., ㅜㅜ, ㅠㅠ, ^^, etc.) in their original form
+- Understand the emotional tone conveyed by emoticons and reflect it in the translation
+- Pay close attention to context, informal speech patterns, and conversational tone
+- Translate based on the overall meaning and intention, not word-by-word
 - Keep proper nouns in their original form unless commonly translated
 - Preserve formatting if any`;
 

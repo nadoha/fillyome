@@ -12,6 +12,7 @@ interface TranslationBoxProps {
   placeholder?: string;
   isTranslating?: boolean;
   isEditable?: boolean;
+  romanization?: string;
 }
 
 export const TranslationBox = memo(({
@@ -22,7 +23,8 @@ export const TranslationBox = memo(({
   onTextSelect,
   placeholder,
   isTranslating,
-  isEditable = false
+  isEditable = false,
+  romanization
 }: TranslationBoxProps) => {
   if (isEditable) {
     return (
@@ -61,11 +63,17 @@ export const TranslationBox = memo(({
   return (
     <div className="relative group animate-fade-in">
       <div 
-        className="min-h-[180px] md:min-h-[240px] lg:min-h-[320px] text-base leading-relaxed border border-border bg-muted/30 rounded-xl p-4 pr-16 select-text transition-colors hover:bg-muted/40"
-        style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+        className="min-h-[180px] md:min-h-[240px] lg:min-h-[320px] border border-border bg-muted/30 rounded-xl p-4 pr-16 select-text transition-colors hover:bg-muted/40"
         onMouseUp={onTextSelect}
       >
-        {value || <span className="text-muted-foreground">{placeholder}</span>}
+        <div className="text-base leading-relaxed" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {value || <span className="text-muted-foreground">{placeholder}</span>}
+        </div>
+        {romanization && value && (
+          <div className="mt-2 pt-2 border-t border-border/50 text-sm text-muted-foreground leading-relaxed" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {romanization}
+          </div>
+        )}
       </div>
       {isTranslating && (
         <div className="absolute top-2 right-2 text-xs text-muted-foreground flex items-center gap-1.5 animate-fade-in">

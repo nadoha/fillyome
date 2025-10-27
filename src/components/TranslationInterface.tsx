@@ -33,6 +33,8 @@ export const TranslationInterface = () => {
   const { t, i18n } = useTranslation();
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
+  const [sourceRomanization, setSourceRomanization] = useState("");
+  const [targetRomanization, setTargetRomanization] = useState("");
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
     return (saved as any) || "ko";
@@ -120,10 +122,12 @@ export const TranslationInterface = () => {
 
       const translation = data.translation;
       const literalTranslation = data.literalTranslation || "";
-      const sourceRomanization = data.sourceRomanization || "";
-      const targetRomanization = data.targetRomanization || "";
+      const srcRomanization = data.sourceRomanization || "";
+      const tgtRomanization = data.targetRomanization || "";
       
       setTargetText(translation);
+      setSourceRomanization(srcRomanization);
+      setTargetRomanization(tgtRomanization);
 
       const newTranslation: Translation = {
         id: crypto.randomUUID(),
@@ -132,8 +136,8 @@ export const TranslationInterface = () => {
         source_lang: sourceLang,
         target_lang: targetLang,
         is_favorite: false,
-        source_romanization: sourceRomanization,
-        target_romanization: targetRomanization,
+        source_romanization: srcRomanization,
+        target_romanization: tgtRomanization,
         literal_translation: literalTranslation,
         created_at: new Date().toISOString(),
         content_classification: 'safe',
@@ -192,6 +196,8 @@ export const TranslationInterface = () => {
   useEffect(() => {
     if (!sourceText.trim() || sourceText.trim().length < 2) {
       setTargetText("");
+      setSourceRomanization("");
+      setTargetRomanization("");
       return;
     }
 
@@ -409,6 +415,7 @@ export const TranslationInterface = () => {
               onSpeak={() => handleSpeak(sourceText, sourceLang)}
               placeholder={t("enterText")}
               isEditable
+              romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
             />
             
             <TranslationBox
@@ -418,6 +425,7 @@ export const TranslationInterface = () => {
               onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
               placeholder={`${t("translate")}...`}
               isTranslating={isTranslating}
+              romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
             />
           </div>
         </div>

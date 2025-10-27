@@ -200,21 +200,21 @@ export const TranslationInterface = () => {
     return () => clearTimeout(detectTimer);
   }, [sourceText, sourceLang]);
 
-  // Auto-translate
-  useEffect(() => {
-    if (!sourceText.trim() || sourceText.trim().length < 2) {
-      setTargetText("");
-      setSourceRomanization("");
-      setTargetRomanization("");
-      return;
-    }
+  // Auto-translate (disabled in favor of manual button)
+  // useEffect(() => {
+  //   if (!sourceText.trim() || sourceText.trim().length < 2) {
+  //     setTargetText("");
+  //     setSourceRomanization("");
+  //     setTargetRomanization("");
+  //     return;
+  //   }
 
-    const translateTimer = setTimeout(() => {
-      handleTranslate();
-    }, 600);
+  //   const translateTimer = setTimeout(() => {
+  //     handleTranslate();
+  //   }, 600);
 
-    return () => clearTimeout(translateTimer);
-  }, [sourceText, sourceLang, targetLang, handleTranslate]);
+  //   return () => clearTimeout(translateTimer);
+  // }, [sourceText, sourceLang, targetLang, handleTranslate]);
 
   // Fetch recent translations from localStorage on mount
   useEffect(() => {
@@ -415,26 +415,47 @@ export const TranslationInterface = () => {
           </div>
 
           {/* Translation Boxes */}
-          <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
-            <TranslationBox
-              value={sourceText}
-              onChange={setSourceText}
-              onCopy={() => handleCopy(sourceText)}
-              onSpeak={() => handleSpeak(sourceText, sourceLang)}
-              placeholder={t("enterText")}
-              isEditable
-              romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
-            />
+          <div className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
+              <TranslationBox
+                value={sourceText}
+                onChange={setSourceText}
+                onCopy={() => handleCopy(sourceText)}
+                onSpeak={() => handleSpeak(sourceText, sourceLang)}
+                placeholder={t("enterText")}
+                isEditable
+                romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
+              />
+              
+              <TranslationBox
+                value={targetText}
+                onCopy={() => handleCopy(targetText)}
+                onSpeak={() => handleSpeak(targetText, targetLang)}
+                onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
+                placeholder={`${t("translate")}...`}
+                isTranslating={isTranslating}
+                romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
+              />
+            </div>
             
-            <TranslationBox
-              value={targetText}
-              onCopy={() => handleCopy(targetText)}
-              onSpeak={() => handleSpeak(targetText, targetLang)}
-              onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
-              placeholder={`${t("translate")}...`}
-              isTranslating={isTranslating}
-              romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
-            />
+            {/* Translate Button */}
+            <div className="flex justify-center">
+              <Button
+                onClick={handleTranslate}
+                disabled={!sourceText.trim() || isTranslating}
+                className="w-full md:w-auto px-8 py-5 text-base font-semibold"
+                size="lg"
+              >
+                {isTranslating ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                    {t("translating")}
+                  </>
+                ) : (
+                  t("translate")
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </main>

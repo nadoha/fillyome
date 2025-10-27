@@ -200,21 +200,21 @@ export const TranslationInterface = () => {
     return () => clearTimeout(detectTimer);
   }, [sourceText, sourceLang]);
 
-  // Auto-translate (disabled in favor of manual button)
-  // useEffect(() => {
-  //   if (!sourceText.trim() || sourceText.trim().length < 2) {
-  //     setTargetText("");
-  //     setSourceRomanization("");
-  //     setTargetRomanization("");
-  //     return;
-  //   }
+  // Auto-translate with debounce
+  useEffect(() => {
+    if (!sourceText.trim() || sourceText.trim().length < 2) {
+      setTargetText("");
+      setSourceRomanization("");
+      setTargetRomanization("");
+      return;
+    }
 
-  //   const translateTimer = setTimeout(() => {
-  //     handleTranslate();
-  //   }, 600);
+    const translateTimer = setTimeout(() => {
+      handleTranslate();
+    }, 600);
 
-  //   return () => clearTimeout(translateTimer);
-  // }, [sourceText, sourceLang, targetLang, handleTranslate]);
+    return () => clearTimeout(translateTimer);
+  }, [sourceText, sourceLang, targetLang, handleTranslate]);
 
   // Fetch recent translations from localStorage on mount
   useEffect(() => {

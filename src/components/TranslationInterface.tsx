@@ -31,8 +31,8 @@ export const TranslationInterface = () => {
   const { t, i18n } = useTranslation();
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
-  const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en">("ko");
-  const [targetLang, setTargetLang] = useState<"ko" | "ja" | "en">("en");
+  const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh">("ko");
+  const [targetLang, setTargetLang] = useState<"ko" | "ja" | "en" | "zh">("en");
   const [isTranslating, setIsTranslating] = useState(false);
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -124,16 +124,18 @@ export const TranslationInterface = () => {
 
     const detectTimer = setTimeout(() => {
       const detected = franc(sourceText);
-      let detectedLang: "ko" | "ja" | "en" | null = null;
+      let detectedLang: "ko" | "ja" | "en" | "zh" | null = null;
       if (detected === "kor") detectedLang = "ko";
       else if (detected === "jpn") detectedLang = "ja";
       else if (detected === "eng") detectedLang = "en";
+      else if (detected === "cmn") detectedLang = "zh";
 
       if (detectedLang && detectedLang !== sourceLang) {
         setSourceLang(detectedLang);
         if (detectedLang === "ko") setTargetLang("en");
         else if (detectedLang === "ja") setTargetLang("ko");
         else if (detectedLang === "en") setTargetLang("ko");
+        else if (detectedLang === "zh") setTargetLang("en");
       }
     }, 300);
 
@@ -233,6 +235,7 @@ export const TranslationInterface = () => {
       if (lang === 'ko') utterance.lang = 'ko-KR';
       else if (lang === 'ja') utterance.lang = 'ja-JP';
       else if (lang === 'en') utterance.lang = 'en-US';
+      else if (lang === 'zh') utterance.lang = 'zh-CN';
       
       utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
@@ -274,6 +277,7 @@ export const TranslationInterface = () => {
               <SelectItem value="ko">{t("korean")}</SelectItem>
               <SelectItem value="ja">{t("japanese")}</SelectItem>
               <SelectItem value="en">{t("english")}</SelectItem>
+              <SelectItem value="zh">{t("chinese")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -286,12 +290,13 @@ export const TranslationInterface = () => {
           <div className="flex items-center justify-center gap-2">
             <select
               value={sourceLang}
-              onChange={(e) => setSourceLang(e.target.value as "ko" | "ja" | "en")}
+              onChange={(e) => setSourceLang(e.target.value as "ko" | "ja" | "en" | "zh")}
               className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
             >
               <option value="ko">{t("korean")}</option>
               <option value="ja">{t("japanese")}</option>
               <option value="en">{t("english")}</option>
+              <option value="zh">{t("chinese")}</option>
             </select>
             
             <Button
@@ -305,12 +310,13 @@ export const TranslationInterface = () => {
             
             <select
               value={targetLang}
-              onChange={(e) => setTargetLang(e.target.value as "ko" | "ja" | "en")}
+              onChange={(e) => setTargetLang(e.target.value as "ko" | "ja" | "en" | "zh")}
               className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
             >
               <option value="ko">{t("korean")}</option>
               <option value="ja">{t("japanese")}</option>
               <option value="en">{t("english")}</option>
+              <option value="zh">{t("chinese")}</option>
             </select>
           </div>
 

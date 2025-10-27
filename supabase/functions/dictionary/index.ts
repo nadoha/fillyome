@@ -21,20 +21,22 @@ serve(async (req) => {
     const langNames: Record<string, string> = {
       ko: 'Korean',
       ja: 'Japanese',
-      en: 'English'
+      en: 'English',
+      zh: 'Chinese'
     };
 
     const userLangNames: Record<string, string> = {
       ko: '한국어',
       ja: '日本語',
-      en: 'English'
+      en: 'English',
+      zh: '中文'
     };
 
     const systemPrompt = `You are a concise dictionary. Provide definitions in ${userLangNames[userLang] || 'English'}.
 Return a JSON object with:
 - pos: part of speech in ${userLangNames[userLang] || 'English'} (noun/verb/adj/etc)
 - definitions: array of 1-2 short definitions in ${userLangNames[userLang] || 'English'} (max 10 words each)
-- romanization: ${lang === 'ko' ? 'Revised Romanization' : lang === 'ja' ? 'Hepburn romanization' : 'not needed for English'}
+- romanization: ${lang === 'ko' ? 'Revised Romanization' : lang === 'ja' ? 'Hepburn romanization' : lang === 'zh' ? 'Pinyin' : 'not needed for English'}
 - example: one SHORT example sentence in ${langNames[lang]} using the word (reuse context if provided, max 15 words)
 
 Keep everything minimal and concise. All explanations must be in ${userLangNames[userLang] || 'English'}.`;

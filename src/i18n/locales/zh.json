@@ -1,0 +1,18 @@
+{
+  "korean": "韩语",
+  "japanese": "日语",
+  "english": "英语",
+  "chinese": "中文",
+  "enterText": "输入文本",
+  "translate": "翻译",
+  "recent3": "最近3条",
+  "copied": "已复制",
+  "bulkDelete": "批量删除",
+  "literal": "直译",
+  "natural": "自然",
+  "dictionary": "词典",
+  "partOfSpeech": "词性",
+  "definitions": "定义",
+  "example": "例句",
+  "romanization": "拼音"
+}

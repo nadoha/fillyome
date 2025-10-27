@@ -38,7 +38,8 @@ serve(async (req) => {
     const langNames: Record<string, string> = {
       ko: "Korean",
       ja: "Japanese",
-      en: "English"
+      en: "English",
+      zh: "Chinese (Simplified)"
     };
 
     // OPTIMIZED: Single AI call with structured output using tool calling
@@ -47,6 +48,7 @@ serve(async (req) => {
     const getRomanizationInstruction = (lang: string) => {
       if (lang === "ja") return "Hepburn romanization";
       if (lang === "ko") return "Revised Romanization of Korean";
+      if (lang === "zh") return "Pinyin";
       return "no romanization needed for English";
     };
 

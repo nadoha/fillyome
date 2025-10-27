@@ -11,6 +11,7 @@ import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { RecentTranslationItem } from "./RecentTranslationItem";
 import { LanguageSelector } from "./LanguageSelector";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface Translation {
   id: string;
@@ -346,18 +347,21 @@ export const TranslationInterface = () => {
       <header className="border-b border-border/30 bg-card/20 backdrop-blur-sm sticky top-0 z-10 animate-slide-up">
         <div className="max-w-3xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-foreground">Translate</h1>
-          <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-            <SelectTrigger className="w-[130px] h-9 border-0 bg-transparent gap-1.5 text-sm hover:bg-accent/50 transition-colors">
-              <Globe className="h-4 w-4" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ko">{t("korean")}</SelectItem>
-              <SelectItem value="ja">{t("japanese")}</SelectItem>
-              <SelectItem value="en">{t("english")}</SelectItem>
-              <SelectItem value="zh">{t("chinese")}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
+              <SelectTrigger className="w-[130px] h-9 border-0 bg-transparent gap-1.5 text-sm hover:bg-accent/50 transition-colors">
+                <Globe className="h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ko">{t("korean")}</SelectItem>
+                <SelectItem value="ja">{t("japanese")}</SelectItem>
+                <SelectItem value="en">{t("english")}</SelectItem>
+                <SelectItem value="zh">{t("chinese")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 

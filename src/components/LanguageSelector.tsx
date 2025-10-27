@@ -40,7 +40,7 @@ export const LanguageSelector = memo(({
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[160px] h-10 bg-card/50 border-0 font-medium transition-all hover:bg-card/80">
+      <SelectTrigger className="w-[160px] h-10 bg-card/50 border border-border font-medium transition-all hover:bg-card/80">
         <SelectValue>{selectedLang?.label || value}</SelectValue>
       </SelectTrigger>
       <SelectContent className="max-h-[400px]">

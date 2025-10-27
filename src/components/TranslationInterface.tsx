@@ -381,7 +381,7 @@ export const TranslationInterface = () => {
             />
             
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               onClick={swapLanguages}
               className="h-9 w-9 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300"

@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 interface TranslationResultBoxProps {
   naturalTranslation: string;
@@ -26,6 +27,7 @@ export const TranslationResultBox = memo(({
   placeholder
 }: TranslationResultBoxProps) => {
   const [showLiteral, setShowLiteral] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <div className="relative group animate-fade-in">
@@ -64,7 +66,7 @@ export const TranslationResultBox = memo(({
                   className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2"
                 >
                   {showLiteral ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                  Literal translation
+                  {t("literalTranslation")}
                 </Button>
                 {showLiteral && (
                   <div className="mt-2 pl-3 border-l-2 border-primary/30 bg-primary/5 rounded-r py-2 pr-2">
@@ -79,7 +81,7 @@ export const TranslationResultBox = memo(({
             {/* Feedback Buttons - Visually Separated */}
             {onFeedback && (
               <div className="pt-3 border-t border-border/20 flex items-center gap-2">
-                <span className="text-xs text-muted-foreground mr-1">How's this translation?</span>
+                <span className="text-xs text-muted-foreground mr-1">{t("howsThisTranslation")}</span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -87,7 +89,7 @@ export const TranslationResultBox = memo(({
                   className="h-7 px-2 text-xs hover:bg-green-500/10 hover:text-green-600"
                 >
                   <ThumbsUp className="h-3 w-3 mr-1" />
-                  Good
+                  {t("good")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -96,7 +98,7 @@ export const TranslationResultBox = memo(({
                   className="h-7 px-2 text-xs hover:bg-orange-500/10 hover:text-orange-600"
                 >
                   <ThumbsDown className="h-3 w-3 mr-1" />
-                  Feels off
+                  {t("feelsOff")}
                 </Button>
               </div>
             )}

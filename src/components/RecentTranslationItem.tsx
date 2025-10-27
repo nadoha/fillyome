@@ -108,11 +108,11 @@ export const RecentTranslationItem = memo(({
                 variant="ghost"
                 size="sm"
                 onClick={onToggleLiteral}
-                className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2"
-              >
-                {showLiteral ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                Literal translation
-              </Button>
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2"
+                >
+                  {showLiteral ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+                  {t("literalTranslation")}
+                </Button>
               {showLiteral && (
                 <div className="mt-1 pl-2 border-l-2 border-primary/30 bg-primary/5 rounded-r py-1.5 pr-2">
                   <p 
@@ -129,7 +129,7 @@ export const RecentTranslationItem = memo(({
           
         {/* Feedback - Visually Separated */}
         <div className="pt-2 border-t border-border/20 flex items-center gap-2">
-          <span className="text-xs text-muted-foreground mr-0.5">How's this?</span>
+          <span className="text-xs text-muted-foreground mr-0.5">{t("howsThis")}</span>
           <Button 
             variant="ghost" 
             size="sm" 

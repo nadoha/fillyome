@@ -40,6 +40,8 @@ serve(async (req) => {
       ja: "Japanese"
     };
 
+    // DEFAULT: Natural/idiomatic translation (의역)
+    // This is the primary translation method shown to users by default
     // Step 1: Natural (idiomatic/contextual) translation
     const naturalPrompt = `You are a professional translator. Translate the given text from ${langNames[sourceLang]} to ${langNames[targetLang]}. 
     
@@ -99,6 +101,7 @@ Rules:
     }
 
     const naturalData = await naturalResponse.json();
+    // Primary translation: Natural/idiomatic (의역 - default)
     const translation = naturalData.choices?.[0]?.message?.content;
 
     if (!translation) {
@@ -112,7 +115,7 @@ Rules:
       );
     }
 
-    // Step 2: Literal translation
+    // Step 2: Literal translation (직역 - optional, shown on toggle)
     const literalPrompt = `You are a professional translator. Provide a literal, word-for-word translation from ${langNames[sourceLang]} to ${langNames[targetLang]}. 
     
 Rules:

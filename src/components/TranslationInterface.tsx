@@ -82,6 +82,7 @@ export const TranslationInterface = () => {
         return;
       }
 
+      // Default: Natural/idiomatic translation (의역)
       const translation = data.translation;
       const literalTranslation = data.literalTranslation || "";
       const sourceRomanization = data.sourceRomanization || "";
@@ -90,11 +91,12 @@ export const TranslationInterface = () => {
       setTargetText(translation);
 
       // Auto-save to database
+      // target_text stores the natural/idiomatic translation (의역) as default
       const { error: insertError } = await supabase
         .from("translations")
         .insert({
           source_text: sourceText,
-          target_text: translation,
+          target_text: translation, // Natural translation (default)
           source_lang: sourceLang,
           target_lang: targetLang,
           is_favorite: false,

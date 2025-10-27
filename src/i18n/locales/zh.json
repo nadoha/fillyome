@@ -29,5 +29,8 @@
   "delete": "删除",
   "bulkDelete": "删除选中",
   "noHistory": "无翻译记录",
-  "copied": "已复制！"
+  "copied": "已复制！",
+  "feedbackThanks": "感谢您的反馈！",
+  "feedbackReceived": "已收到反馈",
+  "feedbackError": "反馈发送失败"
 }

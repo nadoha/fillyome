@@ -29,5 +29,8 @@
   "delete": "삭제",
   "bulkDelete": "선택 삭제",
   "noHistory": "번역 기록이 없습니다",
-  "copied": "복사됨!"
+  "copied": "복사됨!",
+  "feedbackThanks": "피드백 감사합니다!",
+  "feedbackReceived": "피드백이 접수되었습니다",
+  "feedbackError": "피드백 전송에 실패했습니다"
 }

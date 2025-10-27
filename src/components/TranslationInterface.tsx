@@ -280,9 +280,8 @@ export const TranslationInterface = () => {
   }, []);
 
   const handleFeedback = useCallback(async (translation: Translation, feedbackType: 'positive' | 'negative') => {
-    // Silent feedback submission - no success toast, only log errors
     try {
-      await supabase
+      const { error } = await supabase
         .from("translation_feedback")
         .insert({
           translation_id: translation.id,
@@ -291,11 +290,15 @@ export const TranslationInterface = () => {
           literal_translation: translation.literal_translation,
           feedback_type: feedbackType,
         });
+
+      if (error) throw error;
+      
+      toast.success(feedbackType === 'positive' ? t("feedbackThanks") : t("feedbackReceived"));
     } catch (error) {
-      console.error('Feedback submission failed silently:', error);
-      // No user notification - fail silently as per requirement
+      console.error('Feedback submission failed:', error);
+      toast.error(t("feedbackError"));
     }
-  }, []);
+  }, [t]);
 
   const handleCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text);

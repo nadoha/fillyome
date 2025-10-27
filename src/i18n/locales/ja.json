@@ -29,5 +29,8 @@
   "delete": "削除",
   "bulkDelete": "選択削除",
   "noHistory": "翻訳履歴がありません",
-  "copied": "コピーしました！"
+  "copied": "コピーしました！",
+  "feedbackThanks": "フィードバックありがとうございます！",
+  "feedbackReceived": "フィードバックを受け付けました",
+  "feedbackError": "フィードバックの送信に失敗しました"
 }

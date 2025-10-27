@@ -29,5 +29,8 @@
   "delete": "Delete",
   "bulkDelete": "Delete Selected",
   "noHistory": "No translation history",
-  "copied": "Copied!"
+  "copied": "Copied!",
+  "feedbackThanks": "Thanks for your feedback!",
+  "feedbackReceived": "Feedback received",
+  "feedbackError": "Failed to send feedback"
 }

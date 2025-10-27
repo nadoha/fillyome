@@ -43,8 +43,6 @@ export const RecentTranslationItem = memo(({
   noRomanization = false,
   t
 }: RecentTranslationItemProps) => {
-  const [showSourceRom, setShowSourceRom] = useState(false);
-  const [showTargetRom, setShowTargetRom] = useState(false);
 
   return (
     <div className="flex items-start gap-2 p-3 rounded-lg bg-card/50 hover:bg-card transition-colors group">
@@ -73,20 +71,7 @@ export const RecentTranslationItem = memo(({
             </div>
           </div>
           {!noRomanization && translation.source_romanization && (
-            <div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSourceRom(!showSourceRom)}
-                className="h-5 px-1.5 text-xs text-muted-foreground/70 hover:text-muted-foreground -ml-1.5"
-              >
-                {showSourceRom ? <ChevronUp className="h-2.5 w-2.5 mr-0.5" /> : <ChevronDown className="h-2.5 w-2.5 mr-0.5" />}
-                Rom
-              </Button>
-              {showSourceRom && (
-                <p className="text-xs text-muted-foreground/60 italic ml-2">{translation.source_romanization}</p>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground/60 italic ml-1">{translation.source_romanization}</p>
           )}
         </div>
 
@@ -109,23 +94,10 @@ export const RecentTranslationItem = memo(({
             </div>
           </div>
 
-          {/* Target Romanization - Collapsible */}
+          {/* Target Romanization - Always Visible */}
           {!noRomanization && translation.target_romanization && (
             <div className="pt-1 border-t border-border/20">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowTargetRom(!showTargetRom)}
-                className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2"
-              >
-                {showTargetRom ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                Romanization
-              </Button>
-              {showTargetRom && (
-                <div className="mt-1 pl-2 border-l-2 border-border/40">
-                  <p className="text-xs text-muted-foreground/70 italic">{translation.target_romanization}</p>
-                </div>
-              )}
+              <p className="text-sm text-muted-foreground/70 pl-2">{translation.target_romanization}</p>
             </div>
           )}
 

@@ -26,7 +26,6 @@ export const TranslationResultBox = memo(({
   placeholder
 }: TranslationResultBoxProps) => {
   const [showLiteral, setShowLiteral] = useState(false);
-  const [showRomanization, setShowRomanization] = useState(false);
 
   return (
     <div className="relative group animate-fade-in">
@@ -46,25 +45,12 @@ export const TranslationResultBox = memo(({
               {naturalTranslation}
             </div>
 
-            {/* Romanization Toggle */}
+            {/* Romanization - Always Visible */}
             {romanization && (
               <div className="pt-2 border-t border-border/30">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowRomanization(!showRomanization)}
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2"
-                >
-                  {showRomanization ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                  Romanization
-                </Button>
-                {showRomanization && (
-                  <div className="mt-2 pl-3 border-l-2 border-border/50">
-                    <p className="text-sm text-muted-foreground/70 leading-relaxed" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                      {romanization}
-                    </p>
-                  </div>
-                )}
+                <p className="text-sm text-muted-foreground/70 leading-relaxed pl-2" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {romanization}
+                </p>
               </div>
             )}
 

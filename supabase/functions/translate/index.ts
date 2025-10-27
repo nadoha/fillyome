@@ -37,11 +37,18 @@ serve(async (req) => {
 
     const langNames: Record<string, string> = {
       ko: "Korean",
-      ja: "Japanese"
+      ja: "Japanese",
+      en: "English"
     };
 
     // OPTIMIZED: Single AI call with structured output using tool calling
     const systemPrompt = `You are a professional translator. Translate text from ${langNames[sourceLang]} to ${langNames[targetLang]} and provide comprehensive translation data.`;
+
+    const getRomanizationInstruction = (lang: string) => {
+      if (lang === "ja") return "Hepburn romanization";
+      if (lang === "ko") return "Revised Romanization of Korean";
+      return "no romanization needed for English";
+    };
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -62,8 +69,8 @@ serve(async (req) => {
 Provide:
 1. Natural/idiomatic translation (의역) - Use natural expressions, adapt cultural context, preserve emoticons (ㅜㅜ, ^^, etc.), understand emotional tone, translate based on overall meaning
 2. Literal translation (직역) - Word-by-word, keep original structure even if unnatural
-3. Source romanization - Use ${sourceLang === "ja" ? "Hepburn romanization" : "Revised Romanization of Korean"}
-4. Target romanization - Use ${targetLang === "ja" ? "Hepburn romanization" : "Revised Romanization of Korean"}` 
+3. Source romanization - Use ${getRomanizationInstruction(sourceLang)}
+4. Target romanization - Use ${getRomanizationInstruction(targetLang)}` 
           }
         ],
         tools: [

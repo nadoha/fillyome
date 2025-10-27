@@ -25,8 +25,8 @@ interface Translation {
 export const TranslationInterface = () => {
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
-  const [sourceLang, setSourceLang] = useState<"ko" | "ja">("ko");
-  const [targetLang, setTargetLang] = useState<"ko" | "ja">("ja");
+  const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en">("ko");
+  const [targetLang, setTargetLang] = useState<"ko" | "ja" | "en">("en");
   const [isTranslating, setIsTranslating] = useState(false);
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -117,7 +117,9 @@ export const TranslationInterface = () => {
 
 
   const getLangLabel = useCallback((lang: string) => {
-    return lang === "ko" ? "한국어" : "日本語";
+    if (lang === "ko") return "한국어";
+    if (lang === "ja") return "日本語";
+    return "English";
   }, []);
 
   const handleDelete = useCallback((id: string) => {
@@ -184,10 +186,16 @@ export const TranslationInterface = () => {
       <main className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-3xl space-y-5">
           {/* Language Selector */}
-          <div className="flex items-center justify-center gap-3">
-            <button className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted">
-              {getLangLabel(sourceLang)}
-            </button>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <select
+              value={sourceLang}
+              onChange={(e) => setSourceLang(e.target.value as "ko" | "ja" | "en")}
+              className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted border-0 cursor-pointer focus:ring-2 focus:ring-primary"
+            >
+              <option value="ko">한국어</option>
+              <option value="ja">日本語</option>
+              <option value="en">English</option>
+            </select>
             
             <Button
               variant="ghost"
@@ -198,9 +206,15 @@ export const TranslationInterface = () => {
               <ArrowLeftRight className="h-4 w-4" />
             </Button>
             
-            <button className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted">
-              {getLangLabel(targetLang)}
-            </button>
+            <select
+              value={targetLang}
+              onChange={(e) => setTargetLang(e.target.value as "ko" | "ja" | "en")}
+              className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted border-0 cursor-pointer focus:ring-2 focus:ring-primary"
+            >
+              <option value="ko">한국어</option>
+              <option value="ja">日本語</option>
+              <option value="en">English</option>
+            </select>
           </div>
 
           {/* Translation Boxes */}

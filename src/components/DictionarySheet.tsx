@@ -23,18 +23,18 @@ export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading }: Dic
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-auto max-h-[50vh] rounded-t-3xl">
-        <div className="space-y-3 pb-4">
+      <SheetContent side="bottom" className="h-auto max-h-[50vh] rounded-t-2xl">
+        <div className="space-y-2 pb-3">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold">{word}</h3>
+              <h3 className="text-base font-semibold">{word}</h3>
               {entry?.romanization && (
-                <p className="text-xs text-muted-foreground italic">{entry.romanization}</p>
+                <p className="text-xs text-muted-foreground/70 italic">{entry.romanization}</p>
               )}
             </div>
             {entry && (
-              <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
+              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
                 {entry.pos}
               </span>
             )}
@@ -49,21 +49,21 @@ export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading }: Dic
 
           {/* Content */}
           {!isLoading && entry && (
-            <div className="space-y-2">
-              {/* Definitions - Default 2 lines */}
-              <div className={`space-y-1.5 ${!isExpanded ? 'line-clamp-2' : ''}`}>
+            <div className="space-y-1.5">
+              {/* Definitions */}
+              <div className={`space-y-1 ${!isExpanded ? 'line-clamp-2' : ''}`}>
                 {entry.definitions.slice(0, isExpanded ? undefined : 2).map((def, idx) => (
-                  <p key={idx} className="text-sm text-foreground">
+                  <p key={idx} className="text-sm text-foreground/90">
                     {idx + 1}. {def}
                   </p>
                 ))}
               </div>
 
-              {/* Example - Only show when expanded */}
+              {/* Example */}
               {isExpanded && (
-                <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground mb-1">Example:</p>
-                  <p className="text-sm italic">{entry.example}</p>
+                <div className="pt-1.5 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground/70 mb-0.5">Example:</p>
+                  <p className="text-sm italic text-foreground/80">{entry.example}</p>
                 </div>
               )}
 
@@ -72,7 +72,7 @@ export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading }: Dic
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full text-xs mt-2"
+                className="w-full text-xs h-7 mt-1"
               >
                 {isExpanded ? (
                   <>

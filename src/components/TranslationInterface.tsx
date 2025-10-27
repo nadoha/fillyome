@@ -1,21 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeftRight, Trash2, ChevronDown, ChevronUp, Globe, Copy, Volume2 } from "lucide-react";
+import { ArrowLeftRight, Trash2, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { franc } from "franc-min";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDictionary } from "@/hooks/useDictionary";
 import { DictionarySheet } from "./DictionarySheet";
+import { TranslationBox } from "./TranslationBox";
+import { RecentTranslationItem } from "./RecentTranslationItem";
 
 interface Translation {
   id: string;
@@ -124,14 +118,12 @@ export const TranslationInterface = () => {
     }
   }, [sourceText, sourceLang, targetLang, saveToLocalStorage, fetchRecentTranslations]);
 
-  // Auto-detect language and set source/target languages
+  // Auto-detect language
   useEffect(() => {
     if (sourceText.trim().length < 3) return;
 
     const detectTimer = setTimeout(() => {
       const detected = franc(sourceText);
-      
-      // Map franc language codes to our codes
       let detectedLang: "ko" | "ja" | "en" | null = null;
       if (detected === "kor") detectedLang = "ko";
       else if (detected === "jpn") detectedLang = "ja";
@@ -139,18 +131,16 @@ export const TranslationInterface = () => {
 
       if (detectedLang && detectedLang !== sourceLang) {
         setSourceLang(detectedLang);
-        
-        // Auto-set target language based on detected source
         if (detectedLang === "ko") setTargetLang("en");
         else if (detectedLang === "ja") setTargetLang("ko");
         else if (detectedLang === "en") setTargetLang("ko");
       }
-    }, 500); // Debounce for 500ms
+    }, 300);
 
     return () => clearTimeout(detectTimer);
   }, [sourceText, sourceLang]);
 
-  // Auto-translate when text or languages change
+  // Auto-translate
   useEffect(() => {
     if (!sourceText.trim() || sourceText.trim().length < 2) {
       setTargetText("");
@@ -159,7 +149,7 @@ export const TranslationInterface = () => {
 
     const translateTimer = setTimeout(() => {
       handleTranslate();
-    }, 1000); // Wait 1 second after user stops typing
+    }, 600);
 
     return () => clearTimeout(translateTimer);
   }, [sourceText, sourceLang, targetLang, handleTranslate]);
@@ -271,16 +261,13 @@ export const TranslationInterface = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header with App Language Selector */}
-      <header className="border-b border-border/40 bg-card/30 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-foreground tracking-tight">
-            Translate
-          </h1>
-          
+      {/* Header */}
+      <header className="border-b border-border/30 bg-card/20 sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-3 py-2 flex items-center justify-between">
+          <h1 className="text-base font-medium text-foreground">Translate</h1>
           <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-            <SelectTrigger className="w-[140px] h-9 border-0 bg-card/50 hover:bg-card gap-2">
-              <Globe className="h-4 w-4" />
+            <SelectTrigger className="w-[120px] h-8 border-0 bg-transparent gap-1.5 text-xs">
+              <Globe className="h-3.5 w-3.5" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -292,15 +279,15 @@ export const TranslationInterface = () => {
         </div>
       </header>
 
-      {/* Main Translation Area */}
-      <main className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-3xl space-y-5">
+      {/* Main */}
+      <main className="flex-1 flex items-center justify-center px-3 py-6">
+        <div className="w-full max-w-3xl space-y-3">
           {/* Language Selector */}
-          <div className="flex items-center justify-center gap-3 flex-wrap">
+          <div className="flex items-center justify-center gap-2">
             <select
               value={sourceLang}
               onChange={(e) => setSourceLang(e.target.value as "ko" | "ja" | "en")}
-              className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted border-0 cursor-pointer focus:ring-2 focus:ring-primary"
+              className="px-3 py-1.5 rounded-lg bg-card/50 text-xs font-medium text-foreground border-0 cursor-pointer"
             >
               <option value="ko">{t("korean")}</option>
               <option value="ja">{t("japanese")}</option>
@@ -311,15 +298,15 @@ export const TranslationInterface = () => {
               variant="ghost"
               size="icon"
               onClick={swapLanguages}
-              className="rounded-full h-9 w-9 hover:rotate-180 transition-all duration-300"
+              className="h-7 w-7"
             >
-              <ArrowLeftRight className="h-4 w-4" />
+              <ArrowLeftRight className="h-3.5 w-3.5" />
             </Button>
             
             <select
               value={targetLang}
               onChange={(e) => setTargetLang(e.target.value as "ko" | "ja" | "en")}
-              className="px-5 py-2.5 rounded-xl bg-card text-sm font-medium text-foreground transition-colors hover:bg-muted border-0 cursor-pointer focus:ring-2 focus:ring-primary"
+              className="px-3 py-1.5 rounded-lg bg-card/50 text-xs font-medium text-foreground border-0 cursor-pointer"
             >
               <option value="ko">{t("korean")}</option>
               <option value="ja">{t("japanese")}</option>
@@ -328,241 +315,62 @@ export const TranslationInterface = () => {
           </div>
 
           {/* Translation Boxes */}
-          <div className="grid md:grid-cols-2 gap-3">
-            <div className="relative">
-              <Textarea
-                placeholder={t("enterText")}
-                value={sourceText}
-                onChange={(e) => setSourceText(e.target.value)}
-                className="min-h-[180px] resize-none text-[15px] leading-relaxed border-0 bg-card shadow-sm rounded-2xl p-4 pr-20 focus-visible:ring-1"
-                autoFocus
-              />
-              {sourceText && (
-                <div className="absolute top-3 right-3 flex gap-1.5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-primary/10"
-                    onClick={() => handleCopy(sourceText)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-primary/10"
-                    onClick={() => handleSpeak(sourceText, sourceLang)}
-                  >
-                    <Volume2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <div 
-                className="min-h-[180px] text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4 pr-20 select-text cursor-text"
-                style={{ 
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word'
-                }}
-                onMouseUp={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
-              >
-                {targetText || <span className="text-muted-foreground">{t("translate")}...</span>}
-              </div>
-              {isTranslating && (
-                <div className="absolute top-2 right-2 text-xs text-muted-foreground flex items-center gap-1.5">
-                  <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  {t("translating")}
-                </div>
-              )}
-              {!isTranslating && targetText && (
-                <div className="absolute top-3 right-3 flex gap-1.5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-primary/10"
-                    onClick={() => handleCopy(targetText)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-primary/10"
-                    onClick={() => handleSpeak(targetText, targetLang)}
-                  >
-                    <Volume2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
+          <div className="grid md:grid-cols-2 gap-2">
+            <TranslationBox
+              value={sourceText}
+              onChange={setSourceText}
+              onCopy={() => handleCopy(sourceText)}
+              onSpeak={() => handleSpeak(sourceText, sourceLang)}
+              placeholder={t("enterText")}
+              isEditable
+            />
+            
+            <TranslationBox
+              value={targetText}
+              onCopy={() => handleCopy(targetText)}
+              onSpeak={() => handleSpeak(targetText, targetLang)}
+              onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
+              placeholder={`${t("translate")}...`}
+              isTranslating={isTranslating}
+            />
           </div>
         </div>
       </main>
 
-      {/* Recent Translations */}
+      {/* Recent */}
       {recentTranslations.length > 0 && (
-        <aside className="border-t bg-muted/20">
-          <div className="max-w-3xl mx-auto px-4 py-5 space-y-3">
+        <aside className="border-t border-border/30 bg-muted/10">
+          <div className="max-w-3xl mx-auto px-3 py-3 space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("recent3")}</h3>
+              <h3 className="text-xs font-medium text-muted-foreground">{t("recent3")}</h3>
               {selectedIds.size > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleBulkDelete}
-                  className="h-7 px-3 text-xs text-destructive hover:text-destructive"
+                  className="h-6 px-2 text-xs text-destructive"
                 >
-                  <Trash2 className="h-3 w-3 mr-1.5" />
+                  <Trash2 className="h-3 w-3 mr-1" />
                   {t("bulkDelete")} ({selectedIds.size})
                 </Button>
               )}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {recentTranslations.map((translation) => (
-                <div
+                <RecentTranslationItem
                   key={translation.id}
-                  className="flex items-start gap-3 p-3.5 rounded-xl bg-card hover:shadow-sm transition-all group"
-                >
-                  <Checkbox
-                    checked={selectedIds.has(translation.id)}
-                    onCheckedChange={() => toggleSelect(translation.id)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1 min-w-0 space-y-2.5">
-                    {/* Source text with romanization */}
-                    <div className="space-y-0.5">
-                      <div className="flex items-start gap-2 group/text">
-                        <p 
-                          className="text-[15px] text-foreground leading-relaxed flex-1 select-text cursor-text"
-                          onMouseUp={(e) => handleTextSelection(e, translation.source_lang, translation.source_text)}
-                        >
-                          {translation.source_text}
-                        </p>
-                        <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full hover:bg-primary/10"
-                            onClick={() => handleCopy(translation.source_text)}
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full hover:bg-primary/10"
-                            onClick={() => handleSpeak(translation.source_text, translation.source_lang)}
-                          >
-                            <Volume2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      {translation.source_romanization && (
-                        <p className="text-xs text-muted-foreground/60 italic">{translation.source_romanization}</p>
-                      )}
-                    </div>
-
-                    {/* Natural translation with romanization */}
-                    <div className="space-y-0.5">
-                      <div className="flex items-start gap-2 group/text">
-                        <p 
-                          className="text-[15px] text-primary/90 leading-relaxed font-medium flex-1 select-text cursor-text"
-                          onMouseUp={(e) => handleTextSelection(e, translation.target_lang, translation.target_text)}
-                        >
-                          {translation.target_text}
-                        </p>
-                        <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full hover:bg-primary/10"
-                            onClick={() => handleCopy(translation.target_text)}
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full hover:bg-primary/10"
-                            onClick={() => handleSpeak(translation.target_text, translation.target_lang)}
-                          >
-                            <Volume2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      {translation.target_romanization && (
-                        <p className="text-xs text-muted-foreground/60 italic">{translation.target_romanization}</p>
-                      )}
-                    </div>
-
-                    {/* Literal translation toggle - clearly visible */}
-                    {translation.literal_translation && (
-                      <div className="pt-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleLiteral(translation.id)}
-                          className="h-8 px-3 text-xs font-medium border-primary/20 hover:bg-primary/5"
-                        >
-                          {showLiteral[translation.id] ? (
-                            <>
-                              <ChevronUp className="h-3 w-3 mr-1.5" />
-                              {t("literal")}
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="h-3 w-3 mr-1.5" />
-                              {t("literal")}
-                            </>
-                          )}
-                        </Button>
-                        
-                        {showLiteral[translation.id] && (
-                          <div className="mt-2 pl-3 border-l-2 border-primary/20 bg-primary/5 -ml-3 py-2 pr-3">
-                            <p 
-                              className="text-xs text-foreground/80 leading-relaxed select-text cursor-text"
-                              onMouseUp={(e) => handleTextSelection(e, translation.target_lang, translation.literal_translation || "")}
-                            >
-                              {translation.literal_translation || ""}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                      
-                    {/* Feedback buttons - simple and clear */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleFeedback(translation, 'positive')}
-                        className="h-8 px-3 text-xs hover:bg-green-500/10"
-                      >
-                        {t("good")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleFeedback(translation, 'negative')}
-                        className="h-8 px-3 text-xs hover:bg-orange-500/10"
-                      >
-                        {t("feelsOff")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Delete button only */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={() => handleDelete(translation.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+                  translation={translation}
+                  isSelected={selectedIds.has(translation.id)}
+                  showLiteral={showLiteral[translation.id] || false}
+                  onToggleSelect={() => toggleSelect(translation.id)}
+                  onToggleLiteral={() => toggleLiteral(translation.id)}
+                  onDelete={() => handleDelete(translation.id)}
+                  onCopy={handleCopy}
+                  onSpeak={handleSpeak}
+                  onTextSelect={handleTextSelection}
+                  onFeedback={(type) => handleFeedback(translation, type)}
+                  t={t}
+                />
               ))}
             </div>
           </div>

@@ -251,38 +251,17 @@ export const TranslationInterface = () => {
     }
   }, []);
 
-  const renderClickableText = useCallback((text: string, lang: string, context: string) => {
-    // Split text into words, preserving spaces and punctuation
-    const words = text.split(/(\s+)/);
+  const handleTextSelection = useCallback((e: React.MouseEvent, lang: string, context: string) => {
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
     
-    return (
-      <>
-        {words.map((word, index) => {
-          // If it's whitespace, render as-is
-          if (/^\s+$/.test(word)) {
-            return <span key={index}>{word}</span>;
-          }
-          
-          // If it's a word, make it clickable
-          return (
-            <span
-              key={index}
-              className="cursor-pointer hover:bg-muted/70 active:bg-muted rounded-sm px-0.5 -mx-0.5 transition-colors duration-150"
-              onClick={(e) => {
-                e.stopPropagation();
-                const cleanWord = word.trim().replace(/[.,!?;:'"()[\]{}]/g, '');
-                if (cleanWord) {
-                  setIsDictionaryOpen(true);
-                  lookupWord(cleanWord, lang, i18n.language, context);
-                }
-              }}
-            >
-              {word}
-            </span>
-          );
-        })}
-      </>
-    );
+    if (selectedText && selectedText.length > 0) {
+      const cleanText = selectedText.replace(/[.,!?;:'"()[\]{}]/g, '');
+      if (cleanText) {
+        setIsDictionaryOpen(true);
+        lookupWord(cleanText, lang, i18n.language, context);
+      }
+    }
   }, [lookupWord, i18n.language]);
 
   const closeDictionary = useCallback(() => {
@@ -382,13 +361,14 @@ export const TranslationInterface = () => {
 
             <div className="relative">
               <div 
-                className="min-h-[180px] text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4 pr-20"
+                className="min-h-[180px] text-[15px] leading-relaxed border-0 bg-muted/40 shadow-sm rounded-2xl p-4 pr-20 select-text cursor-text"
                 style={{ 
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word'
                 }}
+                onMouseUp={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
               >
-                {targetText ? renderClickableText(targetText, targetLang, targetText) : <span className="text-muted-foreground">{t("translate")}...</span>}
+                {targetText || <span className="text-muted-foreground">{t("translate")}...</span>}
               </div>
               {isTranslating && (
                 <div className="absolute top-2 right-2 text-xs text-muted-foreground flex items-center gap-1.5">
@@ -454,8 +434,11 @@ export const TranslationInterface = () => {
                     {/* Source text with romanization */}
                     <div className="space-y-0.5">
                       <div className="flex items-start gap-2 group/text">
-                        <p className="text-[15px] text-foreground leading-relaxed flex-1">
-                          {renderClickableText(translation.source_text, translation.source_lang, translation.source_text)}
+                        <p 
+                          className="text-[15px] text-foreground leading-relaxed flex-1 select-text cursor-text"
+                          onMouseUp={(e) => handleTextSelection(e, translation.source_lang, translation.source_text)}
+                        >
+                          {translation.source_text}
                         </p>
                         <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
                           <Button
@@ -484,8 +467,11 @@ export const TranslationInterface = () => {
                     {/* Natural translation with romanization */}
                     <div className="space-y-0.5">
                       <div className="flex items-start gap-2 group/text">
-                        <p className="text-[15px] text-primary/90 leading-relaxed font-medium flex-1">
-                          {renderClickableText(translation.target_text, translation.target_lang, translation.target_text)}
+                        <p 
+                          className="text-[15px] text-primary/90 leading-relaxed font-medium flex-1 select-text cursor-text"
+                          onMouseUp={(e) => handleTextSelection(e, translation.target_lang, translation.target_text)}
+                        >
+                          {translation.target_text}
                         </p>
                         <div className="flex gap-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
                           <Button
@@ -535,8 +521,11 @@ export const TranslationInterface = () => {
                         
                         {showLiteral[translation.id] && (
                           <div className="mt-2 pl-3 border-l-2 border-primary/20 bg-primary/5 -ml-3 py-2 pr-3">
-                            <p className="text-xs text-foreground/80 leading-relaxed">
-                              {renderClickableText(translation.literal_translation || "", translation.target_lang, translation.literal_translation || "")}
+                            <p 
+                              className="text-xs text-foreground/80 leading-relaxed select-text cursor-text"
+                              onMouseUp={(e) => handleTextSelection(e, translation.target_lang, translation.literal_translation || "")}
+                            >
+                              {translation.literal_translation || ""}
                             </p>
                           </div>
                         )}

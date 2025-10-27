@@ -111,63 +111,7 @@ Rules:
       );
     }
 
-    // Step 2: Classify content
-    const classificationPrompt = `Analyze this text and classify it as one of: safe, offensive, sexual.
-    
-Text: "${text}"
-
-Respond with ONLY one word: safe, offensive, or sexual`;
-
-    const classificationResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: "You are a content classifier. Respond with only one word." },
-          { role: "user", content: classificationPrompt }
-        ],
-      }),
-    });
-
-    let contentClassification = "safe";
-    if (classificationResponse.ok) {
-      const classificationData = await classificationResponse.json();
-      const classification = classificationData.choices?.[0]?.message?.content?.trim().toLowerCase();
-      if (classification === "offensive" || classification === "sexual") {
-        contentClassification = classification;
-      }
-    }
-
-    // Step 3: Create masked versions if needed
-    const maskText = (text: string): string => {
-      if (contentClassification === "safe") return text;
-      
-      // Simple masking: replace words with ***
-      const offensivePatterns = [
-        /\b(fuck|shit|damn|ass|bitch|bastard|dick|cock|pussy|cunt)\b/gi,
-        /\b(sex|sexual|sexy|porn|xxx)\b/gi,
-        /씨발|개새끼|병신|좆|섹스/gi,
-        /セックス|エロ|ファック/gi
-      ];
-      
-      let masked = text;
-      offensivePatterns.forEach(pattern => {
-        masked = masked.replace(pattern, (match) => {
-          return match[0] + '*'.repeat(Math.max(match.length - 2, 1)) + match[match.length - 1];
-        });
-      });
-      
-      return masked;
-    };
-
-    const maskedSourceText = maskText(text);
-    const maskedTargetText = maskText(translation);
-
-    // Step 4: Generate romanization
+    // Step 2: Generate romanization
     const getRomanization = async (textToRomanize: string, lang: string): Promise<string> => {
       const romanizationSystem = lang === "ja" ? "Hepburn romanization" : "Revised Romanization of Korean";
       const romanizationPrompt = `Convert this ${langNames[lang]} text to ${romanizationSystem}. Respond with ONLY the romanization, no explanations.
@@ -202,9 +146,6 @@ Text: "${textToRomanize}"`;
     return new Response(
       JSON.stringify({ 
         translation,
-        contentClassification,
-        maskedSourceText,
-        maskedTargetText,
         sourceRomanization,
         targetRomanization
       }), 

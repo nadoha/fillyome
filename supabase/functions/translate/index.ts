@@ -39,7 +39,19 @@ serve(async (req) => {
       ko: "Korean",
       ja: "Japanese",
       en: "English",
-      zh: "Chinese (Simplified)"
+      zh: "Chinese (Simplified)",
+      es: "Spanish",
+      fr: "French",
+      de: "German",
+      pt: "Portuguese",
+      it: "Italian",
+      ru: "Russian",
+      ar: "Arabic",
+      th: "Thai",
+      vi: "Vietnamese",
+      id: "Indonesian",
+      hi: "Hindi",
+      tr: "Turkish"
     };
 
     // OPTIMIZED: Single AI call with structured output using tool calling
@@ -49,7 +61,11 @@ serve(async (req) => {
       if (lang === "ja") return "Hepburn romanization";
       if (lang === "ko") return "Revised Romanization of Korean";
       if (lang === "zh") return "Pinyin";
-      return "no romanization needed for English";
+      if (lang === "ru") return "standard Romanization";
+      if (lang === "ar") return "Arabic romanization";
+      if (lang === "th") return "Thai romanization";
+      if (lang === "hi") return "Devanagari romanization";
+      return "standard romanization or leave empty if not applicable";
     };
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

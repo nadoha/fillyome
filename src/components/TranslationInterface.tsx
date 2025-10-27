@@ -31,8 +31,8 @@ export const TranslationInterface = () => {
   const { t, i18n } = useTranslation();
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
-  const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh">("ko");
-  const [targetLang, setTargetLang] = useState<"ko" | "ja" | "en" | "zh">("en");
+  const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">("ko");
+  const [targetLang, setTargetLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">("en");
   const [isTranslating, setIsTranslating] = useState(false);
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -124,11 +124,23 @@ export const TranslationInterface = () => {
 
     const detectTimer = setTimeout(() => {
       const detected = franc(sourceText);
-      let detectedLang: "ko" | "ja" | "en" | "zh" | null = null;
+      let detectedLang: "ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr" | null = null;
       if (detected === "kor") detectedLang = "ko";
       else if (detected === "jpn") detectedLang = "ja";
       else if (detected === "eng") detectedLang = "en";
       else if (detected === "cmn") detectedLang = "zh";
+      else if (detected === "spa") detectedLang = "es";
+      else if (detected === "fra") detectedLang = "fr";
+      else if (detected === "deu") detectedLang = "de";
+      else if (detected === "por") detectedLang = "pt";
+      else if (detected === "ita") detectedLang = "it";
+      else if (detected === "rus") detectedLang = "ru";
+      else if (detected === "arb") detectedLang = "ar";
+      else if (detected === "tha") detectedLang = "th";
+      else if (detected === "vie") detectedLang = "vi";
+      else if (detected === "ind") detectedLang = "id";
+      else if (detected === "hin") detectedLang = "hi";
+      else if (detected === "tur") detectedLang = "tr";
 
       if (detectedLang && detectedLang !== sourceLang) {
         setSourceLang(detectedLang);
@@ -136,6 +148,7 @@ export const TranslationInterface = () => {
         else if (detectedLang === "ja") setTargetLang("ko");
         else if (detectedLang === "en") setTargetLang("ko");
         else if (detectedLang === "zh") setTargetLang("en");
+        else setTargetLang("en"); // Default target for other languages
       }
     }, 300);
 
@@ -232,10 +245,25 @@ export const TranslationInterface = () => {
       const utterance = new SpeechSynthesisUtterance(text);
       
       // Set language based on lang parameter
-      if (lang === 'ko') utterance.lang = 'ko-KR';
-      else if (lang === 'ja') utterance.lang = 'ja-JP';
-      else if (lang === 'en') utterance.lang = 'en-US';
-      else if (lang === 'zh') utterance.lang = 'zh-CN';
+      const langMap: Record<string, string> = {
+        ko: 'ko-KR',
+        ja: 'ja-JP',
+        en: 'en-US',
+        zh: 'zh-CN',
+        es: 'es-ES',
+        fr: 'fr-FR',
+        de: 'de-DE',
+        pt: 'pt-PT',
+        it: 'it-IT',
+        ru: 'ru-RU',
+        ar: 'ar-SA',
+        th: 'th-TH',
+        vi: 'vi-VN',
+        id: 'id-ID',
+        hi: 'hi-IN',
+        tr: 'tr-TR'
+      };
+      utterance.lang = langMap[lang] || 'en-US';
       
       utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
@@ -245,6 +273,12 @@ export const TranslationInterface = () => {
   }, []);
 
   const handleTextSelection = useCallback((e: React.MouseEvent, lang: string, context: string) => {
+    // Dictionary only supports ko, ja, en, zh
+    const supportedDictionaryLangs = ['ko', 'ja', 'en', 'zh'];
+    if (!supportedDictionaryLangs.includes(lang)) {
+      return; // Skip dictionary for unsupported languages
+    }
+
     const selection = window.getSelection();
     const selectedText = selection?.toString().trim();
     
@@ -290,13 +324,25 @@ export const TranslationInterface = () => {
           <div className="flex items-center justify-center gap-2">
             <select
               value={sourceLang}
-              onChange={(e) => setSourceLang(e.target.value as "ko" | "ja" | "en" | "zh")}
+              onChange={(e) => setSourceLang(e.target.value as any)}
               className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
             >
               <option value="ko">{t("korean")}</option>
               <option value="ja">{t("japanese")}</option>
               <option value="en">{t("english")}</option>
               <option value="zh">{t("chinese")}</option>
+              <option value="es">{t("spanish")}</option>
+              <option value="fr">{t("french")}</option>
+              <option value="de">{t("german")}</option>
+              <option value="pt">{t("portuguese")}</option>
+              <option value="it">{t("italian")}</option>
+              <option value="ru">{t("russian")}</option>
+              <option value="ar">{t("arabic")}</option>
+              <option value="th">{t("thai")}</option>
+              <option value="vi">{t("vietnamese")}</option>
+              <option value="id">{t("indonesian")}</option>
+              <option value="hi">{t("hindi")}</option>
+              <option value="tr">{t("turkish")}</option>
             </select>
             
             <Button
@@ -310,13 +356,25 @@ export const TranslationInterface = () => {
             
             <select
               value={targetLang}
-              onChange={(e) => setTargetLang(e.target.value as "ko" | "ja" | "en" | "zh")}
+              onChange={(e) => setTargetLang(e.target.value as any)}
               className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
             >
               <option value="ko">{t("korean")}</option>
               <option value="ja">{t("japanese")}</option>
               <option value="en">{t("english")}</option>
               <option value="zh">{t("chinese")}</option>
+              <option value="es">{t("spanish")}</option>
+              <option value="fr">{t("french")}</option>
+              <option value="de">{t("german")}</option>
+              <option value="pt">{t("portuguese")}</option>
+              <option value="it">{t("italian")}</option>
+              <option value="ru">{t("russian")}</option>
+              <option value="ar">{t("arabic")}</option>
+              <option value="th">{t("thai")}</option>
+              <option value="vi">{t("vietnamese")}</option>
+              <option value="id">{t("indonesian")}</option>
+              <option value="hi">{t("hindi")}</option>
+              <option value="tr">{t("turkish")}</option>
             </select>
           </div>
 

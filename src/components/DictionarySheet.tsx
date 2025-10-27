@@ -53,7 +53,7 @@ export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading }: Dic
               {/* Definitions */}
               <div className={`space-y-1 ${!isExpanded ? 'line-clamp-2' : ''}`}>
                 {entry.definitions.slice(0, isExpanded ? undefined : 2).map((def, idx) => (
-                  <p key={idx} className="text-sm text-foreground/90">
+                  <p key={idx} className="text-base text-foreground/90 leading-relaxed">
                     {idx + 1}. {def}
                   </p>
                 ))}
@@ -62,8 +62,8 @@ export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading }: Dic
               {/* Example */}
               {isExpanded && (
                 <div className="pt-1.5 border-t border-border/50">
-                  <p className="text-xs text-muted-foreground/70 mb-0.5">Example:</p>
-                  <p className="text-sm italic text-foreground/80">{entry.example}</p>
+                  <p className="text-sm text-muted-foreground/70 mb-0.5">Example:</p>
+                  <p className="text-base italic text-foreground/80 leading-relaxed">{entry.example}</p>
                 </div>
               )}
 

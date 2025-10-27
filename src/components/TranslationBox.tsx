@@ -31,7 +31,7 @@ export const TranslationBox = memo(({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="min-h-[160px] resize-none text-sm leading-relaxed border-0 bg-card/50 rounded-xl p-3 pr-16 focus-visible:ring-1"
+          className="min-h-[180px] resize-none text-base leading-relaxed border-0 bg-card/50 rounded-xl p-4 pr-16 focus-visible:ring-1"
           autoFocus
         />
         {value && (
@@ -61,7 +61,7 @@ export const TranslationBox = memo(({
   return (
     <div className="relative">
       <div 
-        className="min-h-[160px] text-sm leading-relaxed border-0 bg-muted/30 rounded-xl p-3 pr-16 select-text"
+        className="min-h-[180px] text-base leading-relaxed border-0 bg-muted/30 rounded-xl p-4 pr-16 select-text"
         style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
         onMouseUp={onTextSelect}
       >

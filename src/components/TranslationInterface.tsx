@@ -266,8 +266,8 @@ export const TranslationInterface = () => {
         <div className="max-w-3xl mx-auto px-3 py-2 flex items-center justify-between">
           <h1 className="text-base font-medium text-foreground">Translate</h1>
           <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-            <SelectTrigger className="w-[120px] h-8 border-0 bg-transparent gap-1.5 text-xs">
-              <Globe className="h-3.5 w-3.5" />
+            <SelectTrigger className="w-[130px] h-9 border-0 bg-transparent gap-1.5 text-sm">
+              <Globe className="h-4 w-4" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -287,7 +287,7 @@ export const TranslationInterface = () => {
             <select
               value={sourceLang}
               onChange={(e) => setSourceLang(e.target.value as "ko" | "ja" | "en")}
-              className="px-3 py-1.5 rounded-lg bg-card/50 text-xs font-medium text-foreground border-0 cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
             >
               <option value="ko">{t("korean")}</option>
               <option value="ja">{t("japanese")}</option>
@@ -306,7 +306,7 @@ export const TranslationInterface = () => {
             <select
               value={targetLang}
               onChange={(e) => setTargetLang(e.target.value as "ko" | "ja" | "en")}
-              className="px-3 py-1.5 rounded-lg bg-card/50 text-xs font-medium text-foreground border-0 cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-card/50 text-sm font-medium text-foreground border-0 cursor-pointer"
             >
               <option value="ko">{t("korean")}</option>
               <option value="ja">{t("japanese")}</option>

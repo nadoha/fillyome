@@ -53,7 +53,7 @@ export const RecentTranslationItem = memo(({
         <div className="space-y-0.5">
           <div className="flex items-start gap-1.5 group/text">
             <p 
-              className="text-sm text-foreground/90 leading-relaxed flex-1 select-text"
+              className="text-base text-foreground/90 leading-relaxed flex-1 select-text"
               onMouseUp={(e) => onTextSelect(e, translation.source_lang, translation.source_text)}
             >
               {translation.source_text}
@@ -76,7 +76,7 @@ export const RecentTranslationItem = memo(({
         <div className="space-y-0.5">
           <div className="flex items-start gap-1.5 group/text">
             <p 
-              className="text-sm text-primary/80 leading-relaxed font-medium flex-1 select-text"
+              className="text-base text-primary/80 leading-relaxed font-medium flex-1 select-text"
               onMouseUp={(e) => onTextSelect(e, translation.target_lang, translation.target_text)}
             >
               {translation.target_text}
@@ -110,7 +110,7 @@ export const RecentTranslationItem = memo(({
             {showLiteral && (
               <div className="mt-1 pl-2 border-l border-primary/20 bg-primary/5 -ml-2 py-1.5 pr-2">
                 <p 
-                  className="text-xs text-foreground/70 leading-relaxed select-text"
+                  className="text-sm text-foreground/70 leading-relaxed select-text"
                   onMouseUp={(e) => onTextSelect(e, translation.target_lang, translation.literal_translation || "")}
                 >
                   {translation.literal_translation}

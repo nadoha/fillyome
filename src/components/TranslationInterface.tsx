@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { ArrowLeftRight, Star, Trash2, ThumbsUp, ThumbsDown } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { ArrowLeftRight, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Translation {
   id: string;
@@ -32,36 +31,10 @@ export const TranslationInterface = () => {
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
-  const [showConsentDialog, setShowConsentDialog] = useState(false);
 
   // Fetch recent translations from localStorage on mount
   useEffect(() => {
     fetchRecentTranslations();
-    
-    // 동의 여부 확인
-    const consent = localStorage.getItem('dataCollectionConsent');
-    if (consent === null) {
-      setShowConsentDialog(true);
-    }
-  }, []);
-
-  const handleConsent = useCallback((agreed: boolean) => {
-    localStorage.setItem('dataCollectionConsent', agreed ? 'true' : 'false');
-    setShowConsentDialog(false);
-    
-    if (agreed) {
-      toast.success("동의 완료", {
-        description: "서비스 개선을 위한 데이터 수집에 동의하셨습니다.",
-      });
-    } else {
-      toast.info("동의 거부", {
-        description: "피드백 기능이 제한됩니다. 번역은 정상적으로 이용 가능합니다.",
-      });
-    }
-  }, []);
-
-  const hasConsent = useCallback(() => {
-    return localStorage.getItem('dataCollectionConsent') === 'true';
   }, []);
 
   const fetchRecentTranslations = useCallback(() => {
@@ -142,17 +115,6 @@ export const TranslationInterface = () => {
     }
   }, [sourceText, sourceLang, targetLang, saveToLocalStorage, fetchRecentTranslations]);
 
-  const toggleFavorite = useCallback((id: string, currentFavorite: boolean) => {
-    const stored = localStorage.getItem('translations');
-    if (stored) {
-      const translations = JSON.parse(stored);
-      const updated = translations.map((t: Translation) =>
-        t.id === id ? { ...t, is_favorite: !currentFavorite } : t
-      );
-      localStorage.setItem('translations', JSON.stringify(updated));
-      fetchRecentTranslations();
-    }
-  }, [fetchRecentTranslations]);
 
   const getLangLabel = useCallback((lang: string) => {
     return lang === "ko" ? "한국어" : "日本語";
@@ -199,15 +161,9 @@ export const TranslationInterface = () => {
   }, []);
 
   const handleFeedback = useCallback(async (translation: Translation, feedbackType: 'positive' | 'negative') => {
-    if (!hasConsent()) {
-      toast.error("피드백 제한", {
-        description: "데이터 수집에 동의하셔야 피드백을 제출할 수 있습니다.",
-      });
-      return;
-    }
-
+    // Silent feedback submission - no success toast, only log errors
     try {
-      const { error } = await supabase
+      await supabase
         .from("translation_feedback")
         .insert({
           translation_id: translation.id,
@@ -216,48 +172,14 @@ export const TranslationInterface = () => {
           literal_translation: translation.literal_translation,
           feedback_type: feedbackType,
         });
-
-      if (error) throw error;
-
-      toast.success(feedbackType === 'positive' ? "피드백 감사합니다!" : "피드백이 전송되었습니다");
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      toast.error("피드백 제출 중 오류가 발생했습니다.");
+      console.error('Feedback submission failed silently:', error);
+      // No user notification - fail silently as per requirement
     }
-  }, [hasConsent]);
+  }, []);
 
   return (
-    <>
-      <AlertDialog open={showConsentDialog} onOpenChange={setShowConsentDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>데이터 수집 및 이용 동의</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                번역 서비스 개선 및 AI 학습을 위해 다음 데이터를 수집합니다:
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>번역 요청 원문 및 번역 결과</li>
-                <li>사용자 피드백 (좋아요/어색해요)</li>
-                <li>서비스 이용 기록</li>
-              </ul>
-              <p className="text-sm">
-                동의하지 않으셔도 번역 기능은 정상적으로 이용 가능하나, 피드백 제출이 제한됩니다.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => handleConsent(false)}>
-              동의하지 않음
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleConsent(true)}>
-              동의함
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Main Translation Area */}
       <main className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-3xl space-y-5">
@@ -318,7 +240,7 @@ export const TranslationInterface = () => {
         <aside className="border-t bg-muted/20">
           <div className="max-w-3xl mx-auto px-4 py-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">최근 기록</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">최근 3개</h3>
               {selectedIds.size > 0 && (
                 <Button
                   variant="ghost"
@@ -327,7 +249,7 @@ export const TranslationInterface = () => {
                   className="h-7 px-3 text-xs text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-3 w-3 mr-1.5" />
-                  삭제 ({selectedIds.size})
+                  선택 삭제 ({selectedIds.size})
                 </Button>
               )}
             </div>
@@ -342,90 +264,91 @@ export const TranslationInterface = () => {
                     onCheckedChange={() => toggleSelect(t.id)}
                     className="mt-0.5"
                   />
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <div className="space-y-1">
+                  <div className="flex-1 min-w-0 space-y-2.5">
+                    {/* Source text with romanization */}
+                    <div className="space-y-0.5">
                       <p className="text-[15px] text-foreground leading-relaxed">{t.source_text}</p>
                       {t.source_romanization && (
                         <p className="text-xs text-muted-foreground/60 italic">{t.source_romanization}</p>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[15px] text-muted-foreground leading-relaxed">{t.target_text}</p>
+
+                    {/* Natural translation with romanization */}
+                    <div className="space-y-0.5">
+                      <p className="text-[15px] text-primary/90 leading-relaxed font-medium">{t.target_text}</p>
                       {t.target_romanization && (
                         <p className="text-xs text-muted-foreground/60 italic">{t.target_romanization}</p>
                       )}
                     </div>
+
+                    {/* Literal translation toggle - clearly visible */}
+                    {t.literal_translation && (
+                      <div className="pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleLiteral(t.id)}
+                          className="h-8 px-3 text-xs font-medium border-primary/20 hover:bg-primary/5"
+                        >
+                          {showLiteral[t.id] ? (
+                            <>
+                              <ChevronUp className="h-3 w-3 mr-1.5" />
+                              직역 숨기기
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-3 w-3 mr-1.5" />
+                              직역 보기
+                            </>
+                          )}
+                        </Button>
+                        
+                        {showLiteral[t.id] && (
+                          <div className="mt-2 pl-3 border-l-2 border-primary/20 bg-primary/5 -ml-3 py-2 pr-3">
+                            <p className="text-xs text-foreground/80 leading-relaxed">
+                              {t.literal_translation}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                       
-                    <div className="flex items-center gap-2 pt-0.5">
+                    {/* Feedback buttons - simple and clear */}
+                    <div className="flex items-center gap-2 pt-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleFeedback(t, 'positive')}
-                        className="h-7 px-2.5 text-xs hover:bg-muted"
+                        className="h-8 px-3 text-xs hover:bg-green-500/10"
                       >
-                        <ThumbsUp className="h-3 w-3 mr-1" />
-                        좋아요
+                        👍 Good
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleFeedback(t, 'negative')}
-                        className="h-7 px-2.5 text-xs hover:bg-muted"
+                        className="h-8 px-3 text-xs hover:bg-orange-500/10"
                       >
-                        <ThumbsDown className="h-3 w-3 mr-1" />
-                        어색해요
+                        👎 Feels off
                       </Button>
-                      {t.literal_translation && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleLiteral(t.id)}
-                          className="h-7 px-2.5 text-xs hover:bg-muted"
-                        >
-                          {showLiteral[t.id] ? "직역 숨기기" : "직역 보기"}
-                        </Button>
-                      )}
                     </div>
+                  </div>
 
-                    {showLiteral[t.id] && t.literal_translation && (
-                      <div className="pl-3 border-l-2 border-muted mt-2">
-                        <p className="text-xs text-muted-foreground italic leading-relaxed">
-                          {t.literal_translation}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => toggleFavorite(t.id, t.is_favorite)}
-                    >
-                      <Star
-                        className={`h-4 w-4 transition-colors ${
-                          t.is_favorite
-                            ? "fill-accent text-accent"
-                            : "text-muted-foreground group-hover:text-foreground"
-                        }`}
-                      />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(t.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                  {/* Delete button only */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={() => handleDelete(t.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               ))}
             </div>
           </div>
         </aside>
       )}
-      </div>
-    </>
+    </div>
   );
 };

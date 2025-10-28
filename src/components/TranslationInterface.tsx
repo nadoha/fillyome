@@ -244,17 +244,21 @@ export const TranslationInterface = () => {
       else if (detected === "tur") detectedLang = "tr";
 
       if (detectedLang && detectedLang !== sourceLang) {
+        let newTargetLang: typeof targetLang;
+        if (detectedLang === "ko") newTargetLang = "en";
+        else if (detectedLang === "ja") newTargetLang = "ko";
+        else if (detectedLang === "en") newTargetLang = "ko";
+        else if (detectedLang === "zh") newTargetLang = "en";
+        else newTargetLang = "en";
+        
         setSourceLang(detectedLang);
-        if (detectedLang === "ko") setTargetLang("en");
-        else if (detectedLang === "ja") setTargetLang("ko");
-        else if (detectedLang === "en") setTargetLang("ko");
-        else if (detectedLang === "zh") setTargetLang("en");
-        else setTargetLang("en"); // Default target for other languages
+        setTargetLang(newTargetLang);
+        updateLanguagePair(detectedLang, newTargetLang);
       }
     }, 300);
 
     return () => clearTimeout(detectTimer);
-  }, [sourceText, sourceLang]);
+  }, [sourceText, sourceLang, updateLanguagePair]);
 
   // Auto-translate with debounce
   useEffect(() => {

@@ -87,8 +87,8 @@ serve(async (req) => {
       tr: "Turkish"
     };
 
-    // SPEED OPTIMIZED: Ultra-minimal prompt + reduced token overhead
-    const systemPrompt = `${langNames[sourceLang]} → ${langNames[targetLang]}. Natural translation.`;
+    // BALANCED: Natural translation with speed optimization
+    const systemPrompt = `Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}. Provide a natural, idiomatic translation that captures the meaning and tone. Preserve emoticons and formatting.`;
 
     const needsRom = (lang: string) => ['ja', 'ko', 'zh', 'ru', 'ar', 'th', 'hi'].includes(lang);
 
@@ -109,13 +109,26 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "translate",
+              description: "Provide natural translation with context",
               parameters: {
                 type: "object",
                 properties: {
-                  translation: { type: "string" },
-                  literal: { type: "string" },
-                  source_rom: { type: "string", description: needsRom(sourceLang) ? "romanization" : "" },
-                  target_rom: { type: "string", description: needsRom(targetLang) ? "romanization" : "" }
+                  translation: { 
+                    type: "string", 
+                    description: "Natural, fluent translation that sounds native. Adapt idioms and expressions appropriately." 
+                  },
+                  literal: { 
+                    type: "string", 
+                    description: "Word-by-word literal translation for learning purposes" 
+                  },
+                  source_rom: { 
+                    type: "string", 
+                    description: needsRom(sourceLang) ? "Romanization of source text" : "Empty string" 
+                  },
+                  target_rom: { 
+                    type: "string", 
+                    description: needsRom(targetLang) ? "Romanization of target text" : "Empty string" 
+                  }
                 },
                 required: ["translation", "literal", "source_rom", "target_rom"]
               }

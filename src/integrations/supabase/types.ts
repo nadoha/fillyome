@@ -67,7 +67,7 @@ export type Database = {
           target_lang: string
           target_romanization: string | null
           target_text: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           content_classification?: string | null
@@ -83,7 +83,7 @@ export type Database = {
           target_lang: string
           target_romanization?: string | null
           target_text: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           content_classification?: string | null
@@ -99,7 +99,7 @@ export type Database = {
           target_lang?: string
           target_romanization?: string | null
           target_text?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }

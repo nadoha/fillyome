@@ -13,9 +13,42 @@ serve(async (req) => {
   try {
     const { text, sourceLang, targetLang } = await req.json();
     
+    // Input validation
     if (!text || !sourceLang || !targetLang) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    // Validate text length
+    if (typeof text !== 'string' || text.length < 1) {
+      return new Response(
+        JSON.stringify({ error: "Text must be at least 1 character" }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    if (text.length > 5000) {
+      return new Response(
+        JSON.stringify({ error: "Text must be less than 5000 characters" }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    // Validate language codes
+    if (typeof sourceLang !== 'string' || typeof targetLang !== 'string') {
+      return new Response(
+        JSON.stringify({ error: "Invalid language codes" }), 
         { 
           status: 400, 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 

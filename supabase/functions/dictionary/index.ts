@@ -12,6 +12,61 @@ serve(async (req) => {
 
   try {
     const { word, lang, context, userLang } = await req.json();
+    
+    // Input validation
+    if (!word || !lang) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: word and lang are required" }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    // Validate word length
+    if (typeof word !== 'string' || word.length < 1) {
+      return new Response(
+        JSON.stringify({ error: "Word must be at least 1 character" }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    if (word.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Word must be less than 100 characters" }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    // Validate context length if provided
+    if (context && typeof context === 'string' && context.length > 500) {
+      return new Response(
+        JSON.stringify({ error: "Context must be less than 500 characters" }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    // Validate language codes
+    if (typeof lang !== 'string' || (userLang && typeof userLang !== 'string')) {
+      return new Response(
+        JSON.stringify({ error: "Invalid language codes" }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {

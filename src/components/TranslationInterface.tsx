@@ -516,9 +516,15 @@ export const TranslationInterface = () => {
                 <div className="flex items-center gap-2">
                   <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
                     <SelectTrigger className="w-[120px] h-9 text-sm">
-                      <SelectValue />
+                      <Globe className="h-4 w-4 mr-2" />
+                      <SelectValue>
+                        {i18n.language === 'ko' && t("korean")}
+                        {i18n.language === 'ja' && t("japanese")}
+                        {i18n.language === 'en' && t("english")}
+                        {i18n.language === 'zh' && t("chinese")}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background border-border z-50">
                       <SelectItem value="ko">{t("korean")}</SelectItem>
                       <SelectItem value="ja">{t("japanese")}</SelectItem>
                       <SelectItem value="en">{t("english")}</SelectItem>

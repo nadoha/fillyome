@@ -385,6 +385,12 @@ export const TranslationInterface = () => {
   }, []);
 
   const handleFeedback = useCallback(async (translation: Translation, feedbackType: 'positive' | 'negative') => {
+    // Require authentication for feedback submission
+    if (!user) {
+      toast.error(t("loginRequired"));
+      return;
+    }
+
     try {
       console.log('Submitting feedback:', {
         translation_id: translation.id,
@@ -392,6 +398,7 @@ export const TranslationInterface = () => {
         natural_translation: translation.target_text,
         literal_translation: translation.literal_translation,
         feedback_type: feedbackType,
+        user_id: user.id,
       });
 
       const { data, error } = await supabase
@@ -401,6 +408,7 @@ export const TranslationInterface = () => {
           natural_translation: translation.target_text,
           literal_translation: translation.literal_translation,
           feedback_type: feedbackType,
+          user_id: user.id,
         })
         .select();
 
@@ -415,7 +423,7 @@ export const TranslationInterface = () => {
       console.error('Feedback submission failed:', error);
       toast.error(t("feedbackError"));
     }
-  }, [t]);
+  }, [t, user]);
 
   const handleCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text);

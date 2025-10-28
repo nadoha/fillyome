@@ -33,6 +33,7 @@
   "feedbackThanks": "感谢您的反馈！",
   "feedbackReceived": "已收到反馈",
   "feedbackError": "反馈发送失败",
+  "loginRequired": "请登录以提交反馈",
   "login": "登录",
   "signup": "注册",
   "logout": "登出",

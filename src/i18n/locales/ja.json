@@ -33,6 +33,7 @@
   "feedbackThanks": "フィードバックありがとうございます！",
   "feedbackReceived": "フィードバックを受け付けました",
   "feedbackError": "フィードバックの送信に失敗しました",
+  "loginRequired": "フィードバックを送信するにはログインしてください",
   "login": "ログイン",
   "signup": "新規登録",
   "logout": "ログアウト",

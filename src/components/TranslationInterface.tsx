@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ArrowLeftRight, Trash2, Globe } from "lucide-react";
+import { ArrowLeftRight, Menu, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { franc } from "franc-min";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,11 @@ import { useDictionary } from "@/hooks/useDictionary";
 import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
-import { RecentTranslationItem } from "./RecentTranslationItem";
 import { LanguageSelector } from "./LanguageSelector";
 import { ThemeToggle } from "./ThemeToggle";
 import { AuthHeader } from "./AuthHeader";
+import { AppSidebar } from "./AppSidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
 
 interface Translation {
@@ -73,7 +74,7 @@ export const TranslationInterface = () => {
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(3);
+          .limit(50);
         
         if (error) throw error;
         setRecentTranslations(data || []);
@@ -85,7 +86,7 @@ export const TranslationInterface = () => {
       const stored = localStorage.getItem('translations');
       if (stored) {
         const translations = JSON.parse(stored);
-        setRecentTranslations(translations.slice(0, 3));
+        setRecentTranslations(translations.slice(0, 50));
       }
     }
   }, [user]);
@@ -292,8 +293,6 @@ export const TranslationInterface = () => {
     loadTranslations();
   }, [loadTranslations]);
 
-
-
   const handleDelete = useCallback(async (id: string) => {
     if (user) {
       // Delete from database
@@ -385,12 +384,6 @@ export const TranslationInterface = () => {
   }, []);
 
   const handleFeedback = useCallback(async (translation: Translation, feedbackType: 'positive' | 'negative') => {
-    // Require authentication for feedback submission
-    if (!user) {
-      toast.error(t("loginRequired"));
-      return;
-    }
-
     try {
       console.log('Submitting feedback:', {
         translation_id: translation.id,
@@ -398,7 +391,7 @@ export const TranslationInterface = () => {
         natural_translation: translation.target_text,
         literal_translation: translation.literal_translation,
         feedback_type: feedbackType,
-        user_id: user.id,
+        user_id: user?.id || null,
       });
 
       const { data, error } = await supabase
@@ -408,7 +401,7 @@ export const TranslationInterface = () => {
           natural_translation: translation.target_text,
           literal_translation: translation.literal_translation,
           feedback_type: feedbackType,
-          user_id: user.id,
+          user_id: user?.id || null,
         })
         .select();
 
@@ -435,7 +428,6 @@ export const TranslationInterface = () => {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Set language based on lang parameter
       const langMap: Record<string, string> = {
         ko: 'ko-KR',
         ja: 'ja-JP',
@@ -488,185 +480,158 @@ export const TranslationInterface = () => {
   }, [resetDictionary]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border/30 bg-card/20 backdrop-blur-sm sticky top-0 z-10 animate-slide-up">
-        <div className="max-w-5xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-foreground">Translate</h1>
-          <div className="flex items-center gap-2">
-            <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-              <SelectTrigger className="w-[130px] h-9 border-0 bg-transparent gap-1.5 text-sm hover:bg-accent/50 transition-colors">
-                <Globe className="h-4 w-4" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ko">{t("korean")}</SelectItem>
-                <SelectItem value="ja">{t("japanese")}</SelectItem>
-                <SelectItem value="en">{t("english")}</SelectItem>
-                <SelectItem value="zh">{t("chinese")}</SelectItem>
-              </SelectContent>
-            </Select>
-            <ThemeToggle />
-            <AuthHeader />
-          </div>
-        </div>
-      </header>
+    <SidebarProvider defaultOpen={false}>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-background to-muted/20">
+        <AppSidebar
+          recentTranslations={recentTranslations}
+          selectedIds={selectedIds}
+          showLiteral={showLiteral}
+          onToggleSelect={toggleSelect}
+          onToggleLiteral={toggleLiteral}
+          onDelete={handleDelete}
+          onBulkDelete={handleBulkDelete}
+          onCopy={handleCopy}
+          onSpeak={handleSpeak}
+          onTextSelect={handleTextSelection}
+          onFeedback={handleFeedback}
+          noRomanizationLangs={noRomanizationLangs}
+        />
 
-      {/* Main */}
-      <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 animate-fade-in">
-        <div className="w-full max-w-5xl space-y-4 sm:space-y-6">
-          {/* Language Selector */}
-          <div className="flex items-center justify-center gap-2 sm:gap-3 animate-scale-in">
-            <LanguageSelector
-              value={sourceLang}
-              onChange={(newLang) => {
-                setSourceLang(newLang as any);
-                updateLanguagePair(newLang, targetLang);
-              }}
-              recentPairs={recentLangPairs}
-              type="source"
-            />
-            
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={swapLanguages}
-              className="h-9 w-9 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300"
-            >
-              <ArrowLeftRight className="h-4 w-4" />
-            </Button>
-            
-            <LanguageSelector
-              value={targetLang}
-              onChange={(newLang) => {
-                setTargetLang(newLang as any);
-                updateLanguagePair(sourceLang, newLang);
-              }}
-              recentPairs={recentLangPairs}
-              type="target"
-            />
-          </div>
-
-          {/* Translation Boxes */}
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
-              <TranslationBox
-                value={sourceText}
-                onChange={setSourceText}
-                onCopy={() => handleCopy(sourceText)}
-                onSpeak={() => handleSpeak(sourceText, sourceLang)}
-                placeholder={t("enterText")}
-                isEditable
-                romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
-              />
-              
-              <TranslationResultBox
-                naturalTranslation={targetText}
-                literalTranslation={literalTranslation}
-                romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
-                onCopy={() => handleCopy(targetText)}
-                onSpeak={() => handleSpeak(targetText, targetLang)}
-                onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
-                onFeedback={(type) => {
-                  if (targetText) {
-                    handleFeedback({
-                      id: crypto.randomUUID(),
-                      source_text: sourceText,
-                      target_text: targetText,
-                      source_lang: sourceLang,
-                      target_lang: targetLang,
-                      is_favorite: false,
-                      created_at: new Date().toISOString(),
-                      content_classification: 'safe',
-                      masked_source_text: null,
-                      masked_target_text: null,
-                      source_romanization: sourceRomanization,
-                      target_romanization: targetRomanization,
-                      literal_translation: literalTranslation
-                    }, type);
-                  }
-                }}
-                placeholder={`${t("translate")}...`}
-                isTranslating={isTranslating}
-              />
+        <div className="flex-1 flex flex-col">
+          <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
+            <div className="max-w-5xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
+              <div className="flex items-center justify-between gap-2 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <SidebarTrigger className="h-9 w-9" />
+                  <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    번역기
+                  </h1>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
+                    <SelectTrigger className="w-[120px] h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ko">{t("korean")}</SelectItem>
+                      <SelectItem value="ja">{t("japanese")}</SelectItem>
+                      <SelectItem value="en">{t("english")}</SelectItem>
+                      <SelectItem value="zh">{t("chinese")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <ThemeToggle />
+                  <AuthHeader />
+                </div>
+              </div>
             </div>
-            
-            {/* Translate Button */}
-            <div className="flex justify-center">
-              <Button
-                onClick={handleTranslate}
-                disabled={!sourceText.trim() || isTranslating}
-                className="w-full md:w-auto px-8 py-5 text-base font-semibold"
-                size="lg"
-              >
-                {isTranslating ? (
-                  <>
-                    <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
-                    {t("translating")}
-                  </>
-                ) : (
-                  t("translate")
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </main>
+          </header>
 
-      {/* Recent */}
-      {recentTranslations.length > 0 && (
-        <aside className="border-t border-border/30 bg-muted/10 backdrop-blur-sm animate-slide-up">
-          <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-muted-foreground">{t("recent3")}</h3>
-              {selectedIds.size > 0 && (
+          <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 animate-fade-in">
+            <div className="w-full max-w-5xl space-y-4 sm:space-y-6">
+              <div className="flex items-center justify-center gap-2 sm:gap-3 animate-scale-in">
+                <LanguageSelector
+                  value={sourceLang}
+                  onChange={(newLang) => {
+                    setSourceLang(newLang as any);
+                    updateLanguagePair(newLang, targetLang);
+                  }}
+                  recentPairs={recentLangPairs}
+                  type="source"
+                />
+                
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                  className="h-7 px-3 text-xs text-destructive hover:bg-destructive/10 transition-colors"
+                  variant="outline"
+                  size="icon"
+                  onClick={swapLanguages}
+                  className="h-9 w-9 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300"
                 >
-                  <Trash2 className="h-3 w-3 mr-1.5" />
-                  {t("bulkDelete")} ({selectedIds.size})
+                  <ArrowLeftRight className="h-4 w-4" />
                 </Button>
-              )}
-            </div>
-            <div className="space-y-2">
-              {recentTranslations.map((translation, index) => (
-                <div 
-                  key={translation.id}
-                  style={{ animationDelay: `${index * 50}ms` }}
-                  className="animate-fade-in"
-                >
-                  <RecentTranslationItem
-                    translation={translation}
-                    isSelected={selectedIds.has(translation.id)}
-                    showLiteral={showLiteral[translation.id] || false}
-                    onToggleSelect={() => toggleSelect(translation.id)}
-                    onToggleLiteral={() => toggleLiteral(translation.id, translation.source_lang, translation.target_lang)}
-                    onDelete={() => handleDelete(translation.id)}
-                    onCopy={handleCopy}
-                    onSpeak={handleSpeak}
-                    onTextSelect={handleTextSelection}
-                    onFeedback={(type) => handleFeedback(translation, type)}
-                    noRomanization={noRomanizationLangs.includes(translation.source_lang) && noRomanizationLangs.includes(translation.target_lang)}
-                    t={t}
+                
+                <LanguageSelector
+                  value={targetLang}
+                  onChange={(newLang) => {
+                    setTargetLang(newLang as any);
+                    updateLanguagePair(sourceLang, newLang);
+                  }}
+                  recentPairs={recentLangPairs}
+                  type="target"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
+                  <TranslationBox
+                    value={sourceText}
+                    onChange={setSourceText}
+                    onCopy={() => handleCopy(sourceText)}
+                    onSpeak={() => handleSpeak(sourceText, sourceLang)}
+                    placeholder={t("enterText")}
+                    isEditable
+                    romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
+                  />
+                  
+                  <TranslationResultBox
+                    naturalTranslation={targetText}
+                    literalTranslation={literalTranslation}
+                    romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
+                    onCopy={() => handleCopy(targetText)}
+                    onSpeak={() => handleSpeak(targetText, targetLang)}
+                    onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
+                    onFeedback={(type) => {
+                      if (targetText) {
+                        handleFeedback({
+                          id: crypto.randomUUID(),
+                          source_text: sourceText,
+                          target_text: targetText,
+                          source_lang: sourceLang,
+                          target_lang: targetLang,
+                          is_favorite: false,
+                          created_at: new Date().toISOString(),
+                          content_classification: 'safe',
+                          masked_source_text: null,
+                          masked_target_text: null,
+                          source_romanization: sourceRomanization,
+                          target_romanization: targetRomanization,
+                          literal_translation: literalTranslation
+                        }, type);
+                      }
+                    }}
+                    placeholder={`${t("translate")}...`}
+                    isTranslating={isTranslating}
                   />
                 </div>
-              ))}
+                
+                <div className="flex justify-center">
+                  <Button
+                    onClick={handleTranslate}
+                    disabled={!sourceText.trim() || isTranslating}
+                    className="w-full md:w-auto px-8 py-5 text-base font-semibold"
+                    size="lg"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                        {t("translating")}
+                      </>
+                    ) : (
+                      t("translate")
+                    )}
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </aside>
-      )}
+          </main>
 
-      {/* Dictionary Sheet */}
-      <DictionarySheet
-        isOpen={isDictionaryOpen}
-        onClose={closeDictionary}
-        word={currentWord}
-        entry={currentEntry}
-        isLoading={isDictionaryLoading}
-      />
-    </div>
+          <DictionarySheet
+            isOpen={isDictionaryOpen}
+            onClose={closeDictionary}
+            word={currentWord}
+            entry={currentEntry}
+            isLoading={isDictionaryLoading}
+          />
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };

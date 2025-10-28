@@ -87,25 +87,10 @@ serve(async (req) => {
       tr: "Turkish"
     };
 
-    // SPEED OPTIMIZED: Faster model + simplified prompt
-    const systemPrompt = `Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}. Use natural expressions and preserve emoticons.`;
+    // SPEED OPTIMIZED: Ultra-minimal prompt + reduced token overhead
+    const systemPrompt = `${langNames[sourceLang]} → ${langNames[targetLang]}. Natural translation.`;
 
-    const getRomanization = (lang: string) => {
-      const map: Record<string, string> = {
-        ja: "Hepburn romanization (standard Japanese romanization)", 
-        ko: "Revised Romanization of Korean (RR)", 
-        zh: "Pinyin", 
-        ru: "standard romanization", 
-        ar: "standard romanization", 
-        th: "standard romanization", 
-        hi: "Devanagari romanization"
-      };
-      return map[lang] || "";
-    };
-    
-    const needsRomanization = (lang: string) => {
-      return ['ja', 'ko', 'zh', 'ru', 'ar', 'th', 'hi'].includes(lang);
-    };
+    const needsRom = (lang: string) => ['ja', 'ko', 'zh', 'ru', 'ar', 'th', 'hi'].includes(lang);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -124,27 +109,15 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "translate",
-              description: "Translate text with romanization",
               parameters: {
                 type: "object",
                 properties: {
-                  translation: { type: "string", description: "Natural, fluent translation" },
-                  literal: { type: "string", description: "Word-by-word literal translation" },
-                  source_rom: { 
-                    type: "string", 
-                    description: needsRomanization(sourceLang) 
-                      ? `${getRomanization(sourceLang)} - ONLY if source language needs romanization, otherwise empty string` 
-                      : "Empty string - source language uses Latin alphabet"
-                  },
-                  target_rom: { 
-                    type: "string", 
-                    description: needsRomanization(targetLang)
-                      ? `${getRomanization(targetLang)} - ONLY if target language needs romanization, otherwise empty string`
-                      : "Empty string - target language uses Latin alphabet"
-                  }
+                  translation: { type: "string" },
+                  literal: { type: "string" },
+                  source_rom: { type: "string", description: needsRom(sourceLang) ? "romanization" : "" },
+                  target_rom: { type: "string", description: needsRom(targetLang) ? "romanization" : "" }
                 },
-                required: ["translation", "literal", "source_rom", "target_rom"],
-                additionalProperties: false
+                required: ["translation", "literal", "source_rom", "target_rom"]
               }
             }
           }

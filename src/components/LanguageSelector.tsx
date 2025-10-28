@@ -7,13 +7,15 @@ interface LanguageSelectorProps {
   onChange: (value: string) => void;
   recentPairs: Array<{ source: string; target: string }>;
   type: "source" | "target";
+  showAutoDetect?: boolean;
 }
 
 export const LanguageSelector = memo(({
   value,
   onChange,
   recentPairs,
-  type
+  type,
+  showAutoDetect = false
 }: LanguageSelectorProps) => {
   const { t } = useTranslation();
 
@@ -41,9 +43,14 @@ export const LanguageSelector = memo(({
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-[160px] h-10 bg-card/50 border border-border font-medium transition-all hover:bg-card/80">
-        <SelectValue>{selectedLang?.label || value}</SelectValue>
+        <SelectValue>
+          {selectedLang?.label || value}
+          {showAutoDetect && type === "source" && (
+            <span className="ml-2 text-xs text-muted-foreground">(자동)</span>
+          )}
+        </SelectValue>
       </SelectTrigger>
-      <SelectContent className="max-h-[400px]">
+      <SelectContent className="max-h-[400px] bg-background border-border z-50">
         {recentPairs.length > 0 && (
           <>
             <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">

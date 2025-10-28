@@ -219,13 +219,14 @@ export const TranslationInterface = () => {
     }
   }, [sourceText, sourceLang, targetLang, saveTranslation]);
 
-  // Auto-detect language
+  // Auto-detect language with improved sensitivity
   useEffect(() => {
-    if (sourceText.trim().length < 3) return;
+    if (sourceText.trim().length < 2) return;
 
     const detectTimer = setTimeout(() => {
-      const detected = franc(sourceText);
+      const detected = franc(sourceText, { minLength: 2 });
       let detectedLang: "ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr" | null = null;
+      
       if (detected === "kor") detectedLang = "ko";
       else if (detected === "jpn") detectedLang = "ja";
       else if (detected === "eng") detectedLang = "en";
@@ -254,8 +255,9 @@ export const TranslationInterface = () => {
         setSourceLang(detectedLang);
         setTargetLang(newTargetLang);
         updateLanguagePair(detectedLang, newTargetLang);
+        toast.success(`${detectedLang.toUpperCase()} 자동 감지됨`, { duration: 1500 });
       }
-    }, 300);
+    }, 200);
 
     return () => clearTimeout(detectTimer);
   }, [sourceText, sourceLang, updateLanguagePair]);
@@ -541,6 +543,7 @@ export const TranslationInterface = () => {
                   }}
                   recentPairs={recentLangPairs}
                   type="source"
+                  showAutoDetect={sourceText.trim().length >= 2}
                 />
                 
                 <Button

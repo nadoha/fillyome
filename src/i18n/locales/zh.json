@@ -32,5 +32,22 @@
   "copied": "已复制！",
   "feedbackThanks": "感谢您的反馈！",
   "feedbackReceived": "已收到反馈",
-  "feedbackError": "反馈发送失败"
+  "feedbackError": "反馈发送失败",
+  "login": "登录",
+  "signup": "注册",
+  "logout": "登出",
+  "email": "电子邮件",
+  "password": "密码",
+  "loginSuccess": "登录成功！",
+  "signupSuccess": "注册成功！请登录。",
+  "authError": "发生身份验证错误",
+  "loginDescription": "登录以保存您的翻译历史记录",
+  "signupDescription": "创建帐户以保存您的翻译历史记录",
+  "needAccount": "没有帐户？注册",
+  "haveAccount": "已有帐户？登录",
+  "useWithoutLogin": "不登录使用",
+  "logoutSuccess": "已登出",
+  "saveFailed": "保存翻译失败",
+  "deleteFailed": "删除失败",
+  "loading": "处理中..."
 }

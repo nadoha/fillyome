@@ -32,5 +32,22 @@
   "copied": "Copied!",
   "feedbackThanks": "Thanks for your feedback!",
   "feedbackReceived": "Feedback received",
-  "feedbackError": "Failed to send feedback"
+  "feedbackError": "Failed to send feedback",
+  "login": "Login",
+  "signup": "Sign Up",
+  "logout": "Logout",
+  "email": "Email",
+  "password": "Password",
+  "loginSuccess": "Login successful!",
+  "signupSuccess": "Sign up successful! Please log in.",
+  "authError": "Authentication error occurred",
+  "loginDescription": "Login to save your translation history",
+  "signupDescription": "Create an account to save your translation history",
+  "needAccount": "Don't have an account? Sign up",
+  "haveAccount": "Already have an account? Login",
+  "useWithoutLogin": "Use without login",
+  "logoutSuccess": "Logged out",
+  "saveFailed": "Failed to save translation",
+  "deleteFailed": "Failed to delete",
+  "loading": "Processing..."
 }

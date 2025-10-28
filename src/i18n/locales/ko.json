@@ -32,5 +32,22 @@
   "copied": "복사됨!",
   "feedbackThanks": "피드백 감사합니다!",
   "feedbackReceived": "피드백이 접수되었습니다",
-  "feedbackError": "피드백 전송에 실패했습니다"
+  "feedbackError": "피드백 전송에 실패했습니다",
+  "login": "로그인",
+  "signup": "회원가입",
+  "logout": "로그아웃",
+  "email": "이메일",
+  "password": "비밀번호",
+  "loginSuccess": "로그인 성공!",
+  "signupSuccess": "회원가입 성공! 로그인해주세요.",
+  "authError": "인증 오류가 발생했습니다",
+  "loginDescription": "계정에 로그인하여 번역 기록을 저장하세요",
+  "signupDescription": "새 계정을 만들어 번역 기록을 저장하세요",
+  "needAccount": "계정이 없으신가요? 회원가입",
+  "haveAccount": "이미 계정이 있으신가요? 로그인",
+  "useWithoutLogin": "로그인 없이 사용하기",
+  "logoutSuccess": "로그아웃되었습니다",
+  "saveFailed": "번역 저장 실패",
+  "deleteFailed": "삭제 실패",
+  "loading": "처리 중..."
 }

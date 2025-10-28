@@ -32,5 +32,22 @@
   "copied": "コピーしました！",
   "feedbackThanks": "フィードバックありがとうございます！",
   "feedbackReceived": "フィードバックを受け付けました",
-  "feedbackError": "フィードバックの送信に失敗しました"
+  "feedbackError": "フィードバックの送信に失敗しました",
+  "login": "ログイン",
+  "signup": "新規登録",
+  "logout": "ログアウト",
+  "email": "メールアドレス",
+  "password": "パスワード",
+  "loginSuccess": "ログインに成功しました！",
+  "signupSuccess": "登録が完了しました！ログインしてください。",
+  "authError": "認証エラーが発生しました",
+  "loginDescription": "アカウントにログインして翻訳履歴を保存",
+  "signupDescription": "新しいアカウントを作成して翻訳履歴を保存",
+  "needAccount": "アカウントをお持ちでないですか？新規登録",
+  "haveAccount": "既にアカウントをお持ちですか？ログイン",
+  "useWithoutLogin": "ログインせずに使用",
+  "logoutSuccess": "ログアウトしました",
+  "saveFailed": "翻訳の保存に失敗しました",
+  "deleteFailed": "削除に失敗しました",
+  "loading": "処理中..."
 }

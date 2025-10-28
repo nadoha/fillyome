@@ -13,6 +13,8 @@ import { TranslationResultBox } from "./TranslationResultBox";
 import { RecentTranslationItem } from "./RecentTranslationItem";
 import { LanguageSelector } from "./LanguageSelector";
 import { ThemeToggle } from "./ThemeToggle";
+import { AuthHeader } from "./AuthHeader";
+import { User } from "@supabase/supabase-js";
 
 interface Translation {
   id: string;
@@ -32,6 +34,7 @@ interface Translation {
 
 export const TranslationInterface = () => {
   const { t, i18n } = useTranslation();
+  const [user, setUser] = useState<User | null>(null);
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
   const [literalTranslation, setLiteralTranslation] = useState("");
@@ -60,28 +63,78 @@ export const TranslationInterface = () => {
   // Languages that don't need romanization (use Latin alphabet)
   const noRomanizationLangs = useMemo(() => ['en', 'es', 'fr', 'de', 'pt', 'it', 'id', 'tr', 'vi'], []);
 
-  const fetchRecentTranslations = useCallback(() => {
-    const stored = localStorage.getItem('translations');
-    if (stored) {
-      const translations = JSON.parse(stored);
-      setRecentTranslations(translations.slice(0, 3));
+  // Load translations from DB or localStorage
+  const loadTranslations = useCallback(async () => {
+    if (user) {
+      // Load from database
+      try {
+        const { data, error } = await supabase
+          .from("translations")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(3);
+        
+        if (error) throw error;
+        setRecentTranslations(data || []);
+      } catch (error) {
+        console.error("Failed to load translations:", error);
+      }
+    } else {
+      // Load from localStorage
+      const stored = localStorage.getItem('translations');
+      if (stored) {
+        const translations = JSON.parse(stored);
+        setRecentTranslations(translations.slice(0, 3));
+      }
     }
-  }, []);
+  }, [user]);
 
-  const saveToLocalStorage = useCallback((translation: Translation) => {
-    const stored = localStorage.getItem('translations');
-    const translations = stored ? JSON.parse(stored) : [];
-    
-    // Remove duplicates with same source text and language pair
-    const filtered = translations.filter((t: Translation) => 
-      !(t.source_text === translation.source_text && 
-        t.source_lang === translation.source_lang && 
-        t.target_lang === translation.target_lang)
-    );
-    
-    filtered.unshift(translation);
-    localStorage.setItem('translations', JSON.stringify(filtered));
-  }, []);
+  // Save translation to DB or localStorage
+  const saveTranslation = useCallback(async (translation: Translation) => {
+    if (user) {
+      // Save to database
+      try {
+        const { error } = await supabase
+          .from("translations")
+          .insert({
+            user_id: user.id,
+            source_text: translation.source_text,
+            target_text: translation.target_text,
+            source_lang: translation.source_lang,
+            target_lang: translation.target_lang,
+            literal_translation: translation.literal_translation,
+            source_romanization: translation.source_romanization,
+            target_romanization: translation.target_romanization,
+            is_favorite: translation.is_favorite,
+            content_classification: translation.content_classification,
+            masked_source_text: translation.masked_source_text,
+            masked_target_text: translation.masked_target_text,
+          });
+        
+        if (error) throw error;
+        await loadTranslations();
+      } catch (error) {
+        console.error("Failed to save translation:", error);
+        toast.error(t("saveFailed") || "번역 저장 실패");
+      }
+    } else {
+      // Save to localStorage
+      const stored = localStorage.getItem('translations');
+      const translations = stored ? JSON.parse(stored) : [];
+      
+      // Remove duplicates with same source text and language pair
+      const filtered = translations.filter((t: Translation) => 
+        !(t.source_text === translation.source_text && 
+          t.source_lang === translation.source_lang && 
+          t.target_lang === translation.target_lang)
+      );
+      
+      filtered.unshift(translation);
+      localStorage.setItem('translations', JSON.stringify(filtered));
+      loadTranslations();
+    }
+  }, [user, loadTranslations, t]);
 
   // Save language pair to localStorage and update recent pairs
   const updateLanguagePair = useCallback((source: string, target: string) => {
@@ -156,15 +209,14 @@ export const TranslationInterface = () => {
         masked_target_text: null,
       };
       
-      saveToLocalStorage(newTranslation);
-      fetchRecentTranslations();
+      await saveTranslation(newTranslation);
     } catch (error) {
       console.error("Translation error:", error);
       toast.error("Translation failed. Please try again.");
     } finally {
       setIsTranslating(false);
     }
-  }, [sourceText, sourceLang, targetLang, saveToLocalStorage, fetchRecentTranslations]);
+  }, [sourceText, sourceLang, targetLang, saveTranslation]);
 
   // Auto-detect language
   useEffect(() => {
@@ -220,36 +272,89 @@ export const TranslationInterface = () => {
     return () => clearTimeout(translateTimer);
   }, [sourceText, sourceLang, targetLang, handleTranslate]);
 
-  // Fetch recent translations from localStorage on mount
+  // Auth state listener
   useEffect(() => {
-    fetchRecentTranslations();
-  }, [fetchRecentTranslations]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Load translations when user changes
+  useEffect(() => {
+    loadTranslations();
+  }, [loadTranslations]);
 
 
 
-  const handleDelete = useCallback((id: string) => {
-    const stored = localStorage.getItem('translations');
-    if (stored) {
-      const translations = JSON.parse(stored);
-      const filtered = translations.filter((t: Translation) => t.id !== id);
-      localStorage.setItem('translations', JSON.stringify(filtered));
-      fetchRecentTranslations();
+  const handleDelete = useCallback(async (id: string) => {
+    if (user) {
+      // Delete from database
+      try {
+        const { error } = await supabase
+          .from("translations")
+          .delete()
+          .eq("id", id)
+          .eq("user_id", user.id);
+        
+        if (error) throw error;
+        await loadTranslations();
+      } catch (error) {
+        console.error("Failed to delete translation:", error);
+        toast.error(t("deleteFailed") || "삭제 실패");
+      }
+    } else {
+      // Delete from localStorage
+      const stored = localStorage.getItem('translations');
+      if (stored) {
+        const translations = JSON.parse(stored);
+        const filtered = translations.filter((t: Translation) => t.id !== id);
+        localStorage.setItem('translations', JSON.stringify(filtered));
+        loadTranslations();
+      }
     }
-  }, [fetchRecentTranslations]);
+  }, [user, loadTranslations, t]);
 
-  const handleBulkDelete = useCallback(() => {
+  const handleBulkDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
 
-    const stored = localStorage.getItem('translations');
-    if (stored) {
-      const translations = JSON.parse(stored);
-      const filtered = translations.filter((t: Translation) => !selectedIds.has(t.id));
-      localStorage.setItem('translations', JSON.stringify(filtered));
-      toast.success(`${selectedIds.size} deleted`);
-      setSelectedIds(new Set());
-      fetchRecentTranslations();
+    if (user) {
+      // Bulk delete from database
+      try {
+        const { error } = await supabase
+          .from("translations")
+          .delete()
+          .in("id", Array.from(selectedIds))
+          .eq("user_id", user.id);
+        
+        if (error) throw error;
+        toast.success(`${selectedIds.size} deleted`);
+        setSelectedIds(new Set());
+        await loadTranslations();
+      } catch (error) {
+        console.error("Failed to bulk delete:", error);
+        toast.error(t("deleteFailed") || "삭제 실패");
+      }
+    } else {
+      // Bulk delete from localStorage
+      const stored = localStorage.getItem('translations');
+      if (stored) {
+        const translations = JSON.parse(stored);
+        const filtered = translations.filter((t: Translation) => !selectedIds.has(t.id));
+        localStorage.setItem('translations', JSON.stringify(filtered));
+        toast.success(`${selectedIds.size} deleted`);
+        setSelectedIds(new Set());
+        loadTranslations();
+      }
     }
-  }, [selectedIds, fetchRecentTranslations]);
+  }, [selectedIds, user, loadTranslations, t]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds(prev => {
@@ -394,6 +499,7 @@ export const TranslationInterface = () => {
               </SelectContent>
             </Select>
             <ThemeToggle />
+            <AuthHeader />
           </div>
         </div>
       </header>

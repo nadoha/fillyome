@@ -22,9 +22,8 @@ serve(async (req) => {
       throw new Error('ELEVENLABS_API_KEY is not configured');
     }
 
-    // Select cute female voice based on language
-    // Aria is a cute, friendly female voice
-    const voiceId = '9BWtsMINqrJLrRacOk9x'; // Aria - cute female voice
+    // User's selected voice from ElevenLabs voice library
+    const voiceId = 'lhTvHflPVOqgSWyuWQry';
 
     console.log(`Generating speech for text: ${text.substring(0, 50)}... with voice: ${voiceId}`);
 

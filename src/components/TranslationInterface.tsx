@@ -429,84 +429,36 @@ export const TranslationInterface = () => {
     toast.success(t("copied"));
   }, [t]);
 
-  const handleSpeak = useCallback((text: string, lang: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      
-      const selectVoiceAndSpeak = () => {
-        const utterance = new SpeechSynthesisUtterance(text);
+  const handleSpeak = useCallback(async (text: string, lang: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { text, lang }
+      });
+
+      if (error) throw error;
+
+      if (data?.audioContent) {
+        // Convert base64 to audio and play
+        const audioData = atob(data.audioContent);
+        const audioArray = new Uint8Array(audioData.length);
+        for (let i = 0; i < audioData.length; i++) {
+          audioArray[i] = audioData.charCodeAt(i);
+        }
+        const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
         
-        const langMap: Record<string, string> = {
-          ko: 'ko-KR',
-          ja: 'ja-JP',
-          en: 'en-US',
-          zh: 'zh-CN'
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
         };
         
-        const targetLang = langMap[lang] || 'en-US';
-        utterance.lang = targetLang;
-        
-        // Get available voices and select cute female voices
-        const voices = window.speechSynthesis.getVoices();
-        
-        if (voices.length === 0) {
-          // Voices not loaded yet, wait for them
-          window.speechSynthesis.addEventListener('voiceschanged', () => {
-            selectVoiceAndSpeak();
-          }, { once: true });
-          return;
-        }
-        
-        // Priority: Female voices with cute/young characteristics
-        const cuteVoiceKeywords = ['Female', 'female', 'Woman', 'Girl', 'girl', '여성', '女性'];
-        
-        // First try Google female voices
-        let selectedVoice = voices.find(voice => 
-          voice.lang.startsWith(targetLang.split('-')[0]) &&
-          voice.name.includes('Google') &&
-          cuteVoiceKeywords.some(keyword => voice.name.includes(keyword))
-        );
-        
-        // Then try Microsoft female voices
-        if (!selectedVoice) {
-          selectedVoice = voices.find(voice => 
-            voice.lang.startsWith(targetLang.split('-')[0]) &&
-            voice.name.includes('Microsoft') &&
-            cuteVoiceKeywords.some(keyword => voice.name.includes(keyword))
-          );
-        }
-        
-        // Fallback: any female voice for the language
-        if (!selectedVoice) {
-          selectedVoice = voices.find(voice => 
-            voice.lang.startsWith(targetLang.split('-')[0]) &&
-            cuteVoiceKeywords.some(keyword => voice.name.includes(keyword))
-          );
-        }
-        
-        // Final fallback: any voice for the language
-        if (!selectedVoice) {
-          selectedVoice = voices.find(voice => voice.lang.startsWith(targetLang.split('-')[0]));
-        }
-        
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
-          console.log('Selected voice:', selectedVoice.name);
-        }
-        
-        // Cute voice settings: higher pitch, slightly faster
-        utterance.rate = 1.0;
-        utterance.pitch = 1.3;
-        utterance.volume = 1.0;
-        
-        window.speechSynthesis.speak(utterance);
-      };
-      
-      selectVoiceAndSpeak();
-    } else {
-      toast.error("Text-to-speech not supported");
+        audio.play();
+      }
+    } catch (error) {
+      console.error('Text-to-speech error:', error);
+      toast.error(t('translation.speakError'));
     }
-  }, []);
+  }, [t]);
 
   const handleTextSelection = useCallback((e: React.MouseEvent, lang: string, context: string) => {
     // Dictionary only supports ko, ja, en, zh

@@ -438,23 +438,46 @@ export const TranslationInterface = () => {
         ko: 'ko-KR',
         ja: 'ja-JP',
         en: 'en-US',
-        zh: 'zh-CN',
-        es: 'es-ES',
-        fr: 'fr-FR',
-        de: 'de-DE',
-        pt: 'pt-PT',
-        it: 'it-IT',
-        ru: 'ru-RU',
-        ar: 'ar-SA',
-        th: 'th-TH',
-        vi: 'vi-VN',
-        id: 'id-ID',
-        hi: 'hi-IN',
-        tr: 'tr-TR'
+        zh: 'zh-CN'
       };
-      utterance.lang = langMap[lang] || 'en-US';
+      
+      const targetLang = langMap[lang] || 'en-US';
+      utterance.lang = targetLang;
+      
+      // Get available voices and select the best quality one
+      const voices = window.speechSynthesis.getVoices();
+      
+      // Priority order: Google > Microsoft > Apple native
+      const preferredVoices = [
+        `Google ${targetLang}`,
+        `Microsoft ${targetLang}`,
+      ];
+      
+      let selectedVoice = voices.find(voice => 
+        preferredVoices.some(preferred => voice.name.includes(preferred))
+      );
+      
+      // Fallback: any voice matching the language with quality indicators
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+          voice.lang.startsWith(targetLang.split('-')[0]) && 
+          (voice.name.includes('Google') || voice.name.includes('Premium') || voice.name.includes('Enhanced'))
+        );
+      }
+      
+      // Final fallback: any voice for the language
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => voice.lang.startsWith(targetLang.split('-')[0]));
+      }
+      
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
       
       utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
       window.speechSynthesis.speak(utterance);
     } else {
       toast.error("Text-to-speech not supported");

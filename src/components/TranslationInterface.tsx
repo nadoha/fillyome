@@ -444,24 +444,33 @@ export const TranslationInterface = () => {
       const targetLang = langMap[lang] || 'en-US';
       utterance.lang = targetLang;
       
-      // Get available voices and select the best quality one
+      // Get available voices and select cute female voices
       const voices = window.speechSynthesis.getVoices();
       
-      // Priority order: Google > Microsoft > Apple native
-      const preferredVoices = [
-        `Google ${targetLang}`,
-        `Microsoft ${targetLang}`,
-      ];
+      // Priority: Female voices with cute/young characteristics
+      const cuteVoiceKeywords = ['Female', 'female', 'Woman', 'Girl', 'girl', '여성', '女性'];
       
+      // First try Google female voices
       let selectedVoice = voices.find(voice => 
-        preferredVoices.some(preferred => voice.name.includes(preferred))
+        voice.lang.startsWith(targetLang.split('-')[0]) &&
+        voice.name.includes('Google') &&
+        cuteVoiceKeywords.some(keyword => voice.name.includes(keyword))
       );
       
-      // Fallback: any voice matching the language with quality indicators
+      // Then try Microsoft female voices
       if (!selectedVoice) {
         selectedVoice = voices.find(voice => 
-          voice.lang.startsWith(targetLang.split('-')[0]) && 
-          (voice.name.includes('Google') || voice.name.includes('Premium') || voice.name.includes('Enhanced'))
+          voice.lang.startsWith(targetLang.split('-')[0]) &&
+          voice.name.includes('Microsoft') &&
+          cuteVoiceKeywords.some(keyword => voice.name.includes(keyword))
+        );
+      }
+      
+      // Fallback: any female voice for the language
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+          voice.lang.startsWith(targetLang.split('-')[0]) &&
+          cuteVoiceKeywords.some(keyword => voice.name.includes(keyword))
         );
       }
       
@@ -474,8 +483,9 @@ export const TranslationInterface = () => {
         utterance.voice = selectedVoice;
       }
       
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
+      // Cute voice settings: higher pitch, slightly faster
+      utterance.rate = 1.0;
+      utterance.pitch = 1.3;
       utterance.volume = 1.0;
       
       window.speechSynthesis.speak(utterance);

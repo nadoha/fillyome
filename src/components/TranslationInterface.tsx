@@ -502,20 +502,20 @@ export const TranslationInterface = () => {
           noRomanizationLangs={noRomanizationLangs}
         />
 
-        <div className="flex-1 flex flex-col">
-          <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
-            <div className="max-w-5xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
-              <div className="flex items-center justify-between gap-2 sm:gap-4">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <SidebarTrigger className="h-9 w-9" />
-                  <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+              <div className="flex items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <SidebarTrigger className="h-10 w-10 shrink-0" />
+                  <h1 className="text-base sm:text-lg lg:text-xl font-bold bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent truncate">
                     번역기
                   </h1>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-                    <SelectTrigger className="w-[120px] h-9 text-sm">
-                      <Globe className="h-4 w-4 mr-2" />
+                    <SelectTrigger className="w-[100px] sm:w-[120px] h-9 sm:h-10 text-xs sm:text-sm">
+                      <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
                       <SelectValue>
                         {i18n.language === 'ko' && t("korean")}
                         {i18n.language === 'ja' && t("japanese")}
@@ -523,7 +523,7 @@ export const TranslationInterface = () => {
                         {i18n.language === 'zh' && t("chinese")}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="bg-background border-border z-50">
+                    <SelectContent className="bg-popover border-border z-50">
                       <SelectItem value="ko">{t("korean")}</SelectItem>
                       <SelectItem value="ja">{t("japanese")}</SelectItem>
                       <SelectItem value="en">{t("english")}</SelectItem>
@@ -537,9 +537,9 @@ export const TranslationInterface = () => {
             </div>
           </header>
 
-          <main className="flex-1 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-12 animate-fade-in">
-            <div className="w-full max-w-5xl space-y-4 sm:space-y-6">
-              <div className="flex items-center justify-center gap-2 sm:gap-3 animate-scale-in">
+          <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 animate-fade-in overflow-y-auto">
+            <div className="w-full max-w-6xl space-y-5 sm:space-y-6 lg:space-y-8">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 animate-scale-in">
                 <LanguageSelector
                   value={sourceLang}
                   onChange={(newLang) => {
@@ -555,9 +555,9 @@ export const TranslationInterface = () => {
                   variant="outline"
                   size="icon"
                   onClick={swapLanguages}
-                  className="h-9 w-9 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300"
+                  className="h-10 w-10 sm:h-11 sm:w-11 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300 shrink-0"
                 >
-                  <ArrowLeftRight className="h-4 w-4" />
+                  <ArrowLeftRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
                 
                 <LanguageSelector
@@ -571,8 +571,8 @@ export const TranslationInterface = () => {
                 />
               </div>
 
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-4 sm:space-y-5">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
                   <TranslationBox
                     value={sourceText}
                     onChange={setSourceText}
@@ -614,16 +614,16 @@ export const TranslationInterface = () => {
                   />
                 </div>
                 
-                <div className="flex justify-center">
+                <div className="flex justify-center pt-2">
                   <Button
                     onClick={handleTranslate}
                     disabled={!sourceText.trim() || isTranslating}
-                    className="w-full md:w-auto px-8 py-5 text-base font-semibold"
+                    className="w-full sm:w-auto min-w-[200px] px-8 sm:px-10 py-5 sm:py-6 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                     size="lg"
                   >
                     {isTranslating ? (
                       <>
-                        <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                        <div className="h-4 w-4 sm:h-5 sm:w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
                         {t("translating")}
                       </>
                     ) : (

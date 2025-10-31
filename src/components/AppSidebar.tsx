@@ -62,18 +62,11 @@ export function AppSidebar({
 
   return (
     <Sidebar className="border-r bg-card/50 backdrop-blur-sm">
-      <SidebarHeader className="border-b px-4 py-4">
+      <SidebarHeader className="border-b px-4 py-6 bg-gradient-to-br from-primary/5 to-primary/10">
         {open ? (
           <div className="space-y-4 animate-fade-in">
-            <AuthHeader />
-            <div className="flex items-center gap-3 pt-2 border-t">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <History className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-base font-semibold">번역 기록</h2>
-                <p className="text-xs text-muted-foreground">최대 50개 저장</p>
-              </div>
+            <div className="w-full">
+              <AuthHeader />
             </div>
           </div>
         ) : (
@@ -84,6 +77,20 @@ export function AppSidebar({
           </div>
         )}
       </SidebarHeader>
+
+      <div className="px-4 py-3 border-b bg-muted/30">
+        {open && (
+          <div className="flex items-center gap-3 animate-fade-in">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <History className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-sm font-semibold">번역 기록</h2>
+              <p className="text-xs text-muted-foreground">최대 50개</p>
+            </div>
+          </div>
+        )}
+      </div>
 
       <SidebarContent className="px-2">
         <SidebarGroup>

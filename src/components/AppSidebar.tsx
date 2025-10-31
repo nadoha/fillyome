@@ -6,13 +6,10 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { RecentTranslationItem } from "./RecentTranslationItem";
-import { ThemeToggle } from "./ThemeToggle";
 import { AuthHeader } from "./AuthHeader";
 
 interface Translation {
@@ -65,22 +62,24 @@ export function AppSidebar({
 
   return (
     <Sidebar className="border-r bg-card/50 backdrop-blur-sm">
-      <SidebarHeader className="border-b px-3 py-4 space-y-3">
+      <SidebarHeader className="border-b px-4 py-4">
         {open ? (
-          <div className="space-y-3 animate-fade-in">
+          <div className="space-y-4 animate-fade-in">
             <AuthHeader />
-            <div className="flex items-center gap-2 pt-2">
-              <History className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-3 pt-2 border-t">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <History className="h-5 w-5 text-primary" />
+              </div>
               <div className="flex-1">
-                <h2 className="text-sm font-semibold">번역 기록</h2>
-                <p className="text-xs text-muted-foreground">최대 50개</p>
+                <h2 className="text-base font-semibold">번역 기록</h2>
+                <p className="text-xs text-muted-foreground">최대 50개 저장</p>
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-full flex justify-center">
-              <ThemeToggle />
+          <div className="flex justify-center py-2">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <History className="h-5 w-5 text-primary" />
             </div>
           </div>
         )}
@@ -141,14 +140,6 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="border-t px-3 py-4 bg-muted/30">
-        {open && (
-          <div className="flex justify-center animate-fade-in">
-            <ThemeToggle />
-          </div>
-        )}
-      </SidebarFooter>
     </Sidebar>
   );
 }

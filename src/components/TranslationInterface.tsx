@@ -11,6 +11,7 @@ import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
 import { LanguageSelector } from "./LanguageSelector";
+import { ThemeToggle } from "./ThemeToggle";
 import { AppSidebar } from "./AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
@@ -510,7 +511,8 @@ export const TranslationInterface = () => {
                     번역기
                   </h1>
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <ThemeToggle />
                   <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
                     <SelectTrigger className="w-[100px] sm:w-[120px] h-9 sm:h-10 text-xs sm:text-sm">
                       <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />

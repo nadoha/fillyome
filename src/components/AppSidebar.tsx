@@ -64,30 +64,39 @@ export function AppSidebar({
   const { open } = useSidebar();
 
   return (
-    <Sidebar className="border-r">
-      <SidebarHeader className="border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <History className="h-5 w-5 text-primary" />
-          {open && (
-            <div className="flex-1">
-              <h2 className="text-sm font-semibold">번역 기록</h2>
-              <p className="text-xs text-muted-foreground">최대 50개</p>
+    <Sidebar className="border-r bg-card/50 backdrop-blur-sm">
+      <SidebarHeader className="border-b px-3 py-4 space-y-3">
+        {open ? (
+          <div className="space-y-3 animate-fade-in">
+            <AuthHeader />
+            <div className="flex items-center gap-2 pt-2">
+              <History className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold">번역 기록</h2>
+                <p className="text-xs text-muted-foreground">최대 50개</p>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-full flex justify-center">
+              <ThemeToggle />
+            </div>
+          </div>
+        )}
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarGroup>
           {selectedIds.size > 0 && open && (
-            <div className="px-4 pb-2">
+            <div className="px-2 pb-3 pt-2 animate-scale-in">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onBulkDelete}
-                className="w-full h-8 text-xs text-destructive hover:bg-destructive/10"
+                className="w-full h-9 text-xs text-destructive hover:bg-destructive/10 border-2 border-destructive/20 hover:border-destructive/40 transition-all"
               >
-                <Trash2 className="h-3 w-3 mr-1.5" />
+                <Trash2 className="h-3.5 w-3.5 mr-2" />
                 {t("bulkDelete")} ({selectedIds.size})
               </Button>
             </div>
@@ -95,14 +104,16 @@ export function AppSidebar({
 
           <SidebarGroupContent>
             {recentTranslations.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <History className="h-12 w-12 mx-auto text-muted-foreground/30 mb-2" />
+              <div className="px-4 py-12 text-center animate-fade-in">
+                <div className="rounded-full bg-muted/50 w-20 h-20 mx-auto flex items-center justify-center mb-4">
+                  <History className="h-10 w-10 text-muted-foreground/40" />
+                </div>
                 {open && (
                   <p className="text-sm text-muted-foreground">{t("noHistory")}</p>
                 )}
               </div>
             ) : (
-              <div className="space-y-1 px-2">
+              <div className="space-y-2">
                 {recentTranslations.map((translation, index) => (
                   <div 
                     key={translation.id}
@@ -131,16 +142,9 @@ export function AppSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t px-4 py-3">
-        {open ? (
-          <div className="space-y-3">
-            <AuthHeader />
-            <div className="flex justify-center">
-              <ThemeToggle />
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3">
+      <SidebarFooter className="border-t px-3 py-4 bg-muted/30">
+        {open && (
+          <div className="flex justify-center animate-fade-in">
             <ThemeToggle />
           </div>
         )}

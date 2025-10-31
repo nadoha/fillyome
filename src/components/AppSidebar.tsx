@@ -8,9 +8,12 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { RecentTranslationItem } from "./RecentTranslationItem";
+import { ThemeToggle } from "./ThemeToggle";
+import { AuthHeader } from "./AuthHeader";
 
 interface Translation {
   id: string;
@@ -127,6 +130,21 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t px-4 py-3">
+        {open ? (
+          <div className="space-y-3">
+            <AuthHeader />
+            <div className="flex justify-center">
+              <ThemeToggle />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <ThemeToggle />
+          </div>
+        )}
+      </SidebarFooter>
     </Sidebar>
   );
 }

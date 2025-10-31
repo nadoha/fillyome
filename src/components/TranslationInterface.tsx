@@ -11,8 +11,6 @@ import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
 import { LanguageSelector } from "./LanguageSelector";
-import { ThemeToggle } from "./ThemeToggle";
-import { AuthHeader } from "./AuthHeader";
 import { AppSidebar } from "./AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
@@ -530,8 +528,6 @@ export const TranslationInterface = () => {
                       <SelectItem value="zh">{t("chinese")}</SelectItem>
                     </SelectContent>
                   </Select>
-                  <ThemeToggle />
-                  <AuthHeader />
                 </div>
               </div>
             </div>

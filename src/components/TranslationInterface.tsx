@@ -160,7 +160,7 @@ export const TranslationInterface = () => {
     updateLanguagePair(newSource, newTarget);
   }, [sourceLang, targetLang, updateLanguagePair]);
 
-  const handleTranslate = useCallback(async (saveHistory = false) => {
+  const handleTranslate = useCallback(async () => {
     if (!sourceText.trim()) {
       return;
     }
@@ -175,26 +175,6 @@ export const TranslationInterface = () => {
         setLiteralTranslation(literal);
         setSourceRomanization(srcRom);
         setTargetRomanization(tgtRom);
-        
-        // Save to history if requested (button click)
-        if (saveHistory) {
-          const newTranslation: Translation = {
-            id: crypto.randomUUID(),
-            source_text: sourceText,
-            target_text: translation,
-            source_lang: sourceLang,
-            target_lang: targetLang,
-            is_favorite: false,
-            source_romanization: srcRom,
-            target_romanization: tgtRom,
-            literal_translation: literal,
-            created_at: new Date().toISOString(),
-            content_classification: 'safe',
-            masked_source_text: null,
-            masked_target_text: null,
-          };
-          await saveTranslation(newTranslation);
-        }
         return;
       } catch (e) {
         // Invalid cache, continue with API call
@@ -243,33 +223,14 @@ export const TranslationInterface = () => {
       setSourceRomanization(srcRomanization);
       setTargetRomanization(tgtRomanization);
 
-      // Only save to history if saveHistory is true (button click)
-      if (saveHistory) {
-        const newTranslation: Translation = {
-          id: crypto.randomUUID(),
-          source_text: sourceText,
-          target_text: translation,
-          source_lang: sourceLang,
-          target_lang: targetLang,
-          is_favorite: false,
-          source_romanization: srcRomanization,
-          target_romanization: tgtRomanization,
-          literal_translation: literal,
-          created_at: new Date().toISOString(),
-          content_classification: 'safe',
-          masked_source_text: null,
-          masked_target_text: null,
-        };
-        
-        await saveTranslation(newTranslation);
-      }
+      // Do not save to history on auto-translate
     } catch (error) {
       console.error("Translation error:", error);
       toast.error("Translation failed. Please try again.");
     } finally {
       setIsTranslating(false);
     }
-  }, [sourceText, sourceLang, targetLang, saveTranslation]);
+  }, [sourceText, sourceLang, targetLang]);
 
   // Auto-detect language with improved sensitivity
   useEffect(() => {
@@ -622,68 +583,47 @@ export const TranslationInterface = () => {
                 />
               </div>
 
-              <div className="space-y-4 sm:space-y-5">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
-                  <TranslationBox
-                    value={sourceText}
-                    onChange={setSourceText}
-                    onCopy={() => handleCopy(sourceText)}
-                    onSpeak={() => handleSpeak(sourceText, sourceLang)}
-                    onTextSelect={(e) => sourceText && handleTextSelection(e, sourceLang, sourceText)}
-                    onTranslate={() => handleTranslate(true)}
-                    placeholder={t("enterText")}
-                    isEditable
-                    romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
-                  />
-                  
-                  <TranslationResultBox
-                    naturalTranslation={targetText}
-                    literalTranslation={literalTranslation}
-                    romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
-                    onCopy={() => handleCopy(targetText)}
-                    onSpeak={() => handleSpeak(targetText, targetLang)}
-                    onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
-                    onFeedback={(type) => {
-                      if (targetText) {
-                        handleFeedback({
-                          id: crypto.randomUUID(),
-                          source_text: sourceText,
-                          target_text: targetText,
-                          source_lang: sourceLang,
-                          target_lang: targetLang,
-                          is_favorite: false,
-                          created_at: new Date().toISOString(),
-                          content_classification: 'safe',
-                          masked_source_text: null,
-                          masked_target_text: null,
-                          source_romanization: sourceRomanization,
-                          target_romanization: targetRomanization,
-                          literal_translation: literalTranslation
-                        }, type);
-                      }
-                    }}
-                    placeholder={`${t("translate")}...`}
-                    isTranslating={isTranslating}
-                  />
-                </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 lg:gap-8">
+                <TranslationBox
+                  value={sourceText}
+                  onChange={setSourceText}
+                  onCopy={() => handleCopy(sourceText)}
+                  onSpeak={() => handleSpeak(sourceText, sourceLang)}
+                  onTextSelect={(e) => sourceText && handleTextSelection(e, sourceLang, sourceText)}
+                  placeholder={t("enterText")}
+                  isEditable
+                  romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
+                />
                 
-                <div className="flex justify-center pt-2">
-                  <Button
-                    onClick={() => handleTranslate(true)}
-                    disabled={!sourceText.trim() || isTranslating}
-                    className="w-full sm:w-auto min-w-[200px] px-8 sm:px-10 py-5 sm:py-6 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-                    size="lg"
-                  >
-                    {isTranslating ? (
-                      <>
-                        <div className="h-4 w-4 sm:h-5 sm:w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
-                        {t("translating")}
-                      </>
-                    ) : (
-                      t("translate")
-                    )}
-                  </Button>
-                </div>
+                <TranslationResultBox
+                  naturalTranslation={targetText}
+                  literalTranslation={literalTranslation}
+                  romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
+                  onCopy={() => handleCopy(targetText)}
+                  onSpeak={() => handleSpeak(targetText, targetLang)}
+                  onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
+                  onFeedback={(type) => {
+                    if (targetText) {
+                      handleFeedback({
+                        id: crypto.randomUUID(),
+                        source_text: sourceText,
+                        target_text: targetText,
+                        source_lang: sourceLang,
+                        target_lang: targetLang,
+                        is_favorite: false,
+                        created_at: new Date().toISOString(),
+                        content_classification: 'safe',
+                        masked_source_text: null,
+                        masked_target_text: null,
+                        source_romanization: sourceRomanization,
+                        target_romanization: targetRomanization,
+                        literal_translation: literalTranslation
+                      }, type);
+                    }
+                  }}
+                  placeholder={`${t("translate")}...`}
+                  isTranslating={isTranslating}
+                />
               </div>
             </div>
           </main>

@@ -32,12 +32,12 @@ export const TranslationResultBox = memo(({
   return (
     <div className="relative group animate-fade-in">
       <div 
-        className="min-h-[200px] sm:min-h-[220px] md:min-h-[260px] lg:min-h-[320px] border-2 border-border/60 bg-gradient-to-br from-card/80 to-muted/30 backdrop-blur-sm rounded-2xl p-5 sm:p-6 pr-16 sm:pr-20 transition-all duration-300 hover:border-primary/40 shadow-md hover:shadow-lg"
+        className="min-h-[280px] sm:min-h-[320px] md:min-h-[380px] lg:min-h-[450px] border-2 border-border/60 bg-gradient-to-br from-card/80 to-muted/30 backdrop-blur-sm rounded-2xl p-6 sm:p-7 pr-16 sm:pr-20 transition-all duration-300 hover:border-primary/40 shadow-md hover:shadow-lg"
         style={{ boxShadow: 'var(--shadow-md)' }}
         onMouseUp={onTextSelect}
       >
         {isTranslating ? (
-          <div className="absolute top-4 right-4 text-xs sm:text-sm text-muted-foreground flex items-center gap-2 animate-fade-in backdrop-blur-sm bg-background/60 px-3 py-1.5 rounded-lg shadow-sm">
+          <div className="absolute top-5 right-5 text-xs sm:text-sm text-muted-foreground flex items-center gap-2 animate-fade-in backdrop-blur-sm bg-background/60 px-3 py-1.5 rounded-lg shadow-sm">
             <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             <span>Translating...</span>
           </div>
@@ -111,11 +111,11 @@ export const TranslationResultBox = memo(({
       
       {/* Copy and Speak Buttons */}
       {!isTranslating && naturalTranslation && (
-        <div className="absolute top-4 right-4 flex gap-2 opacity-0 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-all duration-200">
+        <div className="absolute top-5 right-5 flex gap-2 opacity-0 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-all duration-200">
           <Button
             variant="outline"
             size="icon"
-            className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm hover:shadow-md transition-all duration-200 touch-manipulation"
+            className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm hover:shadow-md transition-all duration-200 touch-manipulation"
             onClick={onCopy}
           >
             <Copy className="h-4 w-4" />
@@ -123,7 +123,7 @@ export const TranslationResultBox = memo(({
           <Button
             variant="outline"
             size="icon"
-            className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm hover:shadow-md transition-all duration-200 touch-manipulation"
+            className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm hover:shadow-md transition-all duration-200 touch-manipulation"
             onClick={onSpeak}
           >
             <Volume2 className="h-4 w-4" />

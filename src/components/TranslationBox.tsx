@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Copy, Volume2 } from "lucide-react";
+import { Copy, Volume2, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -9,6 +9,7 @@ interface TranslationBoxProps {
   onCopy: () => void;
   onSpeak: () => void;
   onTextSelect?: (e: React.MouseEvent) => void;
+  onTranslate?: () => void;
   placeholder?: string;
   isTranslating?: boolean;
   isEditable?: boolean;
@@ -21,6 +22,7 @@ export const TranslationBox = memo(({
   onCopy,
   onSpeak,
   onTextSelect,
+  onTranslate,
   placeholder,
   isTranslating,
   isEditable = false,
@@ -38,24 +40,37 @@ export const TranslationBox = memo(({
           autoFocus
         />
         {value && (
-          <div className="absolute top-4 right-4 flex gap-2 opacity-0 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-all duration-200">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
-              onClick={onCopy}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
-              onClick={onSpeak}
-            >
-              <Volume2 className="h-4 w-4" />
-            </Button>
-          </div>
+          <>
+            <div className="absolute top-4 right-4 flex gap-2 opacity-0 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-all duration-200">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
+                onClick={onCopy}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
+                onClick={onSpeak}
+              >
+                <Volume2 className="h-4 w-4" />
+              </Button>
+            </div>
+            {onTranslate && (
+              <div className="absolute bottom-4 right-4">
+                <Button
+                  onClick={onTranslate}
+                  className="h-10 px-5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <Languages className="h-4 w-4 mr-2" />
+                  번역
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     );

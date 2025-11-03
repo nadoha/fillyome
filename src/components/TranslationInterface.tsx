@@ -160,7 +160,7 @@ export const TranslationInterface = () => {
     updateLanguagePair(newSource, newTarget);
   }, [sourceLang, targetLang, updateLanguagePair]);
 
-  const handleTranslate = useCallback(async () => {
+  const handleTranslate = useCallback(async (saveHistory = false) => {
     if (!sourceText.trim()) {
       return;
     }
@@ -175,6 +175,26 @@ export const TranslationInterface = () => {
         setLiteralTranslation(literal);
         setSourceRomanization(srcRom);
         setTargetRomanization(tgtRom);
+        
+        // Save to history if requested (button click)
+        if (saveHistory) {
+          const newTranslation: Translation = {
+            id: crypto.randomUUID(),
+            source_text: sourceText,
+            target_text: translation,
+            source_lang: sourceLang,
+            target_lang: targetLang,
+            is_favorite: false,
+            source_romanization: srcRom,
+            target_romanization: tgtRom,
+            literal_translation: literal,
+            created_at: new Date().toISOString(),
+            content_classification: 'safe',
+            masked_source_text: null,
+            masked_target_text: null,
+          };
+          await saveTranslation(newTranslation);
+        }
         return;
       } catch (e) {
         // Invalid cache, continue with API call
@@ -223,23 +243,26 @@ export const TranslationInterface = () => {
       setSourceRomanization(srcRomanization);
       setTargetRomanization(tgtRomanization);
 
-      const newTranslation: Translation = {
-        id: crypto.randomUUID(),
-        source_text: sourceText,
-        target_text: translation,
-        source_lang: sourceLang,
-        target_lang: targetLang,
-        is_favorite: false,
-        source_romanization: srcRomanization,
-        target_romanization: tgtRomanization,
-        literal_translation: literal,
-        created_at: new Date().toISOString(),
-        content_classification: 'safe',
-        masked_source_text: null,
-        masked_target_text: null,
-      };
-      
-      await saveTranslation(newTranslation);
+      // Only save to history if saveHistory is true (button click)
+      if (saveHistory) {
+        const newTranslation: Translation = {
+          id: crypto.randomUUID(),
+          source_text: sourceText,
+          target_text: translation,
+          source_lang: sourceLang,
+          target_lang: targetLang,
+          is_favorite: false,
+          source_romanization: srcRomanization,
+          target_romanization: tgtRomanization,
+          literal_translation: literal,
+          created_at: new Date().toISOString(),
+          content_classification: 'safe',
+          masked_source_text: null,
+          masked_target_text: null,
+        };
+        
+        await saveTranslation(newTranslation);
+      }
     } catch (error) {
       console.error("Translation error:", error);
       toast.error("Translation failed. Please try again.");
@@ -606,6 +629,8 @@ export const TranslationInterface = () => {
                     onChange={setSourceText}
                     onCopy={() => handleCopy(sourceText)}
                     onSpeak={() => handleSpeak(sourceText, sourceLang)}
+                    onTextSelect={(e) => sourceText && handleTextSelection(e, sourceLang, sourceText)}
+                    onTranslate={() => handleTranslate(true)}
                     placeholder={t("enterText")}
                     isEditable
                     romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
@@ -644,7 +669,7 @@ export const TranslationInterface = () => {
                 
                 <div className="flex justify-center pt-2">
                   <Button
-                    onClick={handleTranslate}
+                    onClick={() => handleTranslate(true)}
                     disabled={!sourceText.trim() || isTranslating}
                     className="w-full sm:w-auto min-w-[200px] px-8 sm:px-10 py-5 sm:py-6 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                     size="lg"

@@ -165,6 +165,22 @@ export const TranslationInterface = () => {
       return;
     }
 
+    // Check cache first
+    const cacheKey = `tr_${sourceLang}_${targetLang}_${sourceText}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const { translation, literal, srcRom, tgtRom } = JSON.parse(cached);
+        setTargetText(translation);
+        setLiteralTranslation(literal);
+        setSourceRomanization(srcRom);
+        setTargetRomanization(tgtRom);
+        return;
+      } catch (e) {
+        // Invalid cache, continue with API call
+      }
+    }
+
     setIsTranslating(true);
 
     try {
@@ -187,6 +203,20 @@ export const TranslationInterface = () => {
       const literal = data.literalTranslation || "";
       const srcRomanization = data.sourceRomanization || "";
       const tgtRomanization = data.targetRomanization || "";
+      
+      // Cache result (limit cache size)
+      try {
+        const cacheData = { translation, literal, srcRom: srcRomanization, tgtRom: tgtRomanization };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        
+        // Clean old cache entries (keep max 100)
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('tr_'));
+        if (keys.length > 100) {
+          keys.slice(0, keys.length - 100).forEach(k => localStorage.removeItem(k));
+        }
+      } catch (e) {
+        // Cache full or error, continue without caching
+      }
       
       setTargetText(translation);
       setLiteralTranslation(literal);

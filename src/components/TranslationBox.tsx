@@ -33,15 +33,16 @@ export const TranslationBox = memo(({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="min-h-[200px] sm:min-h-[220px] md:min-h-[260px] lg:min-h-[320px] resize-none text-base sm:text-lg leading-relaxed border-2 border-border bg-card/60 rounded-2xl p-4 sm:p-5 pr-14 sm:pr-16 focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary/50 transition-all"
+          className="min-h-[200px] sm:min-h-[220px] md:min-h-[260px] lg:min-h-[320px] resize-none text-base sm:text-lg leading-relaxed border-2 border-border/60 bg-card/80 backdrop-blur-sm rounded-2xl p-5 sm:p-6 pr-16 sm:pr-20 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary shadow-sm hover:shadow-md transition-all duration-200"
+          style={{ boxShadow: 'var(--shadow-sm)' }}
           autoFocus
         />
         {value && (
-          <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-opacity">
+          <div className="absolute top-4 right-4 flex gap-2 opacity-0 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-all duration-200">
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-accent transition-colors touch-manipulation"
+              className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
               onClick={onCopy}
             >
               <Copy className="h-4 w-4" />
@@ -49,7 +50,7 @@ export const TranslationBox = memo(({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-accent transition-colors touch-manipulation"
+              className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
               onClick={onSpeak}
             >
               <Volume2 className="h-4 w-4" />
@@ -63,30 +64,31 @@ export const TranslationBox = memo(({
   return (
     <div className="relative group animate-fade-in">
       <div 
-        className="min-h-[200px] sm:min-h-[220px] md:min-h-[260px] lg:min-h-[320px] border-2 border-border bg-muted/30 rounded-2xl p-4 sm:p-5 pr-14 sm:pr-16 select-text transition-colors hover:bg-muted/40"
+        className="min-h-[200px] sm:min-h-[220px] md:min-h-[260px] lg:min-h-[320px] border-2 border-border/60 bg-muted/40 backdrop-blur-sm rounded-2xl p-5 sm:p-6 pr-16 sm:pr-20 select-text transition-all duration-200 hover:bg-muted/50 hover:border-primary/30 shadow-sm"
+        style={{ boxShadow: 'var(--shadow-sm)' }}
         onMouseUp={onTextSelect}
       >
         <div className="text-base sm:text-lg leading-relaxed" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {value || <span className="text-muted-foreground">{placeholder}</span>}
+          {value || <span className="text-muted-foreground/70">{placeholder}</span>}
         </div>
         {romanization && value && (
-          <div className="mt-3 pt-3 border-t border-border/50 text-sm sm:text-base text-muted-foreground leading-relaxed" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          <div className="mt-4 pt-4 border-t border-border/50 text-sm sm:text-base text-muted-foreground/80 leading-relaxed" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
             {romanization}
           </div>
         )}
       </div>
       {isTranslating && (
-        <div className="absolute top-3 right-3 text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2 animate-fade-in">
+        <div className="absolute top-4 right-4 text-xs sm:text-sm text-muted-foreground flex items-center gap-2 animate-fade-in backdrop-blur-sm bg-background/60 px-3 py-1.5 rounded-lg shadow-sm">
           <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <span>Translating...</span>
         </div>
       )}
       {!isTranslating && value && (
-        <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-opacity">
+        <div className="absolute top-4 right-4 flex gap-2 opacity-0 sm:group-hover:opacity-100 opacity-100 sm:opacity-0 transition-all duration-200">
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-accent transition-colors touch-manipulation"
+            className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
             onClick={onCopy}
           >
             <Copy className="h-4 w-4" />
@@ -94,7 +96,7 @@ export const TranslationBox = memo(({
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-accent transition-colors touch-manipulation"
+            className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
             onClick={onSpeak}
           >
             <Volume2 className="h-4 w-4" />

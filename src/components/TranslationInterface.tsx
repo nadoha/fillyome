@@ -549,8 +549,8 @@ export const TranslationInterface = () => {
             </div>
           </header>
 
-          <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 animate-fade-in overflow-y-auto">
-            <div className="w-full max-w-6xl space-y-5 sm:space-y-6 lg:space-y-8">
+          <main className="flex-1 flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-10 xl:py-12 animate-fade-in overflow-y-auto">
+            <div className="w-full max-w-[1600px] space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 animate-scale-in">
                 <LanguageSelector
                   value={sourceLang}
@@ -583,7 +583,7 @@ export const TranslationInterface = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 lg:gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6 lg:gap-8 xl:gap-10">
                 <TranslationBox
                   value={sourceText}
                   onChange={setSourceText}

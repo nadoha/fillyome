@@ -22,7 +22,7 @@ interface RecentTranslationItemProps {
   onToggleLiteral: () => void;
   onDelete: () => void;
   onCopy: (text: string) => void;
-  onSpeak: (text: string, lang: string) => void;
+  onSpeak: (text: string, lang: string, romanization?: string) => void;
   onTextSelect: (e: React.MouseEvent, lang: string, text: string) => void;
   onFeedback: (type: 'positive' | 'negative') => void;
   noRomanization?: boolean;
@@ -65,7 +65,7 @@ export const RecentTranslationItem = memo(({
               <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onCopy(translation.source_text)}>
                 <Copy className="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onSpeak(translation.source_text, translation.source_lang)}>
+              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onSpeak(translation.source_text, translation.source_lang, translation.source_romanization || undefined)}>
                 <Volume2 className="h-3 w-3" />
               </Button>
             </div>
@@ -88,7 +88,7 @@ export const RecentTranslationItem = memo(({
               <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onCopy(translation.target_text)}>
                 <Copy className="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onSpeak(translation.target_text, translation.target_lang)}>
+              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onSpeak(translation.target_text, translation.target_lang, translation.target_romanization || undefined)}>
                 <Volume2 className="h-3 w-3" />
               </Button>
             </div>

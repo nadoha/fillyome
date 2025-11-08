@@ -442,10 +442,13 @@ export const TranslationInterface = () => {
     toast.success(t("copied"));
   }, [t]);
 
-  const handleSpeak = useCallback(async (text: string, lang: string) => {
+  const handleSpeak = useCallback(async (text: string, lang: string, romanization?: string) => {
     try {
+      // For Japanese, prefer romanization if available to reduce pronunciation errors
+      const textToSpeak = lang === 'ja' && romanization ? romanization : text;
+      
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text, lang }
+        body: { text: textToSpeak, lang }
       });
 
       if (error) throw error;
@@ -588,7 +591,7 @@ export const TranslationInterface = () => {
                   value={sourceText}
                   onChange={setSourceText}
                   onCopy={() => handleCopy(sourceText)}
-                  onSpeak={() => handleSpeak(sourceText, sourceLang)}
+                  onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)}
                   onTextSelect={(e) => sourceText && handleTextSelection(e, sourceLang, sourceText)}
                   placeholder={t("enterText")}
                   isEditable
@@ -600,7 +603,7 @@ export const TranslationInterface = () => {
                   literalTranslation={literalTranslation}
                   romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
                   onCopy={() => handleCopy(targetText)}
-                  onSpeak={() => handleSpeak(targetText, targetLang)}
+                  onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)}
                   onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
                   onFeedback={(type) => {
                     if (targetText) {

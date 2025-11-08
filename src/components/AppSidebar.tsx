@@ -37,7 +37,7 @@ interface AppSidebarProps {
   onDelete: (id: string) => void;
   onBulkDelete: () => void;
   onCopy: (text: string) => void;
-  onSpeak: (text: string, lang: string) => void;
+  onSpeak: (text: string, lang: string, romanization?: string) => void;
   onTextSelect: (e: React.MouseEvent, lang: string, text: string) => void;
   onFeedback: (translation: Translation, type: 'positive' | 'negative') => void;
   noRomanizationLangs: string[];

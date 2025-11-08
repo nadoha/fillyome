@@ -87,8 +87,20 @@ serve(async (req) => {
       tr: "Turkish"
     };
 
-    // BALANCED: Natural translation with speed optimization
-    const systemPrompt = `Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}. Provide a natural, idiomatic translation that captures the meaning and tone. Preserve emoticons and formatting.`;
+    console.log(`Translation request: ${langNames[sourceLang]} → ${langNames[targetLang]}`);
+    
+    // CRITICAL: Enforce strict target language adherence
+    const systemPrompt = `You are a professional translator. You MUST translate from ${langNames[sourceLang]} to ${langNames[targetLang]} ONLY.
+
+CRITICAL RULES:
+- The output translation MUST be in ${langNames[targetLang]} language ONLY
+- Source language: ${langNames[sourceLang]}
+- Target language: ${langNames[targetLang]}
+- DO NOT translate to any other language
+- Provide natural, idiomatic translation that captures meaning and tone
+- Preserve emoticons and formatting
+
+If source is ${langNames[sourceLang]}, you MUST output ${langNames[targetLang]}.`;
 
     const needsRom = (lang: string) => ['ja', 'ko', 'zh', 'ru', 'ar', 'th', 'hi'].includes(lang);
 

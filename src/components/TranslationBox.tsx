@@ -42,18 +42,12 @@ export const TranslationBox = memo(({
             <div className="flex items-center gap-2">
               <div className="flex gap-0.5 items-end h-6">
                 {[...Array(8)].map((_, i) => {
-                  const barHeight = Math.max(8, (audioLevel / 100) * 24 * (0.5 + Math.random() * 0.5));
-                  return (
-                    <div 
-                      key={i}
-                      className="w-1 bg-current rounded-full transition-all duration-100 ease-out" 
-                      style={{
-                        height: `${isListening ? barHeight : 8}px`,
-                        animationDelay: `${i * 50}ms`
-                      }} 
-                    />
-                  );
-                })}
+              const barHeight = Math.max(8, audioLevel / 100 * 24 * (0.5 + Math.random() * 0.5));
+              return <div key={i} className="w-1 bg-current rounded-full transition-all duration-100 ease-out" style={{
+                height: `${isListening ? barHeight : 8}px`,
+                animationDelay: `${i * 50}ms`
+              }} />;
+            })}
               </div>
               <span>음성 인식 중...</span>
             </div>
@@ -77,18 +71,7 @@ export const TranslationBox = memo(({
                 
                 {onToggleNoiseCancellation && <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className={`h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-200 ${
-                          noiseCancellation 
-                            ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90' 
-                            : 'hover:bg-primary hover:text-primary-foreground hover:border-primary'
-                        }`}
-                        onClick={onToggleNoiseCancellation}
-                      >
-                        <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      </Button>
+                      
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>{noiseCancellation ? '노이즈 캔슬링 ON' : '노이즈 캔슬링 OFF'}</p>

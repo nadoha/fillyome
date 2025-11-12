@@ -74,7 +74,7 @@ export const TranslationInterface = () => {
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
 
   // Speech recognition hook with noise cancellation
-  const { isListening, transcript, startListening, stopListening, resetTranscript, isSupported } = useSpeechRecognition(sourceLang, noiseCancellation);
+  const { isListening, transcript, startListening, stopListening, resetTranscript, isSupported, audioLevel } = useSpeechRecognition(sourceLang, noiseCancellation);
 
   // Update sourceText when speech recognition transcript changes
   useEffect(() => {
@@ -718,6 +718,7 @@ export const TranslationInterface = () => {
                   isListening={isListening}
                   noiseCancellation={noiseCancellation}
                   onToggleNoiseCancellation={toggleNoiseCancellation}
+                  audioLevel={audioLevel}
                 />
                 
                 <TranslationResultBox

@@ -68,9 +68,12 @@ export const useSpeechRecognition = (language: string, noiseCancellation: boolea
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSupported, setIsSupported] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -175,6 +178,36 @@ export const useSpeechRecognition = (language: string, noiseCancellation: boolea
         };
 
         streamRef.current = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        // Set up audio analysis for waveform visualization
+        audioContextRef.current = new AudioContext();
+        analyserRef.current = audioContextRef.current.createAnalyser();
+        analyserRef.current.fftSize = 256;
+        analyserRef.current.smoothingTimeConstant = 0.8;
+        
+        const source = audioContextRef.current.createMediaStreamSource(streamRef.current);
+        source.connect(analyserRef.current);
+        
+        // Start audio level monitoring
+        const monitorAudioLevel = () => {
+          if (!analyserRef.current || !isListening) {
+            setAudioLevel(0);
+            return;
+          }
+          
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+          
+          // Calculate average volume level
+          const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
+          const normalizedLevel = Math.min(100, (average / 255) * 100);
+          
+          setAudioLevel(normalizedLevel);
+          animationFrameRef.current = requestAnimationFrame(monitorAudioLevel);
+        };
+        
+        monitorAudioLevel();
+        
         console.log('Microphone access granted with noise cancellation:', noiseCancellation);
       } catch (error) {
         console.error('Error accessing microphone:', error);
@@ -192,11 +225,28 @@ export const useSpeechRecognition = (language: string, noiseCancellation: boolea
       setIsListening(false);
     }
     
+    // Cancel animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    // Clean up audio context
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    
+    // Clean up analyser
+    analyserRef.current = null;
+    
     // Clean up media stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    
+    setAudioLevel(0);
   }, [isListening]);
 
   const resetTranscript = useCallback(() => {
@@ -210,5 +260,6 @@ export const useSpeechRecognition = (language: string, noiseCancellation: boolea
     stopListening,
     resetTranscript,
     isSupported,
+    audioLevel,
   };
 };

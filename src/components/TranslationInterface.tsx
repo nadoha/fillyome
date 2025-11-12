@@ -15,6 +15,7 @@ import { TranslationResultBox } from "./TranslationResultBox";
 import { LanguageSelector } from "./LanguageSelector";
 import { ThemeToggle } from "./ThemeToggle";
 import { AppSidebar } from "./AppSidebar";
+import { VoiceInputOnboarding } from "./VoiceInputOnboarding";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
 import {
@@ -70,6 +71,7 @@ export const TranslationInterface = () => {
     const saved = localStorage.getItem('noiseCancellation');
     return saved ? JSON.parse(saved) : true;
   });
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
 
@@ -141,6 +143,13 @@ export const TranslationInterface = () => {
   const handleMicClick = useCallback(() => {
     if (!isSupported) {
       toast.error(t("speechNotSupported") || "음성 인식이 지원되지 않는 브라우저입니다");
+      return;
+    }
+
+    // Check if this is the first time using voice input
+    const onboardingShown = localStorage.getItem("voiceInputOnboardingShown");
+    if (!onboardingShown && !isListening) {
+      setShowOnboarding(true);
       return;
     }
 
@@ -814,6 +823,24 @@ export const TranslationInterface = () => {
             word={currentWord}
             entry={currentEntry}
             isLoading={isDictionaryLoading}
+          />
+
+          <VoiceInputOnboarding
+            open={showOnboarding}
+            onOpenChange={setShowOnboarding}
+            onComplete={() => {
+              setShowOnboarding(false);
+              // Start listening after onboarding
+              setTimeout(() => {
+                resetTranscript();
+                setSourceText("");
+                startListening();
+                const msg = noiseCancellation 
+                  ? "음성 인식 시작 (노이즈 캔슬링 활성화)" 
+                  : "음성 인식 시작";
+                toast.success(t("listeningStarted") || msg);
+              }, 300);
+            }}
           />
         </div>
       </div>

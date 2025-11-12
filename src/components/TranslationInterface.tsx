@@ -545,15 +545,15 @@ export const TranslationInterface = () => {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-              <div className="flex items-center justify-between gap-3 sm:gap-4">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <SidebarTrigger className="h-10 w-10 shrink-0" />
-                  <h1 className="text-base sm:text-lg lg:text-xl font-bold bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent truncate">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4">
+              <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
+                <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 min-w-0">
+                  <SidebarTrigger className="h-9 w-9 sm:h-10 sm:w-10 shrink-0" />
+                  <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent truncate">
                     번역기
                   </h1>
                 </div>
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
                   {user ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -593,8 +593,8 @@ export const TranslationInterface = () => {
                   )}
                   <ThemeToggle />
                   <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-                    <SelectTrigger className="w-[100px] sm:w-[120px] h-9 sm:h-10 text-xs sm:text-sm">
-                      <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
+                    <SelectTrigger className="w-[90px] sm:w-[110px] md:w-[120px] h-9 sm:h-10 text-xs sm:text-sm">
+                      <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 shrink-0" />
                       <SelectValue>
                         {i18n.language === 'ko' && t("korean")}
                         {i18n.language === 'ja' && t("japanese")}
@@ -614,9 +614,9 @@ export const TranslationInterface = () => {
             </div>
           </header>
 
-          <main className="flex-1 flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-10 xl:py-12 animate-fade-in overflow-y-auto">
-            <div className="w-full max-w-[1600px] space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8">
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 animate-scale-in">
+          <main className="flex-1 flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-3 sm:py-4 md:py-6 lg:py-8 animate-fade-in overflow-y-auto">
+            <div className="w-full max-w-7xl mx-auto space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 md:gap-3 animate-scale-in">
                 <LanguageSelector
                   value={sourceLang}
                   onChange={(newLang) => {
@@ -632,9 +632,9 @@ export const TranslationInterface = () => {
                   variant="outline"
                   size="icon"
                   onClick={swapLanguages}
-                  className="h-10 w-10 sm:h-11 sm:w-11 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300 shrink-0"
+                  className="h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300 shrink-0"
                 >
-                  <ArrowLeftRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <ArrowLeftRight className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5" />
                 </Button>
                 
                 <LanguageSelector
@@ -648,7 +648,7 @@ export const TranslationInterface = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6 lg:gap-8 xl:gap-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
                 <TranslationBox
                   value={sourceText}
                   onChange={setSourceText}

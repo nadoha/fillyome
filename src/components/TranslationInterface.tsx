@@ -231,7 +231,24 @@ export const TranslationInterface = () => {
       setSourceRomanization(srcRomanization);
       setTargetRomanization(tgtRomanization);
 
-      // Do not save to history on auto-translate
+      // Auto-save to history when translation completes
+      const newTranslation: Translation = {
+        id: Date.now().toString(),
+        source_text: sourceText,
+        target_text: translation,
+        source_lang: sourceLang,
+        target_lang: targetLang,
+        is_favorite: false,
+        created_at: new Date().toISOString(),
+        content_classification: "",
+        masked_source_text: null,
+        masked_target_text: null,
+        source_romanization: srcRomanization,
+        target_romanization: tgtRomanization,
+        literal_translation: literal,
+      };
+      
+      await saveTranslation(newTranslation);
     } catch (error) {
       console.error("Translation error:", error);
       toast.error("Translation failed. Please try again.");

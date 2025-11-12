@@ -66,11 +66,15 @@ export const TranslationInterface = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
   const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
+  const [noiseCancellation, setNoiseCancellation] = useState(() => {
+    const saved = localStorage.getItem('noiseCancellation');
+    return saved ? JSON.parse(saved) : true;
+  });
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
 
-  // Speech recognition hook
-  const { isListening, transcript, startListening, stopListening, resetTranscript, isSupported } = useSpeechRecognition(sourceLang);
+  // Speech recognition hook with noise cancellation
+  const { isListening, transcript, startListening, stopListening, resetTranscript, isSupported } = useSpeechRecognition(sourceLang, noiseCancellation);
 
   // Update sourceText when speech recognition transcript changes
   useEffect(() => {
@@ -92,9 +96,33 @@ export const TranslationInterface = () => {
       resetTranscript();
       setSourceText("");
       startListening();
-      toast.success(t("listeningStarted") || "음성 인식을 시작합니다...");
+      const msg = noiseCancellation 
+        ? "음성 인식 시작 (노이즈 캔슬링 활성화)" 
+        : "음성 인식 시작";
+      toast.success(t("listeningStarted") || msg);
     }
-  }, [isListening, isSupported, startListening, stopListening, resetTranscript, t]);
+  }, [isListening, isSupported, startListening, stopListening, resetTranscript, noiseCancellation, t]);
+
+  // Toggle noise cancellation
+  const toggleNoiseCancellation = useCallback(() => {
+    const newValue = !noiseCancellation;
+    setNoiseCancellation(newValue);
+    localStorage.setItem('noiseCancellation', JSON.stringify(newValue));
+    
+    const msg = newValue 
+      ? "노이즈 캔슬링이 활성화되었습니다" 
+      : "노이즈 캔슬링이 비활성화되었습니다";
+    toast.success(msg);
+    
+    // If currently listening, restart to apply new settings
+    if (isListening) {
+      stopListening();
+      setTimeout(() => {
+        resetTranscript();
+        startListening();
+      }, 100);
+    }
+  }, [noiseCancellation, isListening, stopListening, startListening, resetTranscript]);
 
   // Languages that don't need romanization (use Latin alphabet)
   const noRomanizationLangs = useMemo(() => ['en', 'es', 'fr', 'de', 'pt', 'it', 'id', 'tr', 'vi'], []);
@@ -688,6 +716,8 @@ export const TranslationInterface = () => {
                   romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
                   onMicClick={handleMicClick}
                   isListening={isListening}
+                  noiseCancellation={noiseCancellation}
+                  onToggleNoiseCancellation={toggleNoiseCancellation}
                 />
                 
                 <TranslationResultBox

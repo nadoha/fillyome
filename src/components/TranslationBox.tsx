@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Copy, Volume2 } from "lucide-react";
+import { Copy, Volume2, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -13,6 +13,8 @@ interface TranslationBoxProps {
   isTranslating?: boolean;
   isEditable?: boolean;
   romanization?: string;
+  onMicClick?: () => void;
+  isListening?: boolean;
 }
 
 export const TranslationBox = memo(({
@@ -24,7 +26,9 @@ export const TranslationBox = memo(({
   placeholder,
   isTranslating,
   isEditable = false,
-  romanization
+  romanization,
+  onMicClick,
+  isListening = false
 }: TranslationBoxProps) => {
   if (isEditable) {
     return (
@@ -37,26 +41,46 @@ export const TranslationBox = memo(({
           style={{ boxShadow: 'var(--shadow-sm)' }}
           autoFocus
         />
-        {value && (
-          <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 md:top-4 md:right-4 flex gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
+        <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 md:top-4 md:right-4 flex gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
+          {onMicClick && (
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
-              onClick={onCopy}
+              className={`h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-200 ${
+                isListening 
+                  ? 'bg-destructive text-destructive-foreground border-destructive animate-pulse' 
+                  : 'hover:bg-primary hover:text-primary-foreground hover:border-primary'
+              }`}
+              onClick={onMicClick}
             >
-              <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {isListening ? (
+                <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              ) : (
+                <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              )}
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
-              onClick={onSpeak}
-            >
-              <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </Button>
-          </div>
-        )}
+          )}
+          {value && (
+            <>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
+                onClick={onCopy}
+              >
+                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
+                onClick={onSpeak}
+              >
+                <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     );
   }

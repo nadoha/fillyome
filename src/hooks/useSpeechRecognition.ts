@@ -64,11 +64,13 @@ const langCodeMap: Record<string, string> = {
   'tr': 'tr-TR',
 };
 
-export const useSpeechRecognition = (language: string) => {
+export const useSpeechRecognition = (language: string, noiseCancellation: boolean = true) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -144,19 +146,56 @@ export const useSpeechRecognition = (language: string) => {
     }
   }, [language]);
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     if (recognitionRef.current && !isListening) {
       setTranscript('');
+      
+      // Request microphone access with enhanced noise cancellation settings
+      try {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
+
+        const constraints: MediaStreamConstraints = {
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: noiseCancellation,
+            autoGainControl: true,
+            // Advanced noise cancellation options
+            ...(noiseCancellation && {
+              // @ts-ignore - Advanced constraints may not be in types
+              googEchoCancellation: true,
+              googAutoGainControl: true,
+              googNoiseSuppression: true,
+              googHighpassFilter: true,
+              googTypingNoiseDetection: true,
+              googExperimentalNoiseSuppression: true,
+            })
+          }
+        };
+
+        streamRef.current = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('Microphone access granted with noise cancellation:', noiseCancellation);
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+      }
+
       recognitionRef.current.lang = langCodeMap[language] || 'ko-KR';
       recognitionRef.current.start();
       setIsListening(true);
     }
-  }, [isListening, language]);
+  }, [isListening, language, noiseCancellation]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current && isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
+    }
+    
+    // Clean up media stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
   }, [isListening]);
 

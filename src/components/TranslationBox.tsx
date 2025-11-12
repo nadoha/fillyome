@@ -1,7 +1,13 @@
 import { memo } from "react";
-import { Copy, Volume2, Mic, MicOff } from "lucide-react";
+import { Copy, Volume2, Mic, MicOff, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TranslationBoxProps {
   value: string;
@@ -15,6 +21,8 @@ interface TranslationBoxProps {
   romanization?: string;
   onMicClick?: () => void;
   isListening?: boolean;
+  noiseCancellation?: boolean;
+  onToggleNoiseCancellation?: () => void;
 }
 
 export const TranslationBox = memo(({
@@ -28,7 +36,9 @@ export const TranslationBox = memo(({
   isEditable = false,
   romanization,
   onMicClick,
-  isListening = false
+  isListening = false,
+  noiseCancellation = true,
+  onToggleNoiseCancellation
 }: TranslationBoxProps) => {
   if (isEditable) {
     return (
@@ -58,22 +68,55 @@ export const TranslationBox = memo(({
         />
         <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 md:top-4 md:right-4 flex gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
           {onMicClick && (
-            <Button
-              variant="outline"
-              size="icon"
-              className={`h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-200 ${
-                isListening 
-                  ? 'bg-destructive text-destructive-foreground border-destructive animate-pulse' 
-                  : 'hover:bg-primary hover:text-primary-foreground hover:border-primary'
-              }`}
-              onClick={onMicClick}
-            >
-              {isListening ? (
-                <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              ) : (
-                <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              )}
-            </Button>
+            <TooltipProvider>
+              <div className="flex gap-1.5 sm:gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className={`h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-200 ${
+                        isListening 
+                          ? 'bg-destructive text-destructive-foreground border-destructive animate-pulse' 
+                          : 'hover:bg-primary hover:text-primary-foreground hover:border-primary'
+                      }`}
+                      onClick={onMicClick}
+                    >
+                      {isListening ? (
+                        <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      ) : (
+                        <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isListening ? '음성 인식 중지' : '음성 입력'}</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                {onToggleNoiseCancellation && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className={`h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-200 ${
+                          noiseCancellation
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'hover:bg-primary hover:text-primary-foreground hover:border-primary'
+                        }`}
+                        onClick={onToggleNoiseCancellation}
+                      >
+                        <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{noiseCancellation ? '노이즈 캔슬링 ON' : '노이즈 캔슬링 OFF'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </TooltipProvider>
           )}
           {value && (
             <>

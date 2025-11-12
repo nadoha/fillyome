@@ -73,8 +73,62 @@ export const TranslationInterface = () => {
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
 
-  // Speech recognition hook with noise cancellation
-  const { isListening, transcript, startListening, stopListening, resetTranscript, isSupported, audioLevel } = useSpeechRecognition(sourceLang, noiseCancellation);
+  // Speech recognition hook with noise cancellation and language detection
+  const [detectedLangFromSpeech, setDetectedLangFromSpeech] = useState<string | null>(null);
+  
+  const { isListening, transcript, startListening, stopListening, resetTranscript, isSupported, audioLevel, detectedLanguage } = useSpeechRecognition(
+    sourceLang, 
+    {
+      noiseCancellation,
+      onLanguageDetected: (lang) => setDetectedLangFromSpeech(lang),
+    }
+  );
+
+  // Handle automatic language switching when language is detected from speech
+  useEffect(() => {
+    if (detectedLangFromSpeech && detectedLangFromSpeech !== sourceLang && isListening) {
+      // Stop current recognition
+      stopListening();
+      
+      // Update languages
+      const newSourceLang = detectedLangFromSpeech as typeof sourceLang;
+      let newTargetLang: typeof targetLang;
+      
+      // Smart target language selection
+      if (detectedLangFromSpeech === "ko") newTargetLang = "en";
+      else if (detectedLangFromSpeech === "ja") newTargetLang = "ko";
+      else if (detectedLangFromSpeech === "en") newTargetLang = "ko";
+      else if (detectedLangFromSpeech === "zh") newTargetLang = "en";
+      else newTargetLang = "en";
+      
+      setSourceLang(newSourceLang);
+      setTargetLang(newTargetLang);
+      
+      // Update localStorage directly
+      localStorage.setItem('lastSourceLang', newSourceLang);
+      localStorage.setItem('lastTargetLang', newTargetLang);
+      
+      // Update recent language pairs
+      const key = 'recentLangPairs';
+      const saved = localStorage.getItem(key);
+      const prev = saved ? JSON.parse(saved) : [];
+      const newPair = { source: newSourceLang, target: newTargetLang };
+      const filtered = prev.filter((p: any) => !(p.source === newSourceLang && p.target === newTargetLang));
+      const updated = [newPair, ...filtered].slice(0, 3);
+      localStorage.setItem(key, JSON.stringify(updated));
+      setRecentLangPairs(updated);
+      
+      toast.success(`언어 자동 전환: ${detectedLangFromSpeech.toUpperCase()} → ${newTargetLang.toUpperCase()}`, {
+        duration: 2500,
+      });
+      
+      // Restart recognition with new language after a short delay
+      setTimeout(() => {
+        setDetectedLangFromSpeech(null);
+        startListening();
+      }, 500);
+    }
+  }, [detectedLangFromSpeech, sourceLang, isListening, stopListening, startListening]);
 
   // Update sourceText when speech recognition transcript changes
   useEffect(() => {

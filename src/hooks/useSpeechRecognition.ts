@@ -64,16 +64,28 @@ const langCodeMap: Record<string, string> = {
   'tr': 'tr-TR',
 };
 
-export const useSpeechRecognition = (language: string, noiseCancellation: boolean = true) => {
+interface UseSpeechRecognitionOptions {
+  noiseCancellation?: boolean;
+  onLanguageDetected?: (detectedLang: string) => void;
+}
+
+export const useSpeechRecognition = (
+  language: string, 
+  options: UseSpeechRecognitionOptions = {}
+) => {
+  const { noiseCancellation = true, onLanguageDetected } = options;
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSupported, setIsSupported] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const lastDetectionRef = useRef<string | null>(null);
+  const detectionCountRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -103,7 +115,13 @@ export const useSpeechRecognition = (language: string, noiseCancellation: boolea
             }
           }
 
-          setTranscript(finalTranscript || interimTranscript);
+          const currentTranscript = finalTranscript || interimTranscript;
+          setTranscript(currentTranscript);
+          
+          // Language detection for multi-language support
+          if (onLanguageDetected && currentTranscript.trim().length >= 5) {
+            detectLanguage(currentTranscript);
+          }
         };
 
         recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -122,7 +140,60 @@ export const useSpeechRecognition = (language: string, noiseCancellation: boolea
         recognitionRef.current.abort();
       }
     };
-  }, []);
+  }, [onLanguageDetected]);
+
+  // Language detection function using franc
+  const detectLanguage = useCallback((text: string) => {
+    if (!onLanguageDetected || text.length < 5) return;
+
+    try {
+      // Dynamic import of franc for language detection
+      import('franc-min').then(({ franc }) => {
+        const detected = franc(text, { minLength: 3 });
+        
+        // Map franc codes to our language codes
+        const langMap: Record<string, string> = {
+          'kor': 'ko',
+          'jpn': 'ja',
+          'eng': 'en',
+          'cmn': 'zh',
+          'spa': 'es',
+          'fra': 'fr',
+          'deu': 'de',
+          'por': 'pt',
+          'ita': 'it',
+          'rus': 'ru',
+          'arb': 'ar',
+          'tha': 'th',
+          'vie': 'vi',
+          'ind': 'id',
+          'hin': 'hi',
+          'tur': 'tr',
+        };
+
+        const detectedLang = langMap[detected];
+        
+        if (detectedLang && detectedLang !== langCodeMap[language]?.split('-')[0]) {
+          // Count consecutive detections to prevent false positives
+          detectionCountRef.current[detectedLang] = (detectionCountRef.current[detectedLang] || 0) + 1;
+          
+          // Only trigger language change if detected consistently (3+ times)
+          if (detectionCountRef.current[detectedLang] >= 3 && lastDetectionRef.current !== detectedLang) {
+            lastDetectionRef.current = detectedLang;
+            setDetectedLanguage(detectedLang);
+            onLanguageDetected(detectedLang);
+            
+            // Reset detection counts
+            detectionCountRef.current = {};
+          }
+        }
+      }).catch(err => {
+        console.error('Language detection error:', err);
+      });
+    } catch (error) {
+      console.error('Language detection error:', error);
+    }
+  }, [language, onLanguageDetected]);
 
   // Update language when it changes and restart if listening
   useEffect(() => {
@@ -251,6 +322,9 @@ export const useSpeechRecognition = (language: string, noiseCancellation: boolea
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
+    setDetectedLanguage(null);
+    lastDetectionRef.current = null;
+    detectionCountRef.current = {};
   }, []);
 
   return {
@@ -261,5 +335,6 @@ export const useSpeechRecognition = (language: string, noiseCancellation: boolea
     resetTranscript,
     isSupported,
     audioLevel,
+    detectedLanguage,
   };
 };

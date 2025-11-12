@@ -117,6 +117,31 @@ export const useSpeechRecognition = (language: string) => {
         recognitionRef.current.abort();
       }
     };
+  }, []);
+
+  // Update language when it changes and restart if listening
+  useEffect(() => {
+    if (recognitionRef.current) {
+      const wasListening = isListening;
+      
+      // Stop if currently listening
+      if (wasListening) {
+        recognitionRef.current.stop();
+      }
+      
+      // Update language
+      recognitionRef.current.lang = langCodeMap[language] || 'ko-KR';
+      
+      // Restart if was listening
+      if (wasListening) {
+        setTimeout(() => {
+          if (recognitionRef.current) {
+            recognitionRef.current.start();
+            setIsListening(true);
+          }
+        }, 100);
+      }
+    }
   }, [language]);
 
   const startListening = useCallback(() => {

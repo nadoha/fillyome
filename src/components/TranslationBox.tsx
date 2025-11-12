@@ -38,8 +38,8 @@ export const TranslationBox = memo(({
   if (isEditable) {
     return <div className="relative group animate-fade-in h-full">
         {isListening && <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-primary/5 animate-pulse pointer-events-none z-10 border-2 border-primary/30" />}
-        {isListening && <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 px-4 py-2 bg-primary/90 text-primary-foreground rounded-2xl text-xs sm:text-sm font-medium shadow-lg animate-fade-in backdrop-blur-sm">
-            <div className="flex items-center gap-2">
+        {isListening && <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 px-4 py-3 bg-primary/95 text-primary-foreground rounded-2xl text-xs sm:text-sm font-medium shadow-lg animate-fade-in backdrop-blur-sm border border-primary-foreground/20">
+            <div className="flex items-center gap-3">
               <div className="flex gap-0.5 items-end h-6">
                 {[...Array(8)].map((_, i) => {
               const barHeight = Math.max(8, audioLevel / 100 * 24 * (0.5 + Math.random() * 0.5));
@@ -49,8 +49,23 @@ export const TranslationBox = memo(({
               }} />;
             })}
               </div>
-              <span>음성 인식 중...</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                  <span className="font-semibold">음성 인식 활성화</span>
+                </div>
+                {audioLevel > 5 ? <span className="text-xs opacity-90 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                    목소리 감지됨 ({Math.round(audioLevel)}%)
+                  </span> : <span className="text-xs opacity-90 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+                    목소리를 기다리는 중...
+                  </span>}
+              </div>
             </div>
+            {value && <div className="text-xs opacity-80 max-w-xs truncate border-t border-primary-foreground/20 pt-2 mt-1">
+                감지된 텍스트: "{value.slice(0, 50)}{value.length > 50 ? '...' : ''}"
+              </div>}
           </div>}
         <Textarea placeholder={placeholder} value={value} onChange={e => onChange?.(e.target.value)} className={`h-full min-h-[200px] sm:min-h-[250px] md:min-h-[320px] lg:min-h-[380px] xl:min-h-[420px] resize-none text-sm sm:text-base md:text-lg leading-relaxed border-2 bg-card/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 pr-11 sm:pr-12 md:pr-14 lg:pr-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : 'border-border/60'}`} style={{
         boxShadow: 'var(--shadow-sm)'

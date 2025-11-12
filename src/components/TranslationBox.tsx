@@ -17,6 +17,7 @@ interface TranslationBoxProps {
   isListening?: boolean;
   noiseCancellation?: boolean;
   onToggleNoiseCancellation?: () => void;
+  audioLevel?: number;
 }
 export const TranslationBox = memo(({
   value,
@@ -31,24 +32,31 @@ export const TranslationBox = memo(({
   onMicClick,
   isListening = false,
   noiseCancellation = true,
-  onToggleNoiseCancellation
+  onToggleNoiseCancellation,
+  audioLevel = 0
 }: TranslationBoxProps) => {
   if (isEditable) {
     return <div className="relative group animate-fade-in h-full">
         {isListening && <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-primary/5 animate-pulse pointer-events-none z-10 border-2 border-primary/30" />}
-        {isListening && <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 bg-primary/90 text-primary-foreground rounded-full text-xs sm:text-sm font-medium shadow-lg animate-fade-in backdrop-blur-sm">
-            <div className="flex gap-0.5">
-              <div className="w-1 h-3 bg-current rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{
-            animationDelay: '0ms'
-          }} />
-              <div className="w-1 h-4 bg-current rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{
-            animationDelay: '150ms'
-          }} />
-              <div className="w-1 h-3 bg-current rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{
-            animationDelay: '300ms'
-          }} />
+        {isListening && <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 px-4 py-2 bg-primary/90 text-primary-foreground rounded-2xl text-xs sm:text-sm font-medium shadow-lg animate-fade-in backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-0.5 items-end h-6">
+                {[...Array(8)].map((_, i) => {
+                  const barHeight = Math.max(8, (audioLevel / 100) * 24 * (0.5 + Math.random() * 0.5));
+                  return (
+                    <div 
+                      key={i}
+                      className="w-1 bg-current rounded-full transition-all duration-100 ease-out" 
+                      style={{
+                        height: `${isListening ? barHeight : 8}px`,
+                        animationDelay: `${i * 50}ms`
+                      }} 
+                    />
+                  );
+                })}
+              </div>
+              <span>음성 인식 중...</span>
             </div>
-            <span>음성 인식 중...</span>
           </div>}
         <Textarea placeholder={placeholder} value={value} onChange={e => onChange?.(e.target.value)} className={`h-full min-h-[200px] sm:min-h-[250px] md:min-h-[320px] lg:min-h-[380px] xl:min-h-[420px] resize-none text-sm sm:text-base md:text-lg leading-relaxed border-2 bg-card/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 pr-11 sm:pr-12 md:pr-14 lg:pr-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : 'border-border/60'}`} style={{
         boxShadow: 'var(--shadow-sm)'
@@ -69,7 +77,18 @@ export const TranslationBox = memo(({
                 
                 {onToggleNoiseCancellation && <Tooltip>
                     <TooltipTrigger asChild>
-                      
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className={`h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-lg sm:rounded-xl border-border/60 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-200 ${
+                          noiseCancellation 
+                            ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90' 
+                            : 'hover:bg-primary hover:text-primary-foreground hover:border-primary'
+                        }`}
+                        onClick={onToggleNoiseCancellation}
+                      >
+                        <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      </Button>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>{noiseCancellation ? '노이즈 캔슬링 ON' : '노이즈 캔슬링 OFF'}</p>

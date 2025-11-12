@@ -33,11 +33,26 @@ export const TranslationBox = memo(({
   if (isEditable) {
     return (
       <div className="relative group animate-fade-in h-full">
+        {isListening && (
+          <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-primary/5 animate-pulse pointer-events-none z-10 border-2 border-primary/30" />
+        )}
+        {isListening && (
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 bg-primary/90 text-primary-foreground rounded-full text-xs sm:text-sm font-medium shadow-lg animate-fade-in backdrop-blur-sm">
+            <div className="flex gap-0.5">
+              <div className="w-1 h-3 bg-current rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }} />
+              <div className="w-1 h-4 bg-current rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{ animationDelay: '150ms' }} />
+              <div className="w-1 h-3 bg-current rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{ animationDelay: '300ms' }} />
+            </div>
+            <span>음성 인식 중...</span>
+          </div>
+        )}
         <Textarea
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="h-full min-h-[200px] sm:min-h-[250px] md:min-h-[320px] lg:min-h-[380px] xl:min-h-[420px] resize-none text-sm sm:text-base md:text-lg leading-relaxed border-2 border-border/60 bg-card/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 pr-11 sm:pr-12 md:pr-14 lg:pr-16 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary shadow-sm hover:shadow-md transition-all duration-200"
+          className={`h-full min-h-[200px] sm:min-h-[250px] md:min-h-[320px] lg:min-h-[380px] xl:min-h-[420px] resize-none text-sm sm:text-base md:text-lg leading-relaxed border-2 bg-card/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 pr-11 sm:pr-12 md:pr-14 lg:pr-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${
+            isListening ? 'border-primary/60 ring-2 ring-primary/20' : 'border-border/60'
+          }`}
           style={{ boxShadow: 'var(--shadow-sm)' }}
           autoFocus
         />

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDictionary } from "@/hooks/useDictionary";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
@@ -67,6 +68,33 @@ export const TranslationInterface = () => {
   const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
+
+  // Speech recognition hook
+  const { isListening, transcript, startListening, stopListening, resetTranscript, isSupported } = useSpeechRecognition(sourceLang);
+
+  // Update sourceText when speech recognition transcript changes
+  useEffect(() => {
+    if (transcript) {
+      setSourceText(transcript);
+    }
+  }, [transcript]);
+
+  // Handle microphone button click
+  const handleMicClick = useCallback(() => {
+    if (!isSupported) {
+      toast.error(t("speechNotSupported") || "음성 인식이 지원되지 않는 브라우저입니다");
+      return;
+    }
+
+    if (isListening) {
+      stopListening();
+    } else {
+      resetTranscript();
+      setSourceText("");
+      startListening();
+      toast.success(t("listeningStarted") || "음성 인식을 시작합니다...");
+    }
+  }, [isListening, isSupported, startListening, stopListening, resetTranscript, t]);
 
   // Languages that don't need romanization (use Latin alphabet)
   const noRomanizationLangs = useMemo(() => ['en', 'es', 'fr', 'de', 'pt', 'it', 'id', 'tr', 'vi'], []);
@@ -658,6 +686,8 @@ export const TranslationInterface = () => {
                   placeholder={t("enterText")}
                   isEditable
                   romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
+                  onMicClick={handleMicClick}
+                  isListening={isListening}
                 />
                 
                 <TranslationResultBox

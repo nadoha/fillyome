@@ -79,7 +79,7 @@ export function AppSidebar({
       </SidebarHeader>
 
       <div className="px-4 py-3 border-b bg-muted/30">
-        {open && (
+        {open ? (
           <div className="flex items-center gap-3 animate-fade-in">
             <div className="rounded-lg bg-primary/10 p-2">
               <History className="h-5 w-5 text-primary" />
@@ -88,6 +88,13 @@ export function AppSidebar({
               <h2 className="text-sm font-semibold">번역 기록</h2>
               <p className="text-xs text-muted-foreground">최대 50개</p>
             </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <History className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center leading-tight">번역<br/>기록</p>
           </div>
         )}
       </div>

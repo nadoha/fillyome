@@ -747,7 +747,7 @@ export const TranslationInterface = () => {
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="h-screen flex w-full bg-gradient-to-br from-background via-background to-muted/20 overflow-hidden">
         <AppSidebar
           recentTranslations={recentTranslations}
           selectedIds={selectedIds}
@@ -812,8 +812,8 @@ export const TranslationInterface = () => {
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col px-3 sm:px-4 py-3 sm:py-4 animate-fade-in overflow-y-auto">
-            <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-3 sm:gap-4">
+          <main className="flex-1 flex flex-col px-3 sm:px-4 py-3 sm:py-4 animate-fade-in overflow-y-auto touch-pan-y">
+            <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-3 sm:gap-4 pb-8">
               {!isOnline && (
                 <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
                   <WifiOff className="h-4 w-4 text-warning" />

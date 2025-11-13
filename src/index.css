@@ -115,6 +115,17 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior: none;
+  }
+  
+  html, body, #root {
+    @apply h-full;
+    overflow: hidden;
+  }
+  
+  /* Safe area padding for mobile notches and keyboards */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
   
   [contenteditable][data-placeholder]:empty:before {

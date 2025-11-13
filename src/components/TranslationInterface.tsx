@@ -69,6 +69,7 @@ export const TranslationInterface = () => {
     return saved ? JSON.parse(saved) : true;
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
 
@@ -284,9 +285,14 @@ export const TranslationInterface = () => {
     updateLanguagePair(newSource, newTarget);
   }, [sourceLang, targetLang, updateLanguagePair]);
 
-  const handleTranslate = useCallback(async () => {
+  const handleTranslate = useCallback(async (retryCount = 0) => {
     if (!sourceText.trim()) {
       return;
+    }
+
+    // Cancel previous request if exists
+    if (abortController) {
+      abortController.abort();
     }
 
     // Check cache first
@@ -313,6 +319,13 @@ export const TranslationInterface = () => {
 
     setIsTranslating(true);
 
+    // Create new AbortController for this request
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    // Set timeout for request (15 seconds)
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
       const { data, error } = await supabase.functions.invoke("translate", {
         body: {
@@ -321,6 +334,8 @@ export const TranslationInterface = () => {
           targetLang,
         },
       });
+
+      clearTimeout(timeoutId);
 
       if (error) throw error;
 
@@ -371,13 +386,27 @@ export const TranslationInterface = () => {
       };
       
       await saveTranslation(newTranslation);
-    } catch (error) {
+    } catch (error: any) {
+      clearTimeout(timeoutId);
       console.error("Translation error:", error);
-      toast.error("Translation failed. Please try again.");
+      
+      // Handle timeout or network errors with retry
+      if ((error.name === 'AbortError' || error.message?.includes('network')) && retryCount < 2) {
+        toast.error(`네트워크 연결이 느립니다. 재시도 중... (${retryCount + 1}/2)`);
+        setTimeout(() => handleTranslate(retryCount + 1), 1000);
+        return;
+      }
+      
+      if (error.name === 'AbortError') {
+        toast.error("번역 요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.");
+      } else {
+        toast.error("번역 실패. 다시 시도해주세요.");
+      }
     } finally {
       setIsTranslating(false);
+      setAbortController(null);
     }
-  }, [sourceText, sourceLang, targetLang]);
+  }, [sourceText, sourceLang, targetLang, abortController, isOnline, t, saveTranslation]);
 
   // Auto-detect language with improved sensitivity
   useEffect(() => {
@@ -434,7 +463,7 @@ export const TranslationInterface = () => {
 
     const translateTimer = setTimeout(() => {
       handleTranslate();
-    }, 400);
+    }, 800);
 
     return () => clearTimeout(translateTimer);
   }, [sourceText, sourceLang, targetLang, handleTranslate]);

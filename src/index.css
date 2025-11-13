@@ -121,6 +121,8 @@ All colors MUST be HSL.
   html, body, #root {
     @apply h-full;
     overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
   }
   
   /* Safe area padding for mobile notches and keyboards */

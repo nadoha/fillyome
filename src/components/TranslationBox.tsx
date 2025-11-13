@@ -67,7 +67,18 @@ export const TranslationBox = memo(({
                 감지된 텍스트: "{value.slice(0, 50)}{value.length > 50 ? '...' : ''}"
               </div>}
           </div>}
-        <Textarea placeholder={placeholder} value={value} onChange={e => onChange?.(e.target.value)} className={`h-full min-h-[160px] sm:min-h-[180px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pr-[120px] sm:pr-[130px] focus-visible:ring-1 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-1 ring-primary/20' : ''}`} autoFocus />
+        <Textarea 
+          placeholder={placeholder} 
+          value={value} 
+          onChange={e => onChange?.(e.target.value)} 
+          onFocus={(e) => {
+            setTimeout(() => {
+              e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+          }}
+          className={`h-full min-h-[160px] sm:min-h-[180px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pr-[120px] sm:pr-[130px] focus-visible:ring-1 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-1 ring-primary/20' : ''}`} 
+          autoFocus 
+        />
         <div className="absolute top-3 right-3 flex gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
           {onMicClick && <TooltipProvider>
               <div className="flex gap-1.5">

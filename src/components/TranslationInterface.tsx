@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ArrowLeftRight, Menu, Globe, LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { ArrowLeftRight, Menu, Globe, LogIn, LogOut, User as UserIcon, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { franc } from "franc-min";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDictionary } from "@/hooks/useDictionary";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
@@ -18,6 +19,7 @@ import { AppSidebar } from "./AppSidebar";
 import { VoiceInputOnboarding } from "./VoiceInputOnboarding";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +47,7 @@ export const TranslationInterface = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const isOnline = useOnlineStatus();
   const [sourceText, setSourceText] = useState("");
   const [targetText, setTargetText] = useState("");
   const [literalTranslation, setLiteralTranslation] = useState("");
@@ -306,6 +309,12 @@ export const TranslationInterface = () => {
       } catch (e) {
         // Invalid cache, continue with API call
       }
+    }
+
+    // If offline and no cache, show error
+    if (!isOnline) {
+      toast.error(t("offlineNoCacheError") || "오프라인 상태에서는 캐시된 번역만 사용할 수 있습니다");
+      return;
     }
 
     setIsTranslating(true);
@@ -735,6 +744,15 @@ export const TranslationInterface = () => {
 
           <main className="flex-1 flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-3 sm:py-4 md:py-6 lg:py-8 animate-fade-in overflow-y-auto">
             <div className="w-full max-w-7xl mx-auto space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6">
+              {!isOnline && (
+                <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
+                  <WifiOff className="h-4 w-4 text-warning" />
+                  <AlertDescription className="text-warning">
+                    {t("offlineMode") || "오프라인 모드 - 최근 번역과 캐시된 번역만 조회할 수 있습니다"}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 md:gap-3 animate-scale-in">
                 <LanguageSelector
                   value={sourceLang}

@@ -51,5 +51,7 @@
   "logoutSuccess": "ログアウトしました",
   "saveFailed": "翻訳の保存に失敗しました",
   "deleteFailed": "削除に失敗しました",
-  "loading": "処理中..."
+  "loading": "処理中...",
+  "offlineMode": "オフラインモード - 最近の翻訳とキャッシュされた翻訳のみ利用可能",
+  "offlineNoCacheError": "オフラインモードではキャッシュされた翻訳のみ使用できます"
 }

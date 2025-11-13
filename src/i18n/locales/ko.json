@@ -51,5 +51,7 @@
   "logoutSuccess": "로그아웃되었습니다",
   "saveFailed": "번역 저장 실패",
   "deleteFailed": "삭제 실패",
-  "loading": "처리 중..."
+  "loading": "처리 중...",
+  "offlineMode": "오프라인 모드 - 최근 번역과 캐시된 번역만 조회할 수 있습니다",
+  "offlineNoCacheError": "오프라인 상태에서는 캐시된 번역만 사용할 수 있습니다"
 }

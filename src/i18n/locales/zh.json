@@ -51,5 +51,7 @@
   "logoutSuccess": "已登出",
   "saveFailed": "保存翻译失败",
   "deleteFailed": "删除失败",
-  "loading": "处理中..."
+  "loading": "处理中...",
+  "offlineMode": "离线模式 - 仅可查看最近和缓存的翻译",
+  "offlineNoCacheError": "离线模式下只能使用缓存的翻译"
 }

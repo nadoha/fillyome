@@ -51,5 +51,7 @@
   "logoutSuccess": "Logged out",
   "saveFailed": "Failed to save translation",
   "deleteFailed": "Failed to delete",
-  "loading": "Processing..."
+  "loading": "Processing...",
+  "offlineMode": "Offline Mode - Only recent and cached translations available",
+  "offlineNoCacheError": "Only cached translations are available in offline mode"
 }

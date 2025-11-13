@@ -33,7 +33,7 @@ export const TranslationResultBox = memo(({
   return (
     <div className="relative group animate-fade-in flex-1">
       <div 
-        className="h-full min-h-[160px] sm:min-h-[180px] border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-4 pr-[100px] sm:pr-[110px] transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
+        className="h-full min-h-[120px] sm:min-h-[140px] border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-3 pr-[100px] sm:pr-[110px] transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
         onMouseUp={onTextSelect}
       >
         {isTranslating ? (
@@ -64,7 +64,7 @@ export const TranslationResultBox = memo(({
         ) : naturalTranslation ? (
           <div className="space-y-3 sm:space-y-4">
             {/* Natural Translation - Larger, Primary */}
-            <div className="text-base sm:text-lg md:text-xl leading-relaxed font-medium text-foreground animate-slide-up" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            <div className="text-sm sm:text-base leading-relaxed font-medium text-foreground animate-slide-up" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
               {naturalTranslation}
             </div>
 

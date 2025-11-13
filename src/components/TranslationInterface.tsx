@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useDictionary } from "@/hooks/useDictionary";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { attemptQuickTranslation, shouldUseQuickTranslation } from "@/utils/quickTranslation";
 import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
@@ -295,7 +296,37 @@ export const TranslationInterface = () => {
       abortController.abort();
     }
 
-    // Check cache first
+    // Try quick translation first (no AI, instant)
+    if (shouldUseQuickTranslation(sourceText)) {
+      const quickResult = attemptQuickTranslation(sourceText, sourceLang, targetLang);
+      if (quickResult) {
+        setTargetText(quickResult.translation);
+        setLiteralTranslation(quickResult.literal || "");
+        setSourceRomanization(quickResult.sourceRom || "");
+        setTargetRomanization(quickResult.targetRom || "");
+        
+        // Auto-save quick translation to history
+        const newTranslation: Translation = {
+          id: Date.now().toString(),
+          source_text: sourceText,
+          target_text: quickResult.translation,
+          source_lang: sourceLang,
+          target_lang: targetLang,
+          is_favorite: false,
+          created_at: new Date().toISOString(),
+          content_classification: "",
+          masked_source_text: null,
+          masked_target_text: null,
+          source_romanization: "",
+          target_romanization: "",
+          literal_translation: quickResult.literal || "",
+        };
+        await saveTranslation(newTranslation);
+        return;
+      }
+    }
+
+    // Check cache second
     const cacheKey = `tr_${sourceLang}_${targetLang}_${sourceText}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -461,9 +492,11 @@ export const TranslationInterface = () => {
       return;
     }
 
+    // Use shorter delay for quick translations, longer for AI
+    const delay = shouldUseQuickTranslation(sourceText) ? 300 : 800;
     const translateTimer = setTimeout(() => {
       handleTranslate();
-    }, 800);
+    }, delay);
 
     return () => clearTimeout(translateTimer);
   }, [sourceText, sourceLang, targetLang, handleTranslate]);

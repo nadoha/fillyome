@@ -769,6 +769,7 @@ export const TranslationInterface = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
                 <TranslationBox
+                  key={`source-${sourceLang}`}
                   value={sourceText}
                   onChange={setSourceText}
                   onCopy={() => handleCopy(sourceText)}
@@ -785,6 +786,7 @@ export const TranslationInterface = () => {
                 />
                 
                 <TranslationResultBox
+                  key={`target-${targetLang}`}
                   naturalTranslation={targetText}
                   literalTranslation={literalTranslation}
                   romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}

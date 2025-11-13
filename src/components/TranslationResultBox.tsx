@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 
 interface TranslationResultBoxProps {
@@ -37,9 +38,29 @@ export const TranslationResultBox = memo(({
         onMouseUp={onTextSelect}
       >
         {isTranslating ? (
-          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2 animate-fade-in backdrop-blur-sm bg-background/60 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg shadow-sm">
-            <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="hidden xs:inline">Translating...</span>
+          <div className="space-y-3 sm:space-y-4 md:space-y-5 animate-fade-in">
+            {/* Loading indicator */}
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2 backdrop-blur-sm bg-background/60 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg shadow-sm z-10">
+              <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span className="hidden xs:inline">Translating...</span>
+            </div>
+            
+            {/* Skeleton for main translation */}
+            <div className="space-y-2 sm:space-y-3">
+              <Skeleton className="h-6 sm:h-7 md:h-8 lg:h-9 w-full" />
+              <Skeleton className="h-6 sm:h-7 md:h-8 lg:h-9 w-5/6" />
+              <Skeleton className="h-6 sm:h-7 md:h-8 lg:h-9 w-4/5" />
+            </div>
+            
+            {/* Skeleton for romanization */}
+            <div className="pt-2 sm:pt-3 md:pt-4 border-t border-border/40">
+              <Skeleton className="h-4 sm:h-5 w-3/4" />
+            </div>
+            
+            {/* Skeleton for literal translation toggle */}
+            <div className="pt-2 sm:pt-3 md:pt-4 border-t border-border/40">
+              <Skeleton className="h-8 sm:h-9 md:h-10 w-32 sm:w-36" />
+            </div>
           </div>
         ) : naturalTranslation ? (
           <div className="space-y-3 sm:space-y-4 md:space-y-5">

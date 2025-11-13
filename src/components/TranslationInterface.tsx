@@ -549,6 +549,42 @@ export const TranslationInterface = () => {
     });
   }, []);
 
+  const toggleFavorite = useCallback(async (id: string) => {
+    if (user) {
+      // Toggle in database
+      const translation = recentTranslations.find(t => t.id === id);
+      if (!translation) return;
+
+      try {
+        const { error } = await supabase
+          .from("translations")
+          .update({ is_favorite: !translation.is_favorite })
+          .eq("id", id)
+          .eq("user_id", user.id);
+        
+        if (error) throw error;
+        toast.success(translation.is_favorite ? t("removedFromFavorites") : t("addedToFavorites"));
+        await loadTranslations();
+      } catch (error) {
+        console.error("Failed to toggle favorite:", error);
+        toast.error(t("favoriteUpdateFailed"));
+      }
+    } else {
+      // Toggle in localStorage
+      const stored = localStorage.getItem('translations');
+      if (stored) {
+        const translations = JSON.parse(stored);
+        const updated = translations.map((t: Translation) => 
+          t.id === id ? { ...t, is_favorite: !t.is_favorite } : t
+        );
+        localStorage.setItem('translations', JSON.stringify(updated));
+        const translation = translations.find((t: Translation) => t.id === id);
+        toast.success(translation?.is_favorite ? t("removedFromFavorites") : t("addedToFavorites"));
+        loadTranslations();
+      }
+    }
+  }, [user, recentTranslations, loadTranslations, t]);
+
   const handleFeedback = useCallback(async (translation: Translation, feedbackType: 'positive' | 'negative') => {
     try {
       console.log('Submitting feedback:', {
@@ -656,6 +692,7 @@ export const TranslationInterface = () => {
           showLiteral={showLiteral}
           onToggleSelect={toggleSelect}
           onToggleLiteral={toggleLiteral}
+          onToggleFavorite={toggleFavorite}
           onDelete={handleDelete}
           onBulkDelete={handleBulkDelete}
           onCopy={handleCopy}

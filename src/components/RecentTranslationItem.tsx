@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Copy, Volume2, Trash2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Copy, Volume2, Trash2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -12,6 +12,7 @@ interface Translation {
   source_romanization: string | null;
   target_romanization: string | null;
   literal_translation: string | null;
+  is_favorite: boolean;
 }
 
 interface RecentTranslationItemProps {
@@ -20,6 +21,7 @@ interface RecentTranslationItemProps {
   showLiteral: boolean;
   onToggleSelect: () => void;
   onToggleLiteral: () => void;
+  onToggleFavorite: () => void;
   onDelete: () => void;
   onCopy: (text: string) => void;
   onSpeak: (text: string, lang: string, romanization?: string) => void;
@@ -35,6 +37,7 @@ export const RecentTranslationItem = memo(({
   showLiteral,
   onToggleSelect,
   onToggleLiteral,
+  onToggleFavorite,
   onDelete,
   onCopy,
   onSpeak,
@@ -51,6 +54,14 @@ export const RecentTranslationItem = memo(({
         onCheckedChange={onToggleSelect}
         className="mt-0.5"
       />
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`h-7 w-7 shrink-0 ${translation.is_favorite ? 'text-yellow-500' : 'text-muted-foreground'}`}
+        onClick={onToggleFavorite}
+      >
+        <Star className={`h-4 w-4 ${translation.is_favorite ? 'fill-yellow-500' : ''}`} />
+      </Button>
       <div className="flex-1 min-w-0 space-y-3">
         {/* Source - Smaller, Secondary */}
         <div className="space-y-1">

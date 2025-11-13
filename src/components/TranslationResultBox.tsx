@@ -106,21 +106,21 @@ export const TranslationResultBox = memo(({
                 <span className="text-xs sm:text-sm text-muted-foreground mr-0.5 sm:mr-1 md:mr-2">{t("howsThisTranslation")}</span>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => onFeedback('positive')}
-                  className="h-8 sm:h-9 md:h-10 px-2 sm:px-3 md:px-4 text-xs sm:text-sm hover:bg-green-500/15 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
+                  className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-green-500/15 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
+                  aria-label={t("good")}
                 >
-                  <ThumbsUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
-                  {t("good")}
+                  <ThumbsUp className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => onFeedback('negative')}
-                  className="h-8 sm:h-9 md:h-10 px-2 sm:px-3 md:px-4 text-xs sm:text-sm hover:bg-orange-500/15 hover:text-orange-600 dark:hover:text-orange-400 rounded-lg transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
+                  className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-orange-500/15 hover:text-orange-600 dark:hover:text-orange-400 rounded-lg transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
+                  aria-label={t("feelsOff")}
                 >
-                  <ThumbsDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
-                  {t("feelsOff")}
+                  <ThumbsDown className="h-4 w-4" />
                 </Button>
               </div>
             )}

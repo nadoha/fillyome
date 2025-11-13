@@ -143,21 +143,21 @@ export const RecentTranslationItem = memo(({
           <span className="text-xs text-muted-foreground mr-0.5">{t("howsThis")}</span>
           <Button 
             variant="ghost" 
-            size="sm" 
+            size="icon" 
             onClick={() => onFeedback('positive')} 
-            className="h-6 px-2 text-xs hover:bg-green-500/10 hover:text-green-600"
+            className="h-7 w-7 hover:bg-green-500/10 hover:text-green-600"
+            aria-label={t("good")}
           >
-            <ThumbsUp className="h-3 w-3 mr-1" />
-            {t("good")}
+            <ThumbsUp className="h-3.5 w-3.5" />
           </Button>
           <Button 
             variant="ghost" 
-            size="sm" 
+            size="icon" 
             onClick={() => onFeedback('negative')} 
-            className="h-6 px-2 text-xs hover:bg-orange-500/10 hover:text-orange-600"
+            className="h-7 w-7 hover:bg-orange-500/10 hover:text-orange-600"
+            aria-label={t("feelsOff")}
           >
-            <ThumbsDown className="h-3 w-3 mr-1" />
-            {t("feelsOff")}
+            <ThumbsDown className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>

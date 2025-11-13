@@ -33,7 +33,7 @@ export const TranslationResultBox = memo(({
   return (
     <div className="relative group animate-fade-in h-full">
       <div 
-        className="h-full min-h-[250px] sm:min-h-[300px] md:min-h-[350px] lg:min-h-[420px] xl:min-h-[480px] border-2 border-border/60 bg-gradient-to-br from-card/80 to-muted/30 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-7 pr-12 sm:pr-14 md:pr-16 lg:pr-20 transition-all duration-300 hover:border-primary/40 shadow-md hover:shadow-lg"
+        className="h-full min-h-[250px] sm:min-h-[300px] md:min-h-[350px] lg:min-h-[420px] xl:min-h-[480px] border-2 border-border/60 bg-gradient-to-br from-card/80 to-muted/30 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-7 pr-[100px] sm:pr-[110px] md:pr-[120px] lg:pr-[130px] transition-all duration-300 hover:border-primary/40 shadow-md hover:shadow-lg"
         style={{ boxShadow: 'var(--shadow-md)' }}
         onMouseUp={onTextSelect}
       >

@@ -67,7 +67,7 @@ export const TranslationBox = memo(({
                 감지된 텍스트: "{value.slice(0, 50)}{value.length > 50 ? '...' : ''}"
               </div>}
           </div>}
-        <Textarea placeholder={placeholder} value={value} onChange={e => onChange?.(e.target.value)} className={`h-full min-h-[200px] sm:min-h-[250px] md:min-h-[320px] lg:min-h-[380px] xl:min-h-[420px] resize-none text-sm sm:text-base md:text-lg leading-relaxed border-2 bg-card/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 pr-11 sm:pr-12 md:pr-14 lg:pr-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : 'border-border/60'}`} style={{
+        <Textarea placeholder={placeholder} value={value} onChange={e => onChange?.(e.target.value)} className={`h-full min-h-[200px] sm:min-h-[250px] md:min-h-[320px] lg:min-h-[380px] xl:min-h-[420px] resize-none text-sm sm:text-base md:text-lg leading-relaxed border-2 bg-card/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 pr-[120px] sm:pr-[130px] md:pr-[140px] lg:pr-[150px] focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : 'border-border/60'}`} style={{
         boxShadow: 'var(--shadow-sm)'
       }} autoFocus />
         <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 md:top-4 md:right-4 flex gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
@@ -106,7 +106,7 @@ export const TranslationBox = memo(({
       </div>;
   }
   return <div className="relative group animate-fade-in h-full">
-      <div className="h-full min-h-[200px] sm:min-h-[250px] md:min-h-[320px] lg:min-h-[380px] xl:min-h-[420px] border-2 border-border/60 bg-muted/40 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 pr-11 sm:pr-12 md:pr-14 lg:pr-16 select-text transition-all duration-200 hover:bg-muted/50 hover:border-primary/30 shadow-sm" style={{
+      <div className="h-full min-h-[200px] sm:min-h-[250px] md:min-h-[320px] lg:min-h-[380px] xl:min-h-[420px] border-2 border-border/60 bg-muted/40 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 lg:p-6 pr-[100px] sm:pr-[110px] md:pr-[120px] lg:pr-[130px] select-text transition-all duration-200 hover:bg-muted/50 hover:border-primary/30 shadow-sm" style={{
       boxShadow: 'var(--shadow-sm)'
     }} onMouseUp={onTextSelect}>
         <div className="text-sm sm:text-base md:text-lg leading-relaxed" style={{

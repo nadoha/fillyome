@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ArrowLeftRight, Menu, Globe, LogIn, LogOut, User as UserIcon, WifiOff } from "lucide-react";
+import { ArrowLeftRight, Globe, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { franc } from "franc-min";
@@ -14,18 +14,12 @@ import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
 import { LanguageSelector } from "./LanguageSelector";
-import { ThemeToggle } from "./ThemeToggle";
+import { HamburgerMenu } from "./HamburgerMenu";
 import { AppSidebar } from "./AppSidebar";
 import { VoiceInputOnboarding } from "./VoiceInputOnboarding";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface Translation {
   id: string;
@@ -682,44 +676,6 @@ export const TranslationInterface = () => {
                   </h1>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
-                  {user ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 rounded-full">
-                          <UserIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <div className="px-2 py-1.5 text-sm">
-                          <p className="text-xs text-muted-foreground">로그인됨</p>
-                          <p className="font-medium truncate">{user.email}</p>
-                        </div>
-                        <DropdownMenuItem onClick={async () => {
-                          try {
-                            await supabase.auth.signOut();
-                            toast.success(t("logoutSuccess") || "로그아웃되었습니다");
-                            setUser(null);
-                          } catch (error: any) {
-                            toast.error(error.message);
-                          }
-                        }}>
-                          <LogOut className="mr-2 h-4 w-4" />
-                          {t("logout") || "로그아웃"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => navigate("/auth")}
-                      className="h-9 sm:h-10 gap-1.5 sm:gap-2"
-                    >
-                      <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">{t("login") || "로그인"}</span>
-                    </Button>
-                  )}
-                  <ThemeToggle />
                   <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
                     <SelectTrigger className="w-[90px] sm:w-[110px] md:w-[120px] h-9 sm:h-10 text-xs sm:text-sm">
                       <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 shrink-0" />
@@ -737,6 +693,7 @@ export const TranslationInterface = () => {
                       <SelectItem value="zh">{t("chinese")}</SelectItem>
                     </SelectContent>
                   </Select>
+                  <HamburgerMenu user={user} onUserChange={setUser} />
                 </div>
               </div>
             </div>

@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ArrowLeftRight, Globe, WifiOff } from "lucide-react";
+import { ArrowLeftRight, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { franc } from "franc-min";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { useDictionary } from "@/hooks/useDictionary";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
@@ -675,26 +675,7 @@ export const TranslationInterface = () => {
                     번역기
                   </h1>
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
-                  <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-                    <SelectTrigger className="w-[90px] sm:w-[110px] md:w-[120px] h-9 sm:h-10 text-xs sm:text-sm">
-                      <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 shrink-0" />
-                      <SelectValue>
-                        {i18n.language === 'ko' && t("korean")}
-                        {i18n.language === 'ja' && t("japanese")}
-                        {i18n.language === 'en' && t("english")}
-                        {i18n.language === 'zh' && t("chinese")}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border-border z-50">
-                      <SelectItem value="ko">{t("korean")}</SelectItem>
-                      <SelectItem value="ja">{t("japanese")}</SelectItem>
-                      <SelectItem value="en">{t("english")}</SelectItem>
-                      <SelectItem value="zh">{t("chinese")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <HamburgerMenu user={user} onUserChange={setUser} />
-                </div>
+                <HamburgerMenu user={user} onUserChange={setUser} />
               </div>
             </div>
           </header>

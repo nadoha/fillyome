@@ -47,42 +47,77 @@ export function AppSidebar({
   onFeedback,
   noRomanizationLangs
 }: AppSidebarProps) {
-  const {
-    t
-  } = useTranslation();
-  const {
-    open
-  } = useSidebar();
-  return <Sidebar className="border-r bg-card/50 backdrop-blur-sm" collapsible="icon">
+  const { t } = useTranslation();
+  const { open } = useSidebar();
+
+  return (
+    <Sidebar className="border-r bg-card/50 backdrop-blur-sm" collapsible="icon">
       <SidebarHeader className="border-b px-4 py-6 bg-gradient-to-br from-primary/5 to-primary/10">
-        {open ? <div className="space-y-4 animate-fade-in">
-            <div className="w-full">
-              <AuthHeader />
+        {open ? (
+          <div className="space-y-4 animate-fade-in">
+            <AuthHeader />
+            <div className="flex items-center gap-3 pt-2">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <History className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold">{t("translationHistory")}</h2>
+                <p className="text-xs text-muted-foreground">{t("max50")}</p>
+              </div>
             </div>
-          </div> : <div className="flex justify-center py-2">
+          </div>
+        ) : (
+          <div className="flex justify-center py-2">
             <div className="rounded-lg bg-primary/10 p-2">
               <History className="h-5 w-5 text-primary" />
             </div>
-          </div>}
+          </div>
+        )}
       </SidebarHeader>
 
-      <div className="px-4 py-3 border-b bg-muted/30">
-        {open ? <div className="flex items-center gap-3 animate-fade-in">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <History className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-sm font-semibold">번역 기록</h2>
-              <p className="text-xs text-muted-foreground">최대 50개</p>
-            </div>
-          </div> : <div className="flex flex-col items-center gap-1.5">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <History className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-[10px] text-muted-foreground text-center leading-tight">번역<br />기록</p>
-          </div>}
-      </div>
-
-      
-    </Sidebar>;
+      <SidebarContent className="px-4 py-4">
+        {selectedIds.size > 0 && (
+          <div className="mb-4 animate-fade-in">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={onBulkDelete}
+              className="w-full"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {t("deleteSelected")} ({selectedIds.size})
+            </Button>
+          </div>
+        )}
+        
+        <SidebarGroup>
+          <SidebarGroupContent className="space-y-2">
+            {recentTranslations.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {t("noHistory")}
+              </p>
+            ) : (
+              recentTranslations.map((translation) => (
+                <RecentTranslationItem
+                  key={translation.id}
+                  translation={translation}
+                  isSelected={selectedIds.has(translation.id)}
+                  showLiteral={showLiteral[translation.id] || false}
+                  onToggleSelect={() => onToggleSelect(translation.id)}
+                  onToggleLiteral={() => onToggleLiteral(translation.id, translation.source_lang, translation.target_lang)}
+                  onDelete={() => onDelete(translation.id)}
+                  onCopy={onCopy}
+                  onSpeak={onSpeak}
+                  onTextSelect={onTextSelect}
+                  onFeedback={(type) => onFeedback(translation, type)}
+                  noRomanization={noRomanizationLangs.includes(translation.source_lang) && noRomanizationLangs.includes(translation.target_lang)}
+                  t={t}
+                />
+              ))
+            )}
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
 }

@@ -57,7 +57,7 @@ export function AppSidebar({
   const allTranslations = recentTranslations;
 
   return (
-    <Sidebar className="border-r bg-card/50 backdrop-blur-sm" collapsible="icon">
+    <Sidebar className="border-r bg-card/50 backdrop-blur-sm" collapsible="offcanvas">
       <SidebarHeader className="border-b px-4 py-6 bg-gradient-to-br from-primary/5 to-primary/10">
         {open ? (
           <div className="space-y-4 animate-fade-in">

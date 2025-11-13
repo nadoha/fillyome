@@ -765,64 +765,65 @@ export const TranslationInterface = () => {
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4">
-              <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
-                <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 min-w-0">
-                  <SidebarTrigger className="h-9 w-9 sm:h-10 sm:w-10 shrink-0" />
-                  <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent truncate">
+          <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <SidebarTrigger className="h-9 w-9 shrink-0" />
+                  <h1 className="text-sm sm:text-base font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent truncate">
                     번역기
                   </h1>
                 </div>
+                
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <LanguageSelector
+                    value={sourceLang}
+                    onChange={(newLang) => {
+                      setSourceLang(newLang as any);
+                      updateLanguagePair(newLang, targetLang);
+                    }}
+                    recentPairs={recentLangPairs}
+                    type="source"
+                    showAutoDetect={sourceText.trim().length >= 2}
+                  />
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={swapLanguages}
+                    className="h-9 w-9 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300 shrink-0"
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </Button>
+                  
+                  <LanguageSelector
+                    value={targetLang}
+                    onChange={(newLang) => {
+                      setTargetLang(newLang as any);
+                      updateLanguagePair(sourceLang, newLang);
+                    }}
+                    recentPairs={recentLangPairs}
+                    type="target"
+                  />
+                </div>
+                
                 <HamburgerMenu user={user} onUserChange={setUser} />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-3 sm:py-4 md:py-6 lg:py-8 animate-fade-in overflow-y-auto">
-            <div className="w-full max-w-7xl mx-auto space-y-3 sm:space-y-4 md:space-y-5 lg:space-y-6">
+          <main className="flex-1 flex flex-col px-3 sm:px-4 py-3 sm:py-4 animate-fade-in overflow-y-auto">
+            <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-3 sm:gap-4">
               {!isOnline && (
                 <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
                   <WifiOff className="h-4 w-4 text-warning" />
-                  <AlertDescription className="text-warning">
+                  <AlertDescription className="text-warning text-sm">
                     {t("offlineMode") || "오프라인 모드 - 최근 번역과 캐시된 번역만 조회할 수 있습니다"}
                   </AlertDescription>
                 </Alert>
               )}
-              
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 md:gap-3 animate-scale-in">
-                <LanguageSelector
-                  value={sourceLang}
-                  onChange={(newLang) => {
-                    setSourceLang(newLang as any);
-                    updateLanguagePair(newLang, targetLang);
-                  }}
-                  recentPairs={recentLangPairs}
-                  type="source"
-                  showAutoDetect={sourceText.trim().length >= 2}
-                />
-                
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={swapLanguages}
-                  className="h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300 shrink-0"
-                >
-                  <ArrowLeftRight className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5" />
-                </Button>
-                
-                <LanguageSelector
-                  value={targetLang}
-                  onChange={(newLang) => {
-                    setTargetLang(newLang as any);
-                    updateLanguagePair(sourceLang, newLang);
-                  }}
-                  recentPairs={recentLangPairs}
-                  type="target"
-                />
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
+              <div className="flex-1 flex flex-col gap-3 sm:gap-4">
                 <TranslationBox
                   key={`source-${sourceLang}`}
                   value={sourceText}

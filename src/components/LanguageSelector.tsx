@@ -42,7 +42,7 @@ export const LanguageSelector = memo(({
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[130px] sm:w-[150px] md:w-[160px] lg:w-[180px] h-10 sm:h-11 md:h-12 bg-card/60 border-2 border-border font-medium text-sm sm:text-base transition-all hover:bg-card/90 hover:border-primary/30 touch-manipulation">
+      <SelectTrigger className="min-w-[100px] sm:min-w-[120px] h-9 sm:h-10 bg-background/50 backdrop-blur-sm border-0 border-b-2 border-border/30 rounded-none font-medium text-sm sm:text-base transition-all hover:border-primary/50 focus:border-primary touch-manipulation">
         <SelectValue>
           <span className="truncate">{selectedLang?.label || value}</span>
           {showAutoDetect && type === "source" && (
@@ -50,7 +50,7 @@ export const LanguageSelector = memo(({
           )}
         </SelectValue>
       </SelectTrigger>
-      <SelectContent className="max-h-[350px] sm:max-h-[450px] bg-popover border-2 border-border shadow-lg z-[100]">
+      <SelectContent className="max-h-[350px] sm:max-h-[450px] bg-popover/95 backdrop-blur-md border border-border/50 shadow-xl z-[100]">
         {recentPairs.length > 0 && (
           <>
             <div className="px-3 py-2 text-xs sm:text-sm font-semibold text-muted-foreground sticky top-0 bg-popover border-b border-border/50">

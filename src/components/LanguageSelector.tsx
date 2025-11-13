@@ -69,7 +69,7 @@ export const LanguageSelector = memo(({
           </>
         )}
         <div className="px-3 py-2 text-xs sm:text-sm font-semibold text-muted-foreground sticky top-0 bg-popover border-b border-border/50">
-          All Languages
+          {t("allLanguages")}
         </div>
         {languages.map((lang) => (
           <SelectItem key={lang.code} value={lang.code} className="py-2.5 sm:py-3 text-sm sm:text-base touch-manipulation">

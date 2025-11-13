@@ -7,6 +7,20 @@ import ja from './locales/ja.json';
 import en from './locales/en.json';
 import zh from './locales/zh.json';
 
+// Detect browser language and map to supported languages
+const getBrowserLanguage = () => {
+  const browserLang = navigator.language.toLowerCase();
+  
+  // Map browser language codes to supported languages
+  if (browserLang.startsWith('ko')) return 'ko';
+  if (browserLang.startsWith('ja')) return 'ja';
+  if (browserLang.startsWith('zh')) return 'zh';
+  if (browserLang.startsWith('en')) return 'en';
+  
+  // Default to Korean if no match
+  return 'ko';
+};
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -17,13 +31,20 @@ i18n
       en: { translation: en },
       zh: { translation: zh },
     },
-    fallbackLng: 'ko',
+    fallbackLng: getBrowserLanguage(),
+    supportedLngs: ['ko', 'ja', 'en', 'zh'],
     interpolation: {
       escapeValue: false,
     },
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng',
+    },
+    react: {
+      useSuspense: false,
+      bindI18n: 'languageChanged loaded',
+      bindI18nStore: 'added removed',
     },
   });
 

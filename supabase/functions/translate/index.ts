@@ -97,7 +97,14 @@ CRITICAL RULES:
 - Source language: ${langNames[sourceLang]}
 - Target language: ${langNames[targetLang]}
 - DO NOT translate to any other language
-- Provide natural, idiomatic translation that captures meaning and tone
+
+TRANSLATION GUIDELINES:
+- Capture the meaning and tone naturally, prioritizing fluency over literal translation
+- Adapt expressions to suit the reader's level and context
+- Focus on idiomatic translation rather than word-for-word translation
+- Choose contextually appropriate expressions
+- Maintain style appropriate to specialized terminology and register
+- Reflect cultural differences and linguistic characteristics when necessary
 - Preserve emoticons and formatting
 
 If source is ${langNames[sourceLang]}, you MUST output ${langNames[targetLang]}.`;

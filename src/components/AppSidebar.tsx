@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, useSidebar } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecentTranslationItem } from "./RecentTranslationItem";
-import { AuthHeader } from "./AuthHeader";
 interface Translation {
   id: string;
   source_text: string;
@@ -61,8 +60,7 @@ export function AppSidebar({
       <SidebarHeader className="border-b px-4 py-6 bg-gradient-to-br from-primary/5 to-primary/10">
         {open ? (
           <div className="space-y-4 animate-fade-in">
-            <AuthHeader />
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3">
               <div className="rounded-lg bg-primary/10 p-2">
                 <History className="h-5 w-5 text-primary" />
               </div>

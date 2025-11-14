@@ -850,7 +850,24 @@ export const TranslationInterface = () => {
                   </h1>
                 </div>
                 
-                <div className="flex items-center gap-1.5 sm:gap-2">
+                <HamburgerMenu user={user} onUserChange={setUser} />
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 flex flex-col items-center justify-center px-4 py-4 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
+            <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4">
+              {!isOnline && (
+                <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
+                  <WifiOff className="h-4 w-4 text-warning" />
+                  <AlertDescription className="text-warning text-sm">
+                    {t("offlineMode") || "오프라인 모드 - 최근 번역과 캐시된 번역만 조회할 수 있습니다"}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex flex-col gap-3 sm:gap-4">
+                <div className="flex items-center justify-center gap-2 mb-2">
                   <LanguageSelector
                     value={sourceLang}
                     onChange={(newLang) => {
@@ -882,23 +899,6 @@ export const TranslationInterface = () => {
                   />
                 </div>
                 
-                <HamburgerMenu user={user} onUserChange={setUser} />
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 flex flex-col items-center justify-center px-4 py-4 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
-            <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4">
-              {!isOnline && (
-                <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
-                  <WifiOff className="h-4 w-4 text-warning" />
-                  <AlertDescription className="text-warning text-sm">
-                    {t("offlineMode") || "오프라인 모드 - 최근 번역과 캐시된 번역만 조회할 수 있습니다"}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex flex-col gap-3 sm:gap-4">
                 <div>
                   <TranslationBox
                     key={`source-${sourceLang}`}

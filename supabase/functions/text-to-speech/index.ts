@@ -7,7 +7,7 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
@@ -17,39 +17,47 @@ serve(async (req) => {
       throw new Error('Text is required');
     }
 
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
-    if (!ELEVENLABS_API_KEY) {
-      throw new Error('ELEVENLABS_API_KEY is not configured');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured')
     }
 
-    // User's selected voice from ElevenLabs voice library
-    const voiceId = 'lhTvHflPVOqgSWyuWQry';
+    // Map language codes to appropriate OpenAI voices
+    const voiceMap: Record<string, string> = {
+      'en': 'alloy',
+      'ja': 'shimmer',
+      'ko': 'nova',
+      'zh': 'shimmer',
+      'es': 'nova',
+      'fr': 'alloy',
+      'de': 'echo',
+      'it': 'nova',
+      'pt': 'alloy',
+      'ru': 'echo',
+    }
 
-    console.log(`Generating speech for text: ${text.substring(0, 50)}... with voice: ${voiceId}`);
+    const voice = voiceMap[lang] || 'alloy'
 
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    console.log(`Generating speech for text: ${text.substring(0, 50)}... with voice: ${voice}`)
+
+    // Generate speech from text using OpenAI
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
-        'Accept': 'audio/mpeg',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
-        'xi-api-key': ELEVENLABS_API_KEY,
       },
       body: JSON.stringify({
-        text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: 0.85,
-          similarity_boost: 0.8,
-          style: 0.4,
-          use_speaker_boost: true
-        }
+        model: 'tts-1',
+        input: text,
+        voice: voice,
+        response_format: 'mp3',
       }),
-    });
+    })
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ElevenLabs API error:', response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      const error = await response.json()
+      throw new Error(error.error?.message || 'Failed to generate speech')
     }
 
     const audioBuffer = await response.arrayBuffer();
@@ -62,7 +70,7 @@ serve(async (req) => {
       },
     );
   } catch (error) {
-    console.error('Text-to-speech error:', error);
+    console.error('Text-to-speech error:', error)
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {

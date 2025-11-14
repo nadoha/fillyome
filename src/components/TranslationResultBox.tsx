@@ -34,45 +34,45 @@ export const TranslationResultBox = memo(({
   return (
     <div className="relative group animate-fade-in flex-1">
       <div 
-        className="h-full min-h-[120px] sm:min-h-[140px] border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-3 pr-[100px] transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
+        className="h-full min-h-[180px] sm:min-h-[220px] border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-4 pr-[110px] transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
         onMouseUp={onTextSelect}
       >
         {isTranslating ? (
-          <div className="space-y-2 sm:space-y-3 animate-fade-in">
+          <div className="space-y-3 sm:space-y-4 animate-fade-in">
             {/* Loading indicator */}
-            <div className="absolute top-2 right-2 text-xs text-muted-foreground flex items-center gap-1.5 backdrop-blur-sm bg-background/80 px-2 py-1 rounded-lg shadow-sm z-20">
-              <div className="h-2.5 w-2.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="absolute top-3 right-3 text-sm text-muted-foreground flex items-center gap-2 backdrop-blur-sm bg-background/80 px-3 py-1.5 rounded-lg shadow-sm z-20">
+              <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               <span className="hidden xs:inline">번역중...</span>
             </div>
             
             {/* Skeleton for main translation */}
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-5/6" />
-              <Skeleton className="h-5 w-4/5" />
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-5/6" />
+              <Skeleton className="h-6 w-4/5" />
             </div>
             
             {/* Skeleton for romanization */}
-            <div className="pt-2 border-t border-border/40">
-              <Skeleton className="h-4 w-3/4" />
+            <div className="pt-3 border-t border-border/40">
+              <Skeleton className="h-5 w-3/4" />
             </div>
             
             {/* Skeleton for literal translation toggle */}
-            <div className="pt-2 border-t border-border/40">
-              <Skeleton className="h-7 w-28" />
+            <div className="pt-3 border-t border-border/40">
+              <Skeleton className="h-8 w-32" />
             </div>
           </div>
         ) : naturalTranslation ? (
-          <div className="space-y-2 sm:space-y-3">
+          <div className="space-y-3 sm:space-y-4">
             {/* Natural Translation */}
-            <div className="text-sm sm:text-base leading-relaxed font-medium text-foreground animate-slide-up" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            <div className="text-base sm:text-lg leading-relaxed font-medium text-foreground animate-slide-up" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
               {naturalTranslation}
             </div>
 
             {/* Romanization */}
             {romanization && (
-              <div className="pt-2 border-t border-border/40 animate-fade-in">
-                <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed italic" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+              <div className="pt-3 border-t border-border/40 animate-fade-in">
+                <p className="text-sm sm:text-base text-muted-foreground/80 leading-relaxed italic" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                   {romanization}
                 </p>
               </div>
@@ -102,47 +102,47 @@ export const TranslationResultBox = memo(({
 
             {/* Feedback Buttons */}
             {onFeedback && (
-              <div className="pt-2 border-t border-border/30 flex flex-wrap items-center gap-1 sm:gap-1.5 animate-fade-in">
-                <span className="text-xs text-muted-foreground mr-0.5">{t("howsThisTranslation")}</span>
+              <div className="pt-3 border-t border-border/30 flex flex-wrap items-center gap-1.5 sm:gap-2 animate-fade-in">
+                <span className="text-sm text-muted-foreground mr-1">{t("howsThisTranslation")}</span>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => onFeedback('positive')}
-                  className="h-7 w-7 hover:bg-green-500/15 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-all duration-200"
+                  className="h-8 w-8 hover:bg-green-500/15 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-all duration-200"
                   aria-label={t("good")}
                 >
-                  <ThumbsUp className="h-3.5 w-3.5" />
+                  <ThumbsUp className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => onFeedback('negative')}
-                  className="h-7 w-7 hover:bg-orange-500/15 hover:text-orange-600 dark:hover:text-orange-400 rounded-lg transition-all duration-200"
+                  className="h-8 w-8 hover:bg-orange-500/15 hover:text-orange-600 dark:hover:text-orange-400 rounded-lg transition-all duration-200"
                   aria-label={t("feelsOff")}
                 >
-                  <ThumbsDown className="h-3.5 w-3.5" />
+                  <ThumbsDown className="h-4 w-4" />
                 </Button>
               </div>
             )}
           </div>
         ) : (
-          <span className="text-muted-foreground/70 text-sm">{placeholder}</span>
+          <span className="text-muted-foreground/70 text-base sm:text-lg">{placeholder}</span>
         )}
       </div>
       
       {/* Copy and Speak Buttons */}
       {!isTranslating && naturalTranslation && (
-        <div className="absolute top-2 right-2 flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
+        <div className="absolute top-3 right-3 flex gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 rounded-lg border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
+                  className="h-9 w-9 rounded-lg border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
                   onClick={onCopy}
                 >
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
@@ -156,10 +156,10 @@ export const TranslationResultBox = memo(({
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 rounded-lg border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
+                  className="h-9 w-9 rounded-lg border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
                   onClick={onSpeak}
                 >
-                  <Volume2 className="h-3.5 w-3.5" />
+                  <Volume2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">

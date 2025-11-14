@@ -813,8 +813,8 @@ export const TranslationInterface = () => {
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col px-3 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
-            <div className="w-full flex-1 flex flex-col gap-4 sm:gap-6 pb-[calc(2rem+env(safe-area-inset-bottom))]">
+          <main className="flex-1 flex flex-col px-2 sm:px-4 py-2 sm:py-3 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
+            <div className="w-full flex-1 flex flex-col gap-2 sm:gap-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               {!isOnline && (
                 <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
                   <WifiOff className="h-4 w-4 text-warning" />
@@ -824,7 +824,7 @@ export const TranslationInterface = () => {
                 </Alert>
               )}
 
-              <div className={`flex-1 flex flex-col gap-4 sm:gap-6 transition-all duration-500 ${sourceText.trim() ? '' : 'justify-center'}`}>
+              <div className={`flex-1 flex flex-col gap-2 sm:gap-3 transition-all duration-500 ${sourceText.trim() ? '' : 'justify-center'}`}>
                 <div className={`transition-all duration-500 ${sourceText.trim() ? 'opacity-100 scale-100' : 'opacity-100 scale-105'}`}>
                   <TranslationBox
                     key={`source-${sourceLang}`}

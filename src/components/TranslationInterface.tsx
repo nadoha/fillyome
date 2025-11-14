@@ -824,54 +824,60 @@ export const TranslationInterface = () => {
                 </Alert>
               )}
 
-              <div className="flex-1 flex flex-col gap-3 sm:gap-4">
-                <TranslationBox
-                  key={`source-${sourceLang}`}
-                  value={sourceText}
-                  onChange={setSourceText}
-                  onCopy={() => handleCopy(sourceText)}
-                  onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)}
-                  onTextSelect={(e) => sourceText && handleTextSelection(e, sourceLang, sourceText)}
-                  placeholder={t("enterText")}
-                  isEditable
-                  romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
-                  onMicClick={handleMicClick}
-                  isListening={isListening}
-                  noiseCancellation={noiseCancellation}
-                  onToggleNoiseCancellation={toggleNoiseCancellation}
-                  audioLevel={audioLevel}
-                />
+              <div className={`flex-1 flex flex-col gap-3 sm:gap-4 transition-all duration-500 ${sourceText.trim() ? '' : 'justify-center'}`}>
+                <div className={`transition-all duration-500 ${sourceText.trim() ? 'opacity-100 scale-100' : 'opacity-100 scale-105'}`}>
+                  <TranslationBox
+                    key={`source-${sourceLang}`}
+                    value={sourceText}
+                    onChange={setSourceText}
+                    onCopy={() => handleCopy(sourceText)}
+                    onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)}
+                    onTextSelect={(e) => sourceText && handleTextSelection(e, sourceLang, sourceText)}
+                    placeholder={t("enterText")}
+                    isEditable
+                    romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined}
+                    onMicClick={handleMicClick}
+                    isListening={isListening}
+                    noiseCancellation={noiseCancellation}
+                    onToggleNoiseCancellation={toggleNoiseCancellation}
+                    audioLevel={audioLevel}
+                  />
+                </div>
                 
-                <TranslationResultBox
-                  key={`target-${targetLang}`}
-                  naturalTranslation={targetText}
-                  literalTranslation={literalTranslation}
-                  romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
-                  onCopy={() => handleCopy(targetText)}
-                  onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)}
-                  onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
-                  onFeedback={(type) => {
-                    if (targetText) {
-                      handleFeedback({
-                        id: crypto.randomUUID(),
-                        source_text: sourceText,
-                        target_text: targetText,
-                        source_lang: sourceLang,
-                        target_lang: targetLang,
-                        is_favorite: false,
-                        created_at: new Date().toISOString(),
-                        content_classification: 'safe',
-                        masked_source_text: null,
-                        masked_target_text: null,
-                        source_romanization: sourceRomanization,
-                        target_romanization: targetRomanization,
-                        literal_translation: literalTranslation
-                      }, type);
-                    }
-                  }}
-                  placeholder={`${t("translate")}...`}
-                  isTranslating={isTranslating}
-                />
+                {sourceText.trim() && (
+                  <div className="animate-slide-up">
+                    <TranslationResultBox
+                      key={`target-${targetLang}`}
+                      naturalTranslation={targetText}
+                      literalTranslation={literalTranslation}
+                      romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
+                      onCopy={() => handleCopy(targetText)}
+                      onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)}
+                      onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
+                      onFeedback={(type) => {
+                        if (targetText) {
+                          handleFeedback({
+                            id: crypto.randomUUID(),
+                            source_text: sourceText,
+                            target_text: targetText,
+                            source_lang: sourceLang,
+                            target_lang: targetLang,
+                            is_favorite: false,
+                            created_at: new Date().toISOString(),
+                            content_classification: 'safe',
+                            masked_source_text: null,
+                            masked_target_text: null,
+                            source_romanization: sourceRomanization,
+                            target_romanization: targetRomanization,
+                            literal_translation: literalTranslation
+                          }, type);
+                        }
+                      }}
+                      placeholder={`${t("translate")}...`}
+                      isTranslating={isTranslating}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </main>

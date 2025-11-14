@@ -499,7 +499,8 @@ export const TranslationInterface = () => {
     }, delay);
 
     return () => clearTimeout(translateTimer);
-  }, [sourceText, sourceLang, targetLang, handleTranslate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceText, sourceLang, targetLang]);
 
   // Auth state listener
   useEffect(() => {

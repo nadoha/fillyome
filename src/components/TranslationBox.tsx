@@ -76,7 +76,7 @@ export const TranslationBox = memo(({
               e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 300);
           }}
-          className={`h-full min-h-[120px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pr-[120px] focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''}`} 
+          className={`h-full min-h-[120px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-2 pr-[120px] focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''}`} 
           autoFocus 
         />
         <div className="absolute top-3 right-3 flex gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
@@ -122,7 +122,7 @@ export const TranslationBox = memo(({
       </div>;
   }
   return <div className="relative group animate-fade-in flex-1">
-      <div className="h-full min-h-[120px] border border-border/50 bg-muted/30 backdrop-blur-sm rounded-2xl p-4 pr-[110px] select-text transition-all duration-200 hover:bg-muted/40 hover:border-primary/30 shadow-sm" onMouseUp={onTextSelect}>
+      <div className="h-full min-h-[120px] border border-border/50 bg-muted/30 backdrop-blur-sm rounded-2xl p-2 pr-[110px] select-text transition-all duration-200 hover:bg-muted/40 hover:border-primary/30 shadow-sm" onMouseUp={onTextSelect}>
         <div className="text-base sm:text-lg leading-relaxed" style={{
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word'

@@ -767,7 +767,7 @@ export const TranslationInterface = () => {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3">
+            <div className="px-2 py-1.5">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <SidebarTrigger className="h-9 w-9 shrink-0" />
@@ -813,8 +813,8 @@ export const TranslationInterface = () => {
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col px-2 sm:px-4 py-2 sm:py-3 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
-            <div className="w-full flex-1 flex flex-col gap-2 sm:gap-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <main className="flex-1 flex flex-col px-1 py-1 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
+            <div className="w-full flex-1 flex flex-col gap-1 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
               {!isOnline && (
                 <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
                   <WifiOff className="h-4 w-4 text-warning" />
@@ -824,7 +824,7 @@ export const TranslationInterface = () => {
                 </Alert>
               )}
 
-              <div className={`flex-1 flex flex-col gap-2 sm:gap-3 transition-all duration-500 ${sourceText.trim() ? '' : 'justify-center'}`}>
+              <div className={`flex-1 flex flex-col gap-1 transition-all duration-500 ${sourceText.trim() ? '' : 'justify-center'}`}>
                 <div className={`flex-1 transition-all duration-500 ${sourceText.trim() ? 'opacity-100 scale-100' : 'opacity-100 scale-105'}`}>
                   <TranslationBox
                     key={`source-${sourceLang}`}

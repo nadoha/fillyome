@@ -690,32 +690,48 @@ export const TranslationInterface = () => {
 
   const handleSpeak = useCallback(async (text: string, lang: string, romanization?: string) => {
     try {
+      // Check if browser supports Web Speech API
+      if (!('speechSynthesis' in window)) {
+        toast.error('브라우저가 음성 재생을 지원하지 않습니다');
+        return;
+      }
+
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
       // For Japanese, prefer romanization if available to reduce pronunciation errors
       const textToSpeak = lang === 'ja' && romanization ? romanization : text;
       
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text: textToSpeak, lang }
-      });
+      // Create speech utterance
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      
+      // Map language codes to speech synthesis language codes
+      const langMap: Record<string, string> = {
+        'ko': 'ko-KR',
+        'ja': 'ja-JP',
+        'en': 'en-US',
+        'zh': 'zh-CN',
+        'es': 'es-ES',
+        'fr': 'fr-FR',
+        'de': 'de-DE',
+        'pt': 'pt-PT',
+        'it': 'it-IT',
+        'ru': 'ru-RU',
+        'ar': 'ar-SA',
+        'th': 'th-TH',
+        'vi': 'vi-VN',
+        'id': 'id-ID',
+        'hi': 'hi-IN',
+        'tr': 'tr-TR'
+      };
+      
+      utterance.lang = langMap[lang] || 'en-US';
+      utterance.rate = 0.9; // Slightly slower for better clarity
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
 
-      if (error) throw error;
-
-      if (data?.audioContent) {
-        // Convert base64 to audio and play
-        const audioData = atob(data.audioContent);
-        const audioArray = new Uint8Array(audioData.length);
-        for (let i = 0; i < audioData.length; i++) {
-          audioArray[i] = audioData.charCodeAt(i);
-        }
-        const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-        };
-        
-        audio.play();
-      }
+      // Speak the text
+      window.speechSynthesis.speak(utterance);
     } catch (error) {
       console.error('Text-to-speech error:', error);
       toast.error(t('translation.speakError'));

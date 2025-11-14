@@ -34,7 +34,7 @@ export const TranslationResultBox = memo(({
   return (
     <div className="relative group animate-fade-in flex-1">
       <div 
-        className="h-full min-h-[120px] border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-2 pr-[110px] transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
+        className="h-full border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-2 pr-[110px] transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
         onMouseUp={onTextSelect}
       >
         {isTranslating ? (

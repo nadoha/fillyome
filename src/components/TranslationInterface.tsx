@@ -824,8 +824,8 @@ export const TranslationInterface = () => {
                 </Alert>
               )}
 
-              <div className={`flex-1 flex flex-col gap-1 transition-all duration-500 ${sourceText.trim() ? '' : 'justify-center'}`}>
-                <div className={`flex-1 transition-all duration-500 ${sourceText.trim() ? 'opacity-100 scale-100' : 'opacity-100 scale-105'}`}>
+              <div className={`flex-1 flex flex-col gap-1 transition-all duration-500 ${sourceText.trim() ? '' : ''}`}>
+                <div className={`${sourceText.trim() ? 'flex-[2]' : 'flex-1'} transition-all duration-500 ${sourceText.trim() ? 'opacity-100 scale-100' : 'opacity-100 scale-105'}`}>
                   <TranslationBox
                     key={`source-${sourceLang}`}
                     value={sourceText}

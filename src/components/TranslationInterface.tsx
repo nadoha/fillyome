@@ -825,7 +825,7 @@ export const TranslationInterface = () => {
               )}
 
               <div className={`flex-1 flex flex-col gap-2 sm:gap-3 transition-all duration-500 ${sourceText.trim() ? '' : 'justify-center'}`}>
-                <div className={`transition-all duration-500 ${sourceText.trim() ? 'opacity-100 scale-100' : 'opacity-100 scale-105'}`}>
+                <div className={`flex-1 transition-all duration-500 ${sourceText.trim() ? 'opacity-100 scale-100' : 'opacity-100 scale-105'}`}>
                   <TranslationBox
                     key={`source-${sourceLang}`}
                     value={sourceText}
@@ -845,7 +845,7 @@ export const TranslationInterface = () => {
                 </div>
                 
                 {sourceText.trim() && (
-                  <div className="animate-slide-up">
+                  <div className="flex-1 animate-slide-up">
                     <TranslationResultBox
                       key={`target-${targetLang}`}
                       naturalTranslation={targetText}

@@ -725,8 +725,66 @@ export const TranslationInterface = () => {
         'tr': 'tr-TR'
       };
       
-      utterance.lang = langMap[lang] || 'en-US';
-      utterance.rate = 0.9; // Slightly slower for better clarity
+      const targetLang = langMap[lang] || 'en-US';
+      utterance.lang = targetLang;
+
+      // Wait for voices to load if not already loaded
+      const getVoices = (): SpeechSynthesisVoice[] => {
+        return window.speechSynthesis.getVoices();
+      };
+
+      let voices = getVoices();
+      
+      // If voices not loaded yet, wait for them
+      if (voices.length === 0) {
+        await new Promise<void>((resolve) => {
+          window.speechSynthesis.onvoiceschanged = () => {
+            voices = getVoices();
+            resolve();
+          };
+          // Fallback timeout
+          setTimeout(resolve, 1000);
+        });
+      }
+
+      // Select the best quality voice for the language
+      // Prefer Google voices (online, high quality) over local voices
+      const languageVoices = voices.filter(voice => 
+        voice.lang.startsWith(targetLang.split('-')[0])
+      );
+
+      let selectedVoice: SpeechSynthesisVoice | null = null;
+
+      // Priority 1: Google voices (online, neural TTS)
+      selectedVoice = languageVoices.find(voice => 
+        voice.name.includes('Google') && !voice.localService
+      ) || null;
+
+      // Priority 2: Microsoft voices (also good quality)
+      if (!selectedVoice) {
+        selectedVoice = languageVoices.find(voice => 
+          voice.name.includes('Microsoft') && !voice.localService
+        ) || null;
+      }
+
+      // Priority 3: Any online voice
+      if (!selectedVoice) {
+        selectedVoice = languageVoices.find(voice => 
+          !voice.localService
+        ) || null;
+      }
+
+      // Priority 4: Any voice matching the language
+      if (!selectedVoice) {
+        selectedVoice = languageVoices[0] || null;
+      }
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log('Selected voice:', selectedVoice.name, selectedVoice.lang);
+      }
+
+      utterance.rate = 0.95; // Slightly slower for better clarity
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
 

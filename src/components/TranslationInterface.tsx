@@ -492,8 +492,8 @@ export const TranslationInterface = () => {
       return;
     }
 
-    // Use shorter delay for quick translations, longer for AI
-    const delay = shouldUseQuickTranslation(sourceText) ? 300 : 800;
+    // Use shorter delay for immediate feedback, longer for complex AI translations
+    const delay = shouldUseQuickTranslation(sourceText) ? 200 : 400;
     const translateTimer = setTimeout(() => {
       handleTranslate();
     }, delay);

@@ -1,8 +1,9 @@
 import { memo, useState } from "react";
-import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 
 interface TranslationResultBoxProps {
@@ -29,6 +30,7 @@ export const TranslationResultBox = memo(({
   placeholder
 }: TranslationResultBoxProps) => {
   const [showLiteral, setShowLiteral] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const { t } = useTranslation();
 
   return (
@@ -130,7 +132,7 @@ export const TranslationResultBox = memo(({
         )}
       </div>
       
-      {/* Copy and Speak Buttons */}
+      {/* Copy, Speak, and Fullscreen Buttons */}
       {!isTranslating && naturalTranslation && (
         <div className="absolute top-3 right-3 flex gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
           <TooltipProvider>
@@ -167,8 +169,83 @@ export const TranslationResultBox = memo(({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 rounded-lg border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
+                  onClick={() => setIsFullScreen(true)}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">전체 화면</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )}
+
+      {/* Fullscreen Modal */}
+      <Dialog open={isFullScreen} onOpenChange={setIsFullScreen}>
+        <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>번역 결과</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4 mt-4">
+            {/* Natural Translation */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">자연스러운 번역</h3>
+              <div className="text-base sm:text-lg leading-relaxed font-medium text-foreground p-4 bg-muted/30 rounded-lg" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                {naturalTranslation}
+              </div>
+            </div>
+
+            {/* Romanization */}
+            {romanization && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">발음</h3>
+                <div className="text-sm sm:text-base text-muted-foreground/80 leading-relaxed italic p-4 bg-muted/20 rounded-lg" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {romanization}
+                </div>
+              </div>
+            )}
+
+            {/* Literal Translation */}
+            {literalTranslation && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">{t("literalTranslation")}</h3>
+                <div className="text-sm sm:text-base text-muted-foreground/90 leading-relaxed p-4 bg-muted/20 rounded-lg" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {literalTranslation}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons in Modal */}
+            <div className="flex gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={onCopy}
+                className="flex-1"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                복사
+              </Button>
+              <Button
+                variant="outline"
+                onClick={onSpeak}
+                className="flex-1"
+              >
+                <Volume2 className="h-4 w-4 mr-2" />
+                듣기
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });

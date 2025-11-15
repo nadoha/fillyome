@@ -274,6 +274,9 @@ export default function DocumentTranslation() {
                       utterance.lang = targetLang;
                       speechSynthesis.speak(utterance);
                     }}
+                    sourceText={sourceText}
+                    sourceLang={sourceLang}
+                    targetLang={targetLang}
                   />
                 </div>
               )}

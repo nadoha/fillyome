@@ -949,6 +949,9 @@ export const TranslationInterface = () => {
                       }}
                       placeholder={`${t("translate")}...`}
                       isTranslating={isTranslating}
+                      sourceText={sourceText}
+                      sourceLang={sourceLang}
+                      targetLang={targetLang}
                     />
                   </div>
                 )}

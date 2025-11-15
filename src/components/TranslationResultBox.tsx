@@ -16,6 +16,9 @@ interface TranslationResultBoxProps {
   onFeedback?: (type: 'positive' | 'negative') => void;
   isTranslating?: boolean;
   placeholder?: string;
+  sourceText?: string;
+  sourceLang?: string;
+  targetLang?: string;
 }
 
 export const TranslationResultBox = memo(({
@@ -27,7 +30,10 @@ export const TranslationResultBox = memo(({
   onTextSelect,
   onFeedback,
   isTranslating,
-  placeholder
+  placeholder,
+  sourceText,
+  sourceLang,
+  targetLang
 }: TranslationResultBoxProps) => {
   const [showLiteral, setShowLiteral] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -189,43 +195,81 @@ export const TranslationResultBox = memo(({
         </div>
       )}
 
-      {/* Fullscreen Modal */}
+      {/* Fullscreen Modal with Dual View */}
       <Dialog open={isFullScreen} onOpenChange={setIsFullScreen}>
-        <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+        <DialogContent className="max-w-7xl h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>번역 결과</DialogTitle>
+            <DialogTitle>번역 비교</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto space-y-4 mt-4">
-            {/* Natural Translation */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground">자연스러운 번역</h3>
-              <div className="text-base sm:text-lg leading-relaxed font-medium text-foreground p-4 bg-muted/30 rounded-lg" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                {naturalTranslation}
+          <div className="flex-1 overflow-hidden mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+              {/* Original Text Column */}
+              {sourceText && (
+                <div className="flex flex-col h-full border border-border rounded-lg overflow-hidden">
+                  <div className="bg-muted/50 px-4 py-3 border-b border-border flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">원본</h3>
+                      {sourceLang && (
+                        <span className="text-xs text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded">
+                          {sourceLang}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-br from-card/60 to-muted/20">
+                    <div className="text-base leading-relaxed text-foreground" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {sourceText}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Translation Column */}
+              <div className="flex flex-col h-full border border-border rounded-lg overflow-hidden">
+                <div className="bg-primary/10 px-4 py-3 border-b border-border flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-foreground">번역</h3>
+                    {targetLang && (
+                      <span className="text-xs text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded">
+                        {targetLang}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-br from-card/60 to-muted/20 space-y-4">
+                  {/* Natural Translation */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">자연스러운 번역</h4>
+                    <div className="text-base leading-relaxed font-medium text-foreground p-4 bg-card/80 rounded-lg border border-border/50" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {naturalTranslation}
+                    </div>
+                  </div>
+
+                  {/* Romanization */}
+                  {romanization && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">발음</h4>
+                      <div className="text-sm text-muted-foreground/80 leading-relaxed italic p-4 bg-card/60 rounded-lg border border-border/30" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                        {romanization}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Literal Translation */}
+                  {literalTranslation && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("literalTranslation")}</h4>
+                      <div className="text-sm text-muted-foreground/90 leading-relaxed p-4 bg-card/60 rounded-lg border border-border/30" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                        {literalTranslation}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Romanization */}
-            {romanization && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-muted-foreground">발음</h3>
-                <div className="text-sm sm:text-base text-muted-foreground/80 leading-relaxed italic p-4 bg-muted/20 rounded-lg" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {romanization}
-                </div>
-              </div>
-            )}
-
-            {/* Literal Translation */}
-            {literalTranslation && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-muted-foreground">{t("literalTranslation")}</h3>
-                <div className="text-sm sm:text-base text-muted-foreground/90 leading-relaxed p-4 bg-muted/20 rounded-lg" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {literalTranslation}
-                </div>
-              </div>
-            )}
-
             {/* Action Buttons in Modal */}
-            <div className="flex gap-2 pt-4 border-t">
+            <div className="flex gap-2 pt-4 border-t mt-4">
               <Button
                 variant="outline"
                 onClick={onCopy}

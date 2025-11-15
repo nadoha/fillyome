@@ -254,7 +254,7 @@ export default function DocumentTranslation() {
                   <Textarea
                     value={sourceText}
                     readOnly
-                    className="min-h-[200px] max-h-[400px] resize-none"
+                    className="min-h-[200px] max-h-[600px] resize-none overflow-y-auto"
                   />
                 </div>
               )}

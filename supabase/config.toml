@@ -8,3 +8,7 @@ verify_jwt = false
 
 [functions.text-to-speech]
 verify_jwt = false
+
+[functions.scrape-url]
+verify_jwt = false
+

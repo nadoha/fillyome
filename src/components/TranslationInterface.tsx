@@ -12,6 +12,7 @@ import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { attemptQuickTranslation, shouldUseQuickTranslation } from "@/utils/quickTranslation";
 import { DictionarySheet } from "./DictionarySheet";
+import { DictionarySearchInput } from "./DictionarySearchInput";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
 import { LanguageSelector } from "./LanguageSelector";
@@ -815,6 +816,33 @@ export const TranslationInterface = () => {
     }
   }, [lookupWord, i18n.language]);
 
+  const handleTextSelectionFromResult = useCallback((selectedText: string, lang: string) => {
+    // Dictionary only supports ko, ja, en, zh
+    const supportedDictionaryLangs = ['ko', 'ja', 'en', 'zh'];
+    if (!supportedDictionaryLangs.includes(lang)) {
+      return;
+    }
+
+    if (selectedText && selectedText.length > 0) {
+      const cleanText = selectedText.replace(/[.,!?;:'"()[\]{}]/g, '');
+      if (cleanText) {
+        setIsDictionaryOpen(true);
+        lookupWord(cleanText, lang, i18n.language, targetText);
+      }
+    }
+  }, [lookupWord, i18n.language, targetText]);
+
+  const handleDictionarySearch = useCallback((word: string, lang: string) => {
+    const supportedDictionaryLangs = ['ko', 'ja', 'en', 'zh'];
+    if (!supportedDictionaryLangs.includes(lang)) {
+      toast.error('해당 언어는 사전 검색을 지원하지 않습니다.');
+      return;
+    }
+
+    setIsDictionaryOpen(true);
+    lookupWord(word, lang, i18n.language);
+  }, [lookupWord, i18n.language]);
+
   const closeDictionary = useCallback(() => {
     setIsDictionaryOpen(false);
     resetDictionary();
@@ -856,6 +884,17 @@ export const TranslationInterface = () => {
           </header>
 
           <main className="flex-1 flex flex-col items-center justify-center px-4 py-4 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
+            {/* Dictionary Search Section */}
+            <div className="w-full max-w-4xl mb-4">
+              <div className="bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 p-4 shadow-sm">
+                <h3 className="text-sm font-medium mb-3">사전 검색</h3>
+                <DictionarySearchInput 
+                  onSearch={handleDictionarySearch}
+                  sourceLang={sourceLang}
+                />
+              </div>
+            </div>
+
             <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4">
               {!isOnline && (
                 <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
@@ -927,7 +966,7 @@ export const TranslationInterface = () => {
                       romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
                       onCopy={() => handleCopy(targetText)}
                       onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)}
-                      onTextSelect={(e) => targetText && handleTextSelection(e, targetLang, targetText)}
+                      onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)}
                       onFeedback={(type) => {
                         if (targetText) {
                           handleFeedback({

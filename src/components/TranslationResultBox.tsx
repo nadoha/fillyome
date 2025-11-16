@@ -12,7 +12,7 @@ interface TranslationResultBoxProps {
   romanization?: string;
   onCopy: () => void;
   onSpeak: () => void;
-  onTextSelect?: (e: React.MouseEvent) => void;
+  onTextSelect?: (selectedText: string, lang: string) => void;
   onFeedback?: (type: 'positive' | 'negative') => void;
   isTranslating?: boolean;
   placeholder?: string;
@@ -37,13 +37,22 @@ export const TranslationResultBox = memo(({
 }: TranslationResultBoxProps) => {
   const [showLiteral, setShowLiteral] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+
+  const handleTextSelect = () => {
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+    
+    if (selectedText && onTextSelect) {
+      onTextSelect(selectedText, targetLang);
+    }
+  };
   const { t } = useTranslation();
 
   return (
     <div className="relative group animate-fade-in flex-1">
       <div 
         className="h-full min-h-[180px] sm:min-h-[220px] max-h-[600px] overflow-y-auto border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-4 pr-[110px] transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
-        onMouseUp={onTextSelect}
+        onMouseUp={handleTextSelect}
       >
         {isTranslating ? (
           <div className="space-y-2 animate-fade-in">

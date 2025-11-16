@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import DocumentTranslation from "./pages/DocumentTranslation";
+import Vocabulary from "./pages/Vocabulary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/document" element={<DocumentTranslation />} />
+            <Route path="/vocabulary" element={<Vocabulary />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

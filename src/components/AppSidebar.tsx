@@ -1,5 +1,6 @@
-import { Trash2, History, Star } from "lucide-react";
+import { Trash2, History, Star, BookMarked } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, useSidebar } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,15 +52,16 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const { t } = useTranslation();
   const { open } = useSidebar();
+  const navigate = useNavigate();
 
   const favoriteTranslations = recentTranslations.filter(t => t.is_favorite);
   const allTranslations = recentTranslations;
 
   return (
     <Sidebar className="border-r bg-card/50 backdrop-blur-sm" collapsible="offcanvas">
-      <SidebarHeader className="border-b px-4 py-6 bg-gradient-to-br from-primary/5 to-primary/10">
+      <SidebarHeader className="border-b px-4 py-4 bg-gradient-to-br from-primary/5 to-primary/10">
         {open ? (
-          <div className="space-y-4 animate-fade-in">
+          <div className="space-y-3 animate-fade-in">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-primary/10 p-2">
                 <History className="h-5 w-5 text-primary" />
@@ -69,6 +71,15 @@ export function AppSidebar({
                 <p className="text-xs text-muted-foreground">{t("max50")}</p>
               </div>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/vocabulary")}
+              className="w-full justify-start"
+            >
+              <BookMarked className="h-4 w-4 mr-2" />
+              나의 단어장
+            </Button>
           </div>
         ) : (
           <div className="flex justify-center py-2">

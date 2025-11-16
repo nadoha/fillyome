@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, BookmarkCheck } from "lucide-react";
 
 interface DictionaryEntry {
   pos: string;
@@ -16,10 +16,19 @@ interface DictionarySheetProps {
   word: string;
   entry: DictionaryEntry | null;
   isLoading: boolean;
+  language?: string;
+  onAddToVocabulary?: (word: string, language: string, entry: DictionaryEntry) => void;
+  isInVocabulary?: boolean;
 }
 
-export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading }: DictionarySheetProps) => {
+export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading, language, onAddToVocabulary, isInVocabulary }: DictionarySheetProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleAddToVocabulary = () => {
+    if (entry && language && onAddToVocabulary) {
+      onAddToVocabulary(word, language, entry);
+    }
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -33,11 +42,34 @@ export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading }: Dic
                 <p className="text-xs text-muted-foreground/70 italic">{entry.romanization}</p>
               )}
             </div>
-            {entry && (
-              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                {entry.pos}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {entry && (
+                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                  {entry.pos}
+                </span>
+              )}
+              {entry && onAddToVocabulary && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAddToVocabulary}
+                  className="h-8 px-2"
+                  disabled={isInVocabulary}
+                >
+                  {isInVocabulary ? (
+                    <>
+                      <BookmarkCheck className="h-4 w-4 mr-1" />
+                      <span className="text-xs">저장됨</span>
+                    </>
+                  ) : (
+                    <>
+                      <BookmarkPlus className="h-4 w-4 mr-1" />
+                      <span className="text-xs">단어장</span>
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Loading State */}

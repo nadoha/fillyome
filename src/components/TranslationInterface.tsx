@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 import { useDictionary } from "@/hooks/useDictionary";
+import { useVocabulary } from "@/hooks/useVocabulary";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { attemptQuickTranslation, shouldUseQuickTranslation } from "@/utils/quickTranslation";
@@ -66,6 +67,7 @@ export const TranslationInterface = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
   const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
+  const [currentDictLang, setCurrentDictLang] = useState<string>("");
   const [noiseCancellation, setNoiseCancellation] = useState(() => {
     const saved = localStorage.getItem('noiseCancellation');
     return saved ? JSON.parse(saved) : true;
@@ -74,6 +76,7 @@ export const TranslationInterface = () => {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
+  const { addWord, isWordInVocabulary } = useVocabulary();
 
   // Speech recognition hook with noise cancellation and language detection
   const [detectedLangFromSpeech, setDetectedLangFromSpeech] = useState<string | null>(null);
@@ -811,6 +814,7 @@ export const TranslationInterface = () => {
       const cleanText = selectedText.replace(/[.,!?;:'"()[\]{}]/g, '');
       if (cleanText) {
         setIsDictionaryOpen(true);
+        setCurrentDictLang(lang);
         lookupWord(cleanText, lang, i18n.language, context);
       }
     }
@@ -827,6 +831,7 @@ export const TranslationInterface = () => {
       const cleanText = selectedText.replace(/[.,!?;:'"()[\]{}]/g, '');
       if (cleanText) {
         setIsDictionaryOpen(true);
+        setCurrentDictLang(lang);
         lookupWord(cleanText, lang, i18n.language, targetText);
       }
     }
@@ -840,6 +845,7 @@ export const TranslationInterface = () => {
     }
 
     setIsDictionaryOpen(true);
+    setCurrentDictLang(lang);
     lookupWord(word, lang, i18n.language);
   }, [lookupWord, i18n.language]);
 
@@ -847,6 +853,10 @@ export const TranslationInterface = () => {
     setIsDictionaryOpen(false);
     resetDictionary();
   }, [resetDictionary]);
+
+  const handleAddToVocabulary = useCallback((word: string, language: string, entry: any) => {
+    addWord(word, language, entry);
+  }, [addWord]);
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -1004,6 +1014,9 @@ export const TranslationInterface = () => {
             word={currentWord}
             entry={currentEntry}
             isLoading={isDictionaryLoading}
+            language={currentDictLang}
+            onAddToVocabulary={handleAddToVocabulary}
+            isInVocabulary={isWordInVocabulary(currentWord, currentDictLang)}
           />
 
           <VoiceInputOnboarding

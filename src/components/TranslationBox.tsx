@@ -75,9 +75,12 @@ export const TranslationBox = memo(({
           value={value} 
           onChange={e => onChange?.(e.target.value)} 
           onFocus={(e) => {
-            setTimeout(() => {
-              e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 300);
+            const target = e.target;
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              });
+            });
           }}
           className={`h-full min-h-[240px] max-h-[600px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pb-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''}`} 
           autoFocus 

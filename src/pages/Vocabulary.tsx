@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VocabularyList } from "@/components/VocabularyList";
@@ -10,6 +11,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 
 const Vocabulary = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { vocabulary, isLoading, removeWord, updateNotes, loadVocabulary, user } = useVocabulary();
 
   useEffect(() => {
@@ -79,16 +81,16 @@ const Vocabulary = () => {
               size="icon"
               onClick={() => navigate("/")}
               className="mb-4 rounded-full h-10 w-10 sm:h-11 sm:w-11"
-              aria-label="돌아가기"
+              aria-label={t("goBack") || "돌아가기"}
             >
               <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              나의 단어장
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground mt-2">
-              저장한 단어 {vocabulary.length}개
-            </p>
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            {t("myVocabulary") || "나의 단어장"}
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
+            {t("savedWords") || "저장한 단어"} {vocabulary.length}{t("korean") === "한국어" ? "개" : ""}
+          </p>
           </div>
 
           {/* Vocabulary List */}

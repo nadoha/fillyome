@@ -133,7 +133,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
               }}
             >
               <FileText className="h-5 w-5" />
-              <span>문서 번역</span>
+              <span>{t("documentTranslation") || "문서 번역"}</span>
             </Button>
 
             <Button
@@ -145,7 +145,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
               }}
             >
               <BookOpen className="h-5 w-5" />
-              <span>사전 검색</span>
+              <span>{t("dictionarySearch") || "사전 검색"}</span>
             </Button>
           </div>
         </div>

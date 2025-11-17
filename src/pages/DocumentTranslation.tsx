@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Upload, Link as LinkIcon, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 
 export default function DocumentTranslation() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [sourceText, setSourceText] = useState("");
@@ -156,14 +158,14 @@ export default function DocumentTranslation() {
                 size="icon"
                 onClick={() => navigate('/')}
                 className="rounded-full h-10 w-10 sm:h-11 sm:w-11"
-                aria-label="뒤로 가기"
+                aria-label={t("back") || "뒤로 가기"}
               >
                 <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  문서 번역
+                  {t("documentTranslation") || "문서 번역"}
                 </h1>
               </div>
             </div>
@@ -192,11 +194,11 @@ export default function DocumentTranslation() {
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="url" className="flex items-center gap-2">
                 <LinkIcon className="h-4 w-4" />
-                URL 번역
+                {t("urlTranslation") || "URL 번역"}
               </TabsTrigger>
               <TabsTrigger value="file" className="flex items-center gap-2">
                 <Upload className="h-4 w-4" />
-                파일 번역
+                {t("fileTranslation") || "파일 번역"}
               </TabsTrigger>
             </TabsList>
 

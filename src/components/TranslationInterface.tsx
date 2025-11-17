@@ -885,7 +885,7 @@ export const TranslationInterface = () => {
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <SidebarTrigger className="h-10 w-10 sm:h-11 sm:w-11 shrink-0" />
                   <h1 className="text-base sm:text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent truncate">
-                    번역기
+                    {t("translator") || "번역기"}
                   </h1>
                 </div>
                 
@@ -907,8 +907,8 @@ export const TranslationInterface = () => {
 
               <Tabs defaultValue="text" className="w-full">
                 <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-4">
-                  <TabsTrigger value="text">텍스트 번역</TabsTrigger>
-                  <TabsTrigger value="image">이미지 번역</TabsTrigger>
+                  <TabsTrigger value="text">{t("textTranslation") || "텍스트 번역"}</TabsTrigger>
+                  <TabsTrigger value="image">{t("imageTranslation") || "이미지 번역"}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="text" className="flex flex-col gap-4 sm:gap-5">

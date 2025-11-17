@@ -74,7 +74,7 @@ export default function Settings() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-4xl mx-auto px-4 py-8 pb-24 space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

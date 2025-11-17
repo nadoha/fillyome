@@ -3,11 +3,17 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, BookmarkCheck } from "lucide-react";
 
+interface DictionaryDefinition {
+  partOfSpeech: string;
+  meanings: string[];
+  examples: string[];
+}
+
 interface DictionaryEntry {
-  pos: string;
-  definitions: string[];
-  romanization?: string;
-  example: string;
+  pronunciation?: string;
+  definitions: DictionaryDefinition[];
+  synonyms?: string[];
+  antonyms?: string[];
 }
 
 interface DictionarySheetProps {
@@ -38,14 +44,14 @@ export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading, langu
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-semibold">{word}</h3>
-              {entry?.romanization && (
-                <p className="text-xs text-muted-foreground/70 italic">{entry.romanization}</p>
+              {entry?.pronunciation && (
+                <p className="text-xs text-muted-foreground/70 italic">{entry.pronunciation}</p>
               )}
             </div>
             <div className="flex items-center gap-2">
-              {entry && (
+              {entry && entry.definitions[0] && (
                 <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                  {entry.pos}
+                  {entry.definitions[0].partOfSpeech}
                 </span>
               )}
               {entry && onAddToVocabulary && (
@@ -84,18 +90,24 @@ export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading, langu
             <div className="space-y-1.5">
               {/* Definitions */}
               <div className={`space-y-1 ${!isExpanded ? 'line-clamp-2' : ''}`}>
-                {entry.definitions.slice(0, isExpanded ? undefined : 2).map((def, idx) => (
-                  <p key={idx} className="text-base text-foreground/90 leading-relaxed">
-                    {idx + 1}. {def}
-                  </p>
+                {entry.definitions.map((def, idx) => (
+                  <div key={idx}>
+                    {def.meanings.map((meaning, mIdx) => (
+                      <p key={mIdx} className="text-base text-foreground/90 leading-relaxed">
+                        {mIdx + 1}. {meaning}
+                      </p>
+                    ))}
+                  </div>
                 ))}
               </div>
 
-              {/* Example */}
-              {isExpanded && (
+              {/* Examples */}
+              {isExpanded && entry.definitions[0]?.examples && (
                 <div className="pt-1.5 border-t border-border/50">
                   <p className="text-sm text-muted-foreground/70 mb-0.5">Example:</p>
-                  <p className="text-base italic text-foreground/80 leading-relaxed">{entry.example}</p>
+                  {entry.definitions[0].examples.map((example, idx) => (
+                    <p key={idx} className="text-base italic text-foreground/80 leading-relaxed">{example}</p>
+                  ))}
                 </div>
               )}
 
@@ -108,24 +120,17 @@ export const DictionarySheet = ({ isOpen, onClose, word, entry, isLoading, langu
               >
                 {isExpanded ? (
                   <>
-                    <ChevronUp className="h-3 w-3 mr-1" />
-                    Less
+                    <span>접기</span>
+                    <ChevronUp className="h-3 w-3 ml-1" />
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="h-3 w-3 mr-1" />
-                    More
+                    <span>더보기</span>
+                    <ChevronDown className="h-3 w-3 ml-1" />
                   </>
                 )}
               </Button>
             </div>
-          )}
-
-          {/* Error State */}
-          {!isLoading && !entry && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No definition found
-            </p>
           )}
         </div>
       </SheetContent>

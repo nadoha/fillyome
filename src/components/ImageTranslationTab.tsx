@@ -142,9 +142,9 @@ export const ImageTranslationTab = ({
         const width = region.width * img.width;
         const height = region.height * img.height;
 
-        // Calculate font size and text dimensions
-        const fontSize = Math.max(14, Math.min(height * 0.7, 36));
-        ctx.font = `${fontSize}px "Pretendard", -apple-system, sans-serif`;
+        // Calculate font size - smaller and more compact
+        const fontSize = Math.max(10, Math.min(height * 0.5, 24));
+        ctx.font = `500 ${fontSize}px "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif`;
         
         const words = region.translated.split(' ');
         const lines: string[] = [];
@@ -154,7 +154,7 @@ export const ImageTranslationTab = ({
           const testLine = currentLine + (currentLine ? ' ' : '') + word;
           const metrics = ctx.measureText(testLine);
           
-          if (metrics.width > width * 0.85) {
+          if (metrics.width > width * 0.88) {
             if (currentLine) lines.push(currentLine);
             currentLine = word;
           } else {
@@ -163,9 +163,9 @@ export const ImageTranslationTab = ({
         });
         if (currentLine) lines.push(currentLine);
 
-        const lineHeight = fontSize * 1.3;
+        const lineHeight = fontSize * 1.2;
         const totalTextHeight = lines.length * lineHeight;
-        const padding = 8;
+        const padding = 4;
         const boxHeight = totalTextHeight + padding * 2;
 
         // Check for overlaps and adjust position
@@ -187,17 +187,20 @@ export const ImageTranslationTab = ({
           attempts++;
         }
 
-        // Draw background box
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        // Draw background box with subtle shadow
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 1;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
         ctx.fillRect(x, adjustedY, width, boxHeight);
         
-        // Draw border
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x, adjustedY, width, boxHeight);
+        // Reset shadow
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
 
         // Draw text
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = '#1a1a1a';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
 

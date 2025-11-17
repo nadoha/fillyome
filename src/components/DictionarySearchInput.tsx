@@ -82,6 +82,19 @@ export const DictionarySearchInput = ({ onSearch, sourceLang }: DictionarySearch
   const handleSearch = () => {
     if (searchTerm.trim()) {
       const word = searchTerm.trim();
+      
+      // Basic validation: filter out meaningless inputs
+      if (word.length < 2 && sourceLang === 'ko') {
+        // Korean: single character is usually not a complete word (except some rare cases)
+        return;
+      }
+      
+      // Filter out common incomplete Korean particles
+      const incompleteKoreanParticles = ['료', '어', '의', '는', '가', '을', '를', '이', '에', '와', '과', '로', '으로', '도', '만', '부터', '까지'];
+      if (sourceLang === 'ko' && incompleteKoreanParticles.includes(word)) {
+        return;
+      }
+      
       saveToHistory(word, sourceLang);
       onSearch(word, sourceLang);
       setSearchTerm("");

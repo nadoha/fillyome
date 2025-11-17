@@ -34,6 +34,20 @@ serve(async (req) => {
         }
       );
     }
+    
+    // Korean validation: reject incomplete particles and single characters
+    if (lang === 'ko') {
+      const incompleteKoreanParticles = ['료', '어', '의', '는', '가', '을', '를', '이', '에', '와', '과', '로', '으로', '도', '만', '부터', '까지'];
+      if (incompleteKoreanParticles.includes(word) || word.length < 2) {
+        return new Response(
+          JSON.stringify({ notFound: true, errorMessage: "완전한 단어를 입력해주세요" }), 
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+    }
 
     if (word.length > 100) {
       return new Response(

@@ -10,6 +10,7 @@ import Settings from "./pages/Settings";
 import DocumentTranslation from "./pages/DocumentTranslation";
 import Vocabulary from "./pages/Vocabulary";
 import Dictionary from "./pages/Dictionary";
+import ImageTranslation from "./pages/ImageTranslation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/document" element={<DocumentTranslation />} />
             <Route path="/vocabulary" element={<Vocabulary />} />
             <Route path="/dictionary" element={<Dictionary />} />
+            <Route path="/image-translation" element={<ImageTranslation />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

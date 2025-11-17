@@ -32,6 +32,7 @@ export const ImageTranslationTab = ({
   const [image, setImage] = useState<string | null>(null);
   const [translatedImage, setTranslatedImage] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,13 +45,8 @@ export const ImageTranslationTab = ({
         if (items[i].type.startsWith('image/')) {
           const file = items[i].getAsFile();
           if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              setImage(event.target?.result as string);
-              setTranslatedImage(null);
-              toast.success("이미지가 붙여넣기되었습니다");
-            };
-            reader.readAsDataURL(file);
+            processImageFile(file);
+            toast.success("이미지가 붙여넣기되었습니다");
           }
           break;
         }
@@ -61,6 +57,15 @@ export const ImageTranslationTab = ({
     return () => window.removeEventListener('paste', handlePaste);
   }, []);
 
+  const processImageFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImage(event.target?.result as string);
+      setTranslatedImage(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -70,12 +75,33 @@ export const ImageTranslationTab = ({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setImage(event.target?.result as string);
-      setTranslatedImage(null);
-    };
-    reader.readAsDataURL(file);
+    processImageFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("이미지 파일만 업로드 가능합니다");
+      return;
+    }
+
+    processImageFile(file);
+    toast.success("이미지가 업로드되었습니다");
   };
 
   const drawTranslatedImage = (imageDataUrl: string, textRegions: TextRegion[]) => {
@@ -91,21 +117,20 @@ export const ImageTranslationTab = ({
 
       ctx.drawImage(img, 0, 0);
 
-      textRegions.forEach((region) => {
+      // Sort regions by Y position to handle overlaps better
+      const sortedRegions = [...textRegions].sort((a, b) => a.y - b.y);
+      const occupiedAreas: Array<{x: number, y: number, width: number, height: number}> = [];
+
+      sortedRegions.forEach((region) => {
         const x = region.x * img.width;
-        const y = region.y * img.height;
+        let y = region.y * img.height;
         const width = region.width * img.width;
         const height = region.height * img.height;
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillRect(x, y, width, height);
-
-        const fontSize = Math.max(12, Math.min(height * 0.6, 32));
+        // Calculate font size and text dimensions
+        const fontSize = Math.max(14, Math.min(height * 0.7, 36));
         ctx.font = `${fontSize}px "Pretendard", -apple-system, sans-serif`;
-        ctx.fillStyle = '#000000';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
+        
         const words = region.translated.split(' ');
         const lines: string[] = [];
         let currentLine = '';
@@ -114,7 +139,7 @@ export const ImageTranslationTab = ({
           const testLine = currentLine + (currentLine ? ' ' : '') + word;
           const metrics = ctx.measureText(testLine);
           
-          if (metrics.width > width * 0.9) {
+          if (metrics.width > width * 0.85) {
             if (currentLine) lines.push(currentLine);
             currentLine = word;
           } else {
@@ -123,13 +148,51 @@ export const ImageTranslationTab = ({
         });
         if (currentLine) lines.push(currentLine);
 
-        const lineHeight = fontSize * 1.2;
-        const totalHeight = lines.length * lineHeight;
-        const startY = y + (height - totalHeight) / 2 + fontSize / 2;
+        const lineHeight = fontSize * 1.3;
+        const totalTextHeight = lines.length * lineHeight;
+        const padding = 8;
+        const boxHeight = totalTextHeight + padding * 2;
 
+        // Check for overlaps and adjust position
+        let adjustedY = y;
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        while (attempts < maxAttempts) {
+          const overlaps = occupiedAreas.some(area => {
+            return !(adjustedY + boxHeight < area.y || 
+                    adjustedY > area.y + area.height ||
+                    x + width < area.x || 
+                    x > area.x + area.width);
+          });
+
+          if (!overlaps) break;
+          
+          adjustedY = Math.max(0, adjustedY - boxHeight * 0.3);
+          attempts++;
+        }
+
+        // Draw background box
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.fillRect(x, adjustedY, width, boxHeight);
+        
+        // Draw border
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, adjustedY, width, boxHeight);
+
+        // Draw text
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        const startY = adjustedY + padding;
         lines.forEach((line, i) => {
           ctx.fillText(line, x + width / 2, startY + i * lineHeight);
         });
+
+        // Record occupied area
+        occupiedAreas.push({x, y: adjustedY, width, height: boxHeight});
       });
 
       setTranslatedImage(canvas.toDataURL('image/png'));
@@ -216,19 +279,26 @@ export const ImageTranslationTab = ({
         />
         
         {!image ? (
-          <button
+          <div
             onClick={() => fileInputRef.current?.click()}
-            className="w-full h-48 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-muted/30 transition-colors"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${
+              isDragging 
+                ? 'border-primary bg-primary/10' 
+                : 'border-border hover:border-primary/50 hover:bg-muted/30'
+            }`}
           >
             <Upload className="h-10 w-10 text-muted-foreground" />
             <div className="text-center">
               <p className="font-medium">이미지 업로드</p>
               <p className="text-sm text-muted-foreground mt-1">
-                클릭하여 이미지를 선택하거나<br />
-                이미지를 복사 후 <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+V</kbd>로 붙여넣기
+                클릭하여 선택, 드래그 앤 드롭 또는<br />
+                <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+V</kbd>로 붙여넣기
               </p>
             </div>
-          </button>
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="flex justify-between items-center">

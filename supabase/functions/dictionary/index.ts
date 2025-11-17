@@ -89,10 +89,10 @@ serve(async (req) => {
 
     const systemPrompt = `You are a concise dictionary. Provide definitions in ${userLangNames[userLang] || 'English'}.
 Return a JSON object with:
-- pos: part of speech in ${userLangNames[userLang] || 'English'} (noun/verb/adj/etc)
-- definitions: array of 1-2 short definitions in ${userLangNames[userLang] || 'English'} (max 10 words each)
+- pos: part of speech in ${userLangNames[userLang] || 'English'} (e.g., 명사, 동사, 형용사, etc.)
+- meanings: array of 2-3 short definitions in ${userLangNames[userLang] || 'English'} (max 15 words each)
 - romanization: ${lang === 'ko' ? 'Revised Romanization' : lang === 'ja' ? 'Hepburn romanization' : lang === 'zh' ? 'Pinyin' : 'not needed for English'}
-- example: one SHORT example sentence in ${langNames[lang]} using the word (reuse context if provided, max 15 words)
+- examples: array of 1-2 SHORT example sentences in ${langNames[lang]} using the word (max 15 words each)
 
 Keep everything minimal and concise. All explanations must be in ${userLangNames[userLang] || 'English'}.`;
 
@@ -122,15 +122,21 @@ Keep everything minimal and concise. All explanations must be in ${userLangNames
                 type: "object",
                 properties: {
                   pos: { type: "string" },
-                  definitions: { 
+                  meanings: { 
                     type: "array",
                     items: { type: "string" },
-                    maxItems: 2
+                    minItems: 2,
+                    maxItems: 3
                   },
                   romanization: { type: "string" },
-                  example: { type: "string" }
+                  examples: { 
+                    type: "array",
+                    items: { type: "string" },
+                    minItems: 1,
+                    maxItems: 2
+                  }
                 },
-                required: ["pos", "definitions", "example"],
+                required: ["pos", "meanings", "examples"],
                 additionalProperties: false
               }
             }
@@ -153,9 +159,21 @@ Keep everything minimal and concise. All explanations must be in ${userLangNames
       throw new Error("No tool call in response");
     }
 
-    const definition = JSON.parse(toolCall.function.arguments);
+    const aiResult = JSON.parse(toolCall.function.arguments);
+    
+    // Transform to match DictionaryResultCard expected structure
+    const formattedResult = {
+      pronunciation: aiResult.romanization || "",
+      definitions: [
+        {
+          partOfSpeech: aiResult.pos,
+          meanings: aiResult.meanings,
+          examples: aiResult.examples
+        }
+      ]
+    };
 
-    return new Response(JSON.stringify(definition), {
+    return new Response(JSON.stringify(formattedResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

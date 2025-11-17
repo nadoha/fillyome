@@ -69,10 +69,10 @@ const Auth = () => {
             <div className="space-y-4">
               <div className="p-4 bg-primary/10 rounded-lg text-center">
                 <p className="text-sm">
-                  <strong>{email}</strong> 주소로 인증 이메일이 전송되었습니다.
+                  <strong>{email}</strong> {t("emailSentTo") || "주소로 인증 이메일이 전송되었습니다."}
                 </p>
                 <p className="text-xs mt-2 text-muted-foreground">
-                  이메일을 확인하고 인증 링크를 클릭해주세요.
+                  {t("checkEmail") || "이메일을 확인하고 인증 링크를 클릭해주세요."}
                 </p>
               </div>
               <Button
@@ -83,7 +83,7 @@ const Auth = () => {
                   setIsLogin(true);
                 }}
               >
-                로그인 페이지로 돌아가기
+                {t("loginPageReturn") || "로그인 페이지로 돌아가기"}
               </Button>
             </div>
           ) : (

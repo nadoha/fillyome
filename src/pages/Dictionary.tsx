@@ -11,7 +11,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 
 const Dictionary = () => {
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [sourceLang, setSourceLang] = useState<string>(() => {
     const saved = localStorage.getItem('lastSourceLang');
     return saved || "ko";
@@ -52,15 +52,15 @@ const Dictionary = () => {
               size="icon"
               onClick={() => navigate("/")}
               className="gap-2 rounded-full h-10 w-10 sm:h-11 sm:w-11 mb-4"
-              aria-label="뒤로 가기"
+              aria-label={t("back") || "뒤로 가기"}
             >
               <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
           </div>
 
           <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">사전 검색</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">단어의 정확한 뜻과 용례를 확인하세요</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">{t("dictionarySearch") || "사전 검색"}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">{t("dictionarySearchDesc") || "단어의 정확한 뜻과 용례를 확인하세요"}</p>
           </div>
 
           <div className="bg-card rounded-2xl shadow-lg p-4 sm:p-6 border border-border/50">

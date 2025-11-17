@@ -76,6 +76,13 @@ export const useDictionary = () => {
 
       if (error) throw error;
 
+      // Check if word was not found
+      if (data?.notFound) {
+        setCurrentEntry(null);
+        setIsLoading(false);
+        return { notFound: true, errorMessage: data.errorMessage };
+      }
+
       setCurrentEntry(data);
 
       // Update cache (store with combined lang key)

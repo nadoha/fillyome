@@ -80,20 +80,35 @@ export const ImageTranslationTab = ({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
+    e.stopPropagation();
+    // Only set to false if we're leaving the drop zone itself, not child elements
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
 
     const file = e.dataTransfer.files?.[0];
-    if (!file) return;
+    if (!file) {
+      toast.error("파일을 찾을 수 없습니다");
+      return;
+    }
 
     if (!file.type.startsWith('image/')) {
       toast.error("이미지 파일만 업로드 가능합니다");
@@ -282,6 +297,7 @@ export const ImageTranslationTab = ({
           <div
             onClick={() => fileInputRef.current?.click()}
             onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={`w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${
@@ -291,7 +307,7 @@ export const ImageTranslationTab = ({
             }`}
           >
             <Upload className="h-10 w-10 text-muted-foreground" />
-            <div className="text-center">
+            <div className="text-center pointer-events-none">
               <p className="font-medium">이미지 업로드</p>
               <p className="text-sm text-muted-foreground mt-1">
                 클릭하여 선택, 드래그 앤 드롭 또는<br />

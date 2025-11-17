@@ -16,14 +16,24 @@ const Dictionary = () => {
     const saved = localStorage.getItem('lastSourceLang');
     return saved || "ko";
   });
+  const [notFound, setNotFound] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
   const { addWord, isWordInVocabulary } = useVocabulary();
 
   const handleDictionarySearch = async (word: string, lang: string) => {
     setSourceLang(lang);
+    setNotFound(false);
+    setErrorMessage("");
     const userLang = i18n.language;
-    await lookupWord(word, lang, userLang);
+    const result = await lookupWord(word, lang, userLang);
+    
+    // Check if word was not found
+    if (result?.notFound) {
+      setNotFound(true);
+      setErrorMessage(result.errorMessage || "단어를 찾을 수 없습니다");
+    }
   };
 
   const handleAddToVocabulary = async (word: string, language: string, entry: any) => {
@@ -32,6 +42,8 @@ const Dictionary = () => {
 
   const handleClose = () => {
     resetDictionary();
+    setNotFound(false);
+    setErrorMessage("");
   };
 
   return (
@@ -71,6 +83,8 @@ const Dictionary = () => {
               onAddToVocabulary={handleAddToVocabulary}
               isInVocabulary={isWordInVocabulary(currentWord, sourceLang)}
               onClose={handleClose}
+              notFound={notFound}
+              errorMessage={errorMessage}
             />
           )}
         </div>

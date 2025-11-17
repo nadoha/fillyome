@@ -87,14 +87,21 @@ serve(async (req) => {
       zh: '中文'
     };
 
-    const systemPrompt = `You are a concise dictionary. Provide definitions in ${userLangNames[userLang] || 'English'}.
-Return a JSON object with:
-- pos: part of speech in ${userLangNames[userLang] || 'English'} (e.g., 명사, 동사, 형용사, etc.)
-- meanings: array of 2-3 short definitions in ${userLangNames[userLang] || 'English'} (max 15 words each)
-- romanization: ${lang === 'ko' ? 'Revised Romanization' : lang === 'ja' ? 'Hepburn romanization' : lang === 'zh' ? 'Pinyin' : 'not needed for English'}
-- examples: array of 1-2 SHORT example sentences in ${langNames[lang]} using the word (max 15 words each)
+    const systemPrompt = `You are a precise dictionary. CRITICAL: Only define words that actually exist in ${langNames[lang]}.
 
-Keep everything minimal and concise. All explanations must be in ${userLangNames[userLang] || 'English'}.`;
+If the word does not exist or is nonsensical:
+- Set not_found to true
+- Set error_message explaining why (e.g., "Not a valid ${langNames[lang]} word", "Gibberish text", "Incomplete word")
+- Leave other fields empty
+
+For valid words, provide definitions in ${userLangNames[userLang] || 'English'}:
+- pos: part of speech in ${userLangNames[userLang] || 'English'}
+- meanings: 2-3 concise definitions (max 12 words each)
+- romanization: ${lang === 'ko' ? 'Revised Romanization' : lang === 'ja' ? 'Hepburn romanization' : lang === 'zh' ? 'Pinyin' : 'skip for English'}
+- examples: 1-2 SHORT natural sentences (max 12 words each)
+- not_found: false
+
+Be strict: if uncertain whether word exists, set not_found=true.`;
 
     const userPrompt = context 
       ? `Define "${word}" (${langNames[lang]}) with definitions in ${userLangNames[userLang] || 'English'} in context: "${context}"`
@@ -107,7 +114,7 @@ Keep everything minimal and concise. All explanations must be in ${userLangNames
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -121,6 +128,8 @@ Keep everything minimal and concise. All explanations must be in ${userLangNames
               parameters: {
                 type: "object",
                 properties: {
+                  not_found: { type: "boolean" },
+                  error_message: { type: "string" },
                   pos: { type: "string" },
                   meanings: { 
                     type: "array",
@@ -136,7 +145,7 @@ Keep everything minimal and concise. All explanations must be in ${userLangNames
                     maxItems: 2
                   }
                 },
-                required: ["pos", "meanings", "examples"],
+                required: ["not_found"],
                 additionalProperties: false
               }
             }
@@ -160,6 +169,16 @@ Keep everything minimal and concise. All explanations must be in ${userLangNames
     }
 
     const aiResult = JSON.parse(toolCall.function.arguments);
+    
+    // Check if word was not found
+    if (aiResult.not_found) {
+      return new Response(JSON.stringify({ 
+        notFound: true, 
+        errorMessage: aiResult.error_message || "Word not found"
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     // Transform to match DictionaryResultCard expected structure
     const formattedResult = {

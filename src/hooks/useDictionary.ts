@@ -12,6 +12,7 @@ interface DictionaryEntry {
   definitions: DictionaryDefinition[];
   synonyms?: string[];
   antonyms?: string[];
+  relatedWords?: string[];
 }
 
 interface CachedEntry {

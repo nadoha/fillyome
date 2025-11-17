@@ -1,11 +1,17 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+interface DictionaryDefinition {
+  partOfSpeech: string;
+  meanings: string[];
+  examples: string[];
+}
+
 interface DictionaryEntry {
-  pos: string;
-  definitions: string[];
-  romanization?: string;
-  example: string;
+  pronunciation?: string;
+  definitions: DictionaryDefinition[];
+  synonyms?: string[];
+  antonyms?: string[];
 }
 
 interface CachedEntry {

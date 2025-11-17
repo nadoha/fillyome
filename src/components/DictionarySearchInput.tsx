@@ -23,6 +23,7 @@ export const DictionarySearchInput = ({ onSearch, sourceLang }: DictionarySearch
   const [searchTerm, setSearchTerm] = useState("");
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
 
   useEffect(() => {
     loadHistory();
@@ -93,9 +94,18 @@ export const DictionarySearchInput = ({ onSearch, sourceLang }: DictionarySearch
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !isComposing) {
+      e.preventDefault();
       handleSearch();
     }
+  };
+
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = () => {
+    setIsComposing(false);
   };
 
   const handleHistoryClick = (item: SearchHistoryItem) => {
@@ -150,6 +160,8 @@ export const DictionarySearchInput = ({ onSearch, sourceLang }: DictionarySearch
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleKeyDown}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
             onFocus={() => setShowHistory(true)}
             placeholder="단어를 검색하세요..."
             className="pl-9 pr-9"

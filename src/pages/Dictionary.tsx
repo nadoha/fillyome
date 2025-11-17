@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DictionarySearchInput } from "@/components/DictionarySearchInput";
-import { DictionarySheet } from "@/components/DictionarySheet";
+import { DictionaryResultCard } from "@/components/DictionaryResultCard";
 import { useDictionary } from "@/hooks/useDictionary";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { BottomNavigation } from "@/components/BottomNavigation";
@@ -16,7 +16,6 @@ const Dictionary = () => {
     const saved = localStorage.getItem('lastSourceLang');
     return saved || "ko";
   });
-  const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
   const { addWord, isWordInVocabulary } = useVocabulary();
@@ -25,21 +24,14 @@ const Dictionary = () => {
     setSourceLang(lang);
     const userLang = i18n.language;
     await lookupWord(word, lang, userLang);
-    setIsDictionaryOpen(true);
   };
 
   const handleAddToVocabulary = async (word: string, language: string, entry: any) => {
     await addWord(word, language, entry);
   };
 
-  const handleSpeak = (text: string, lang: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
-    }
+  const handleClose = () => {
+    resetDictionary();
   };
 
   return (
@@ -70,16 +62,17 @@ const Dictionary = () => {
             />
           </div>
 
-          <DictionarySheet
-            isOpen={isDictionaryOpen}
-            onClose={() => setIsDictionaryOpen(false)}
-            word={currentWord}
-            entry={currentEntry}
-            isLoading={isDictionaryLoading}
-            language={sourceLang}
-            onAddToVocabulary={handleAddToVocabulary}
-            isInVocabulary={isWordInVocabulary(currentWord, sourceLang)}
-          />
+          {(currentWord || isDictionaryLoading) && (
+            <DictionaryResultCard
+              word={currentWord}
+              entry={currentEntry}
+              isLoading={isDictionaryLoading}
+              language={sourceLang}
+              onAddToVocabulary={handleAddToVocabulary}
+              isInVocabulary={isWordInVocabulary(currentWord, sourceLang)}
+              onClose={handleClose}
+            />
+          )}
         </div>
       </div>
       <BottomNavigation />

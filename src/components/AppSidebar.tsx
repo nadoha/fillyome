@@ -91,19 +91,40 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent className="px-4 py-4">
-        {selectedIds.size > 0 && (
-          <div className="mb-4 animate-fade-in">
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={onBulkDelete}
-              className="w-full"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {t("deleteSelected")} ({selectedIds.size})
-            </Button>
-          </div>
-        )}
+        <div className="space-y-4">
+          {selectedIds.size > 0 && (
+            <div className="flex gap-2 animate-fade-in">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const allIds = new Set(recentTranslations.map(t => t.id));
+                  if (selectedIds.size === allIds.size) {
+                    recentTranslations.forEach(t => onToggleSelect(t.id));
+                  } else {
+                    allIds.forEach(id => {
+                      if (!selectedIds.has(id)) {
+                        onToggleSelect(id);
+                      }
+                    });
+                  }
+                }}
+                className="flex-1"
+              >
+                {selectedIds.size === recentTranslations.length ? t("deselectAll") || "전체 해제" : t("selectAll") || "전체 선택"}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={onBulkDelete}
+                className="flex-1"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {t("deleteSelected")} ({selectedIds.size})
+              </Button>
+            </div>
+          )}
+        </div>
         
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">

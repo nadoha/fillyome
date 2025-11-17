@@ -112,5 +112,7 @@
   "emailSentTo": "A verification email has been sent to this address.",
   "checkEmail": "Please check your email and click the verification link.",
   "pageNotFound": "Page not found",
-  "returnHome": "Return to Home"
+  "returnHome": "Return to Home",
+  "selectAll": "Select All",
+  "deselectAll": "Deselect All"
 }

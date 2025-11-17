@@ -1,4 +1,4 @@
-import { Menu, LogIn, LogOut, Moon, Sun, Settings, User as UserIcon, FileText } from "lucide-react";
+import { Menu, LogIn, LogOut, Moon, Sun, Settings, User as UserIcon, FileText, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
@@ -133,6 +133,18 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
             >
               <FileText className="h-5 w-5" />
               <span>문서 번역</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 h-12"
+              onClick={() => {
+                navigate("/dictionary");
+                setOpen(false);
+              }}
+            >
+              <BookOpen className="h-5 w-5" />
+              <span>사전 검색</span>
             </Button>
           </div>
         </div>

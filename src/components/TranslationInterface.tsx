@@ -13,7 +13,6 @@ import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { attemptQuickTranslation, shouldUseQuickTranslation } from "@/utils/quickTranslation";
 import { DictionarySheet } from "./DictionarySheet";
-import { DictionarySearchInput } from "./DictionarySearchInput";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
 import { LanguageSelector } from "./LanguageSelector";
@@ -894,17 +893,6 @@ export const TranslationInterface = () => {
           </header>
 
           <main className="flex-1 flex flex-col items-center justify-center px-4 py-4 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
-            {/* Dictionary Search Section */}
-            <div className="w-full max-w-4xl mb-4">
-              <div className="bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 p-4 shadow-sm">
-                <h3 className="text-sm font-medium mb-3">사전 검색</h3>
-                <DictionarySearchInput 
-                  onSearch={handleDictionarySearch}
-                  sourceLang={sourceLang}
-                />
-              </div>
-            </div>
-
             <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4">
               {!isOnline && (
                 <Alert className="bg-warning/10 border-warning/30 animate-fade-in">

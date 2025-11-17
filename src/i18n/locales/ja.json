@@ -112,5 +112,7 @@
   "emailSentTo": "宛に認証メールが送信されました。",
   "checkEmail": "メールを確認して認証リンクをクリックしてください.",
   "pageNotFound": "ページが見つかりません",
-  "returnHome": "ホームに戻る"
+  "returnHome": "ホームに戻る",
+  "selectAll": "すべて選択",
+  "deselectAll": "すべて解除"
 }

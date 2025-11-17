@@ -112,5 +112,7 @@
   "emailSentTo": "已向此地址发送验证邮件。",
   "checkEmail": "请检查您的电子邮件并点击验证链接。",
   "pageNotFound": "页面未找到",
-  "returnHome": "返回主页"
+  "returnHome": "返回主页",
+  "selectAll": "全选",
+  "deselectAll": "取消全选"
 }

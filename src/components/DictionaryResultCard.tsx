@@ -15,6 +15,7 @@ interface DictionaryResultCardProps {
   onClose: () => void;
   notFound?: boolean;
   errorMessage?: string;
+  onRelatedWordClick?: (word: string) => void;
 }
 
 export const DictionaryResultCard = ({
@@ -26,7 +27,8 @@ export const DictionaryResultCard = ({
   isInVocabulary,
   onClose,
   notFound,
-  errorMessage
+  errorMessage,
+  onRelatedWordClick
 }: DictionaryResultCardProps) => {
   const handleSpeak = (text: string) => {
     if ('speechSynthesis' in window) {
@@ -220,6 +222,27 @@ export const DictionaryResultCard = ({
               {entry.antonyms.map((antonym: string, idx: number) => (
                 <Badge key={idx} variant="outline" className="text-xs">
                   {antonym}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {entry.relatedWords && entry.relatedWords.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold flex items-center gap-1">
+              <span>연관 단어</span>
+              <span className="text-xs text-muted-foreground">(클릭하여 검색)</span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {entry.relatedWords.map((relatedWord: string, idx: number) => (
+                <Badge 
+                  key={idx} 
+                  variant="secondary" 
+                  className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                  onClick={() => onRelatedWordClick?.(relatedWord)}
+                >
+                  {relatedWord}
                 </Badge>
               ))}
             </div>

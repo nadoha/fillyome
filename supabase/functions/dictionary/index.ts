@@ -113,6 +113,7 @@ For valid words, provide definitions in ${userLangNames[userLang] || 'English'}:
 - meanings: 2-3 concise definitions (max 12 words each)
 - romanization: ${lang === 'ko' ? 'Revised Romanization' : lang === 'ja' ? 'Hepburn romanization' : lang === 'zh' ? 'Pinyin' : 'skip for English'}
 - examples: 1-2 SHORT natural sentences (max 12 words each)
+- related_words: 3-5 related words in ${langNames[lang]} (synonyms, antonyms, derived words, or commonly associated words)
 - not_found: false
 
 Be strict: if uncertain whether word exists, set not_found=true.`;
@@ -157,6 +158,12 @@ Be strict: if uncertain whether word exists, set not_found=true.`;
                     items: { type: "string" },
                     minItems: 1,
                     maxItems: 2
+                  },
+                  related_words: {
+                    type: "array",
+                    items: { type: "string" },
+                    minItems: 3,
+                    maxItems: 5
                   }
                 },
                 required: ["not_found"],
@@ -203,7 +210,8 @@ Be strict: if uncertain whether word exists, set not_found=true.`;
           meanings: aiResult.meanings,
           examples: aiResult.examples
         }
-      ]
+      ],
+      relatedWords: aiResult.related_words || []
     };
 
     return new Response(JSON.stringify(formattedResult), {

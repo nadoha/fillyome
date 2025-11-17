@@ -36,6 +36,10 @@ const Dictionary = () => {
     }
   };
 
+  const handleRelatedWordClick = (relatedWord: string) => {
+    handleDictionarySearch(relatedWord, sourceLang);
+  };
+
   const handleAddToVocabulary = async (word: string, language: string, entry: any) => {
     await addWord(word, language, entry);
   };
@@ -85,6 +89,7 @@ const Dictionary = () => {
               onClose={handleClose}
               notFound={notFound}
               errorMessage={errorMessage}
+              onRelatedWordClick={handleRelatedWordClick}
             />
           )}
         </div>

@@ -879,12 +879,12 @@ export const TranslationInterface = () => {
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
-            <div className="px-2 py-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <SidebarTrigger className="h-9 w-9 shrink-0" />
-                  <h1 className="text-sm sm:text-base font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent truncate">
+          <header className="border-b bg-background/95 backdrop-blur-lg sticky top-0 z-10 shadow-sm">
+            <div className="px-3 sm:px-4 py-3 sm:py-3.5">
+              <div className="flex items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <SidebarTrigger className="h-10 w-10 sm:h-11 sm:w-11 shrink-0" />
+                  <h1 className="text-base sm:text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent truncate">
                     번역기
                   </h1>
                 </div>
@@ -894,8 +894,8 @@ export const TranslationInterface = () => {
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col items-center justify-center px-4 py-4 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
-            <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4">
+          <main className="flex-1 flex flex-col items-center justify-start px-3 sm:px-4 py-4 sm:py-6 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
+            <div className="w-full max-w-4xl flex flex-col gap-4 sm:gap-5">
               {!isOnline && (
                 <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
                   <WifiOff className="h-4 w-4 text-warning" />
@@ -911,8 +911,8 @@ export const TranslationInterface = () => {
                   <TabsTrigger value="image">이미지 번역</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="text" className="flex flex-col gap-3 sm:gap-4">
-                  <div className="flex items-center justify-center gap-2 mb-2">
+                <TabsContent value="text" className="flex flex-col gap-4 sm:gap-5">
+                  <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                     <LanguageSelector
                       value={sourceLang}
                       onChange={(newLang) => {

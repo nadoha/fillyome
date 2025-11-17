@@ -85,7 +85,7 @@ export const TranslationBox = memo(({
           className={`h-full min-h-[240px] max-h-[600px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pb-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''}`} 
           autoFocus 
         />
-        <div className="absolute bottom-3 right-3 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
+          <div className="absolute bottom-3 right-3 flex gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
           {onMicClick && <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -146,7 +146,7 @@ export const TranslationBox = memo(({
           <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <span className="hidden xs:inline">번역중...</span>
         </div>}
-      {!isTranslating && value && <div className="absolute bottom-3 right-3 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
+      {!isTranslating && value && <div className="absolute bottom-3 right-3 flex gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

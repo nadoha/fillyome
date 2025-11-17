@@ -52,9 +52,10 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
         <Button 
           variant="ghost" 
           size="icon"
-          className="h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-accent"
+          className="h-10 w-10 sm:h-11 sm:w-11 rounded-full hover:bg-accent shrink-0"
+          aria-label={t("menu") || "메뉴"}
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-[300px] sm:w-[350px]">

@@ -56,25 +56,26 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
+      <header className="border-b bg-card/95 backdrop-blur-lg sticky top-0 z-10 shadow-sm">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate("/")}
-              className="rounded-full"
+              className="rounded-full h-10 w-10 sm:h-11 sm:w-11 shrink-0"
+              aria-label={t("back") || "뒤로가기"}
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
+            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
               {t("settings") || "설정"}
             </h1>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 pb-24 space-y-6">
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-24 sm:pb-32 space-y-5 sm:space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

@@ -50,11 +50,11 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{isLogin ? (t("login") || "로그인") : (t("signup") || "회원가입")}</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-3 sm:p-4">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="space-y-3 sm:space-y-4">
+          <CardTitle className="text-xl sm:text-2xl">{isLogin ? (t("login") || "로그인") : (t("signup") || "회원가입")}</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             {emailSent 
               ? "이메일로 전송된 인증 링크를 클릭하여 회원가입을 완료해주세요."
               : isLogin 
@@ -62,7 +62,7 @@ const Auth = () => {
                 : (t("signupDescription") || "새 계정을 만들어 번역 기록을 저장하세요")}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           {emailSent ? (
             <div className="space-y-4">
               <div className="p-4 bg-primary/10 rounded-lg text-center">
@@ -86,49 +86,49 @@ const Auth = () => {
             </div>
           ) : (
           <>
-            <form onSubmit={handleAuth} className="space-y-4">
+            <form onSubmit={handleAuth} className="space-y-4 sm:space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email">{t("email") || "이메일"}</Label>
+                <Label htmlFor="email" className="text-sm sm:text-base">{t("email") || "이메일"}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="example@email.com"
+                  className="h-11 sm:h-12 text-base"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">{t("password") || "비밀번호"}</Label>
+                <Label htmlFor="password" className="text-sm sm:text-base">{t("password") || "비밀번호"}</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  className="h-11 sm:h-12 text-base"
                   required
                   minLength={6}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full h-11 sm:h-12 text-base" disabled={loading}>
                 {loading ? t("loading") || "처리 중..." : isLogin ? (t("login") || "로그인") : (t("signup") || "회원가입")}
               </Button>
             </form>
-            <div className="mt-4 text-center">
+            <div className="mt-4 sm:mt-6 text-center space-y-2">
               <Button
                 variant="link"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-sm"
+                className="text-sm sm:text-base h-auto"
               >
                 {isLogin 
                   ? (t("needAccount") || "계정이 없으신가요? 회원가입")
                   : (t("haveAccount") || "이미 계정이 있으신가요? 로그인")}
               </Button>
-            </div>
-            <div className="mt-2">
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full h-11 sm:h-12 text-base"
                 onClick={() => navigate("/")}
               >
                 {t("useWithoutLogin") || "로그인 없이 사용하기"}

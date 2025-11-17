@@ -894,7 +894,7 @@ export const TranslationInterface = () => {
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col items-center justify-start px-3 sm:px-4 py-4 sm:py-6 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
+          <main className="flex-1 flex flex-col items-center justify-start px-3 sm:px-4 py-4 sm:py-6 pb-20 md:pb-6 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
             <div className="w-full max-w-4xl flex flex-col gap-4 sm:gap-5">
               {!isOnline && (
                 <Alert className="bg-warning/10 border-warning/30 animate-fade-in">

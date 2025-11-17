@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { TranslationResultBox } from "@/components/TranslationResultBox";
+import { BottomNavigation } from "@/components/BottomNavigation";
 
 export default function DocumentTranslation() {
   const navigate = useNavigate();
@@ -145,30 +146,31 @@ export default function DocumentTranslation() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80 shadow-sm">
-        <div className="container flex h-16 sm:h-[72px] items-center justify-between px-3 sm:px-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/')}
-              className="rounded-full h-10 w-10 sm:h-11 sm:w-11"
-              aria-label="뒤로 가기"
-            >
-              <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                문서 번역
-              </h1>
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 pb-20 md:pb-0">
+        <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80 shadow-sm">
+          <div className="container flex h-16 sm:h-[72px] items-center justify-between px-3 sm:px-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/')}
+                className="rounded-full h-10 w-10 sm:h-11 sm:w-11"
+                aria-label="뒤로 가기"
+              >
+                <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+              </Button>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  문서 번역
+                </h1>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="container max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-24 sm:pb-32">
+        <main className="container max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <Card className="p-4 sm:p-6 shadow-lg">
           <div className="mb-6 flex items-center justify-center gap-2 sm:gap-3">
             <LanguageSelector
@@ -286,5 +288,7 @@ export default function DocumentTranslation() {
         </Card>
       </main>
     </div>
+    <BottomNavigation />
+  </>
   );
 }

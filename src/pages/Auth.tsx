@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { BottomNavigation } from "@/components/BottomNavigation";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -50,18 +51,19 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-3 sm:p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-3 sm:space-y-4">
-          <CardTitle className="text-xl sm:text-2xl">{isLogin ? (t("login") || "로그인") : (t("signup") || "회원가입")}</CardTitle>
-          <CardDescription className="text-sm sm:text-base">
-            {emailSent 
-              ? "이메일로 전송된 인증 링크를 클릭하여 회원가입을 완료해주세요."
-              : isLogin 
-                ? (t("loginDescription") || "계정에 로그인하여 번역 기록을 저장하세요")
-                : (t("signupDescription") || "새 계정을 만들어 번역 기록을 저장하세요")}
-          </CardDescription>
-        </CardHeader>
+    <>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-3 sm:p-4 pb-20 md:pb-4">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardHeader className="space-y-3 sm:space-y-4">
+            <CardTitle className="text-xl sm:text-2xl">{isLogin ? (t("login") || "로그인") : (t("signup") || "회원가입")}</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              {emailSent 
+                ? "이메일로 전송된 인증 링크를 클릭하여 회원가입을 완료해주세요."
+                : isLogin 
+                  ? (t("loginDescription") || "계정에 로그인하여 번역 기록을 저장하세요")
+                  : (t("signupDescription") || "새 계정을 만들어 번역 기록을 저장하세요")}
+            </CardDescription>
+          </CardHeader>
         <CardContent className="px-4 sm:px-6">
           {emailSent ? (
             <div className="space-y-4">
@@ -139,6 +141,8 @@ const Auth = () => {
         </CardContent>
       </Card>
     </div>
+    <BottomNavigation />
+  </>
   );
 };
 

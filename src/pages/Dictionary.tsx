@@ -43,25 +43,25 @@ const Dictionary = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-      <div className="container max-w-4xl mx-auto px-4 py-6">
-        <div className="mb-6">
+      <div className="container max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => navigate("/")}
-            className="gap-2"
+            className="gap-2 rounded-full h-10 w-10 sm:h-11 sm:w-11 mb-4"
+            aria-label="뒤로 가기"
           >
-            <ArrowLeft className="h-4 w-4" />
-            뒤로 가기
+            <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">사전 검색</h1>
-          <p className="text-muted-foreground">단어의 정확한 뜻과 용례를 확인하세요</p>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">사전 검색</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">단어의 정확한 뜻과 용례를 확인하세요</p>
         </div>
 
-        <div className="bg-card rounded-2xl shadow-lg p-6 border border-border/50">
+        <div className="bg-card rounded-2xl shadow-lg p-4 sm:p-6 border border-border/50">
           <DictionarySearchInput 
             onSearch={handleDictionarySearch}
             sourceLang={sourceLang}

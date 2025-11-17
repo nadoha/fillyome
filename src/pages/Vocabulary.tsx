@@ -69,22 +69,22 @@ const Vocabulary = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container max-w-4xl mx-auto px-4 py-8">
+      <div className="container max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-24 sm:pb-32">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-6 sm:mb-8">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => navigate("/")}
-            className="mb-4"
+            className="mb-4 rounded-full h-10 w-10 sm:h-11 sm:w-11"
+            aria-label="돌아가기"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            돌아가기
+            <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
             나의 단어장
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             저장한 단어 {vocabulary.length}개
           </p>
         </div>

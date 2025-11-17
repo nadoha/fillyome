@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, Loader2, Download } from "lucide-react";
+import { Upload, Loader2, Download, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -154,9 +154,33 @@ export const ImageTranslationTab = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Language Selector */}
+      <div className="bg-card rounded-xl shadow-sm p-4 border border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <LanguageSelector
+              value={sourceLang}
+              onChange={onSourceLangChange}
+              recentPairs={recentPairs}
+              type="source"
+              showAutoDetect={true}
+            />
+          </div>
+          <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+          <div className="flex-1">
+            <LanguageSelector
+              value={targetLang}
+              onChange={onTargetLangChange}
+              recentPairs={recentPairs}
+              type="target"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Upload Section */}
-      <div className="bg-card rounded-2xl shadow-lg p-6 border border-border/50">
+      <div className="bg-card rounded-xl shadow-sm p-4 border border-border/50">
         <input
           ref={fileInputRef}
           type="file"
@@ -168,18 +192,18 @@ export const ImageTranslationTab = ({
         {!image ? (
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full h-64 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-4 hover:border-primary/50 hover:bg-muted/30 transition-colors"
+            className="w-full h-48 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-muted/30 transition-colors"
           >
-            <Upload className="h-12 w-12 text-muted-foreground" />
+            <Upload className="h-10 w-10 text-muted-foreground" />
             <div className="text-center">
-              <p className="text-lg font-medium">이미지 업로드</p>
+              <p className="font-medium">이미지 업로드</p>
               <p className="text-sm text-muted-foreground mt-1">클릭하여 이미지를 선택하세요</p>
             </div>
           </button>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">원본 이미지</h3>
+              <h3 className="font-semibold">원본 이미지</h3>
               <Button
                 variant="outline"
                 size="sm"
@@ -188,17 +212,16 @@ export const ImageTranslationTab = ({
                 다른 이미지 선택
               </Button>
             </div>
-            <img src={image} alt="Original" className="w-full rounded-lg" />
+            <img src={image} alt="Original" className="w-full max-h-[400px] object-contain rounded-lg bg-muted/30" />
             
             <Button
               onClick={handleTranslate}
               disabled={isTranslating}
-              className="w-full h-12"
-              size="lg"
+              className="w-full h-11"
             >
               {isTranslating ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   번역 중...
                 </>
               ) : (
@@ -211,9 +234,9 @@ export const ImageTranslationTab = ({
 
       {/* Translated Image Result */}
       {translatedImage && (
-        <div className="bg-card rounded-2xl shadow-lg p-6 border border-border/50 space-y-4">
+        <div className="bg-card rounded-xl shadow-sm p-4 border border-border/50 space-y-3">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">번역 결과</h3>
+            <h3 className="font-semibold">번역 결과</h3>
             <Button
               variant="outline"
               size="sm"
@@ -224,7 +247,7 @@ export const ImageTranslationTab = ({
               다운로드
             </Button>
           </div>
-          <img src={translatedImage} alt="Translated" className="w-full rounded-lg" />
+          <img src={translatedImage} alt="Translated" className="w-full max-h-[400px] object-contain rounded-lg bg-muted/30" />
         </div>
       )}
 

@@ -132,17 +132,13 @@ export const ImageTranslationTab = ({
 
       ctx.drawImage(img, 0, 0);
 
-      // Sort regions by Y position to handle overlaps better
-      const sortedRegions = [...textRegions].sort((a, b) => a.y - b.y);
-      const occupiedAreas: Array<{x: number, y: number, width: number, height: number}> = [];
-
-      sortedRegions.forEach((region) => {
+      textRegions.forEach((region) => {
         const x = region.x * img.width;
-        let y = region.y * img.height;
+        const y = region.y * img.height;
         const width = region.width * img.width;
         const height = region.height * img.height;
 
-        // Calculate font size - smaller and more compact
+        // Calculate font size - compact and clean
         const fontSize = Math.max(10, Math.min(height * 0.5, 24));
         ctx.font = `500 ${fontSize}px "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif`;
         
@@ -168,31 +164,12 @@ export const ImageTranslationTab = ({
         const padding = 4;
         const boxHeight = totalTextHeight + padding * 2;
 
-        // Check for overlaps and adjust position
-        let adjustedY = y;
-        let attempts = 0;
-        const maxAttempts = 10;
-        
-        while (attempts < maxAttempts) {
-          const overlaps = occupiedAreas.some(area => {
-            return !(adjustedY + boxHeight < area.y || 
-                    adjustedY > area.y + area.height ||
-                    x + width < area.x || 
-                    x > area.x + area.width);
-          });
-
-          if (!overlaps) break;
-          
-          adjustedY = Math.max(0, adjustedY - boxHeight * 0.3);
-          attempts++;
-        }
-
-        // Draw background box with subtle shadow
+        // Draw background box with subtle shadow - directly on original text position
         ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
         ctx.shadowBlur = 4;
         ctx.shadowOffsetY = 1;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-        ctx.fillRect(x, adjustedY, width, boxHeight);
+        ctx.fillRect(x, y, width, Math.min(boxHeight, height));
         
         // Reset shadow
         ctx.shadowColor = 'transparent';
@@ -204,13 +181,10 @@ export const ImageTranslationTab = ({
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
 
-        const startY = adjustedY + padding;
+        const startY = y + padding;
         lines.forEach((line, i) => {
           ctx.fillText(line, x + width / 2, startY + i * lineHeight);
         });
-
-        // Record occupied area
-        occupiedAreas.push({x, y: adjustedY, width, height: boxHeight});
       });
 
       setTranslatedImage(canvas.toDataURL('image/png'));

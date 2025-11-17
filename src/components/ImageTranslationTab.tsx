@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Upload, Loader2, Download, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -34,6 +34,32 @@ export const ImageTranslationTab = ({
   const [isTranslating, setIsTranslating] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              setImage(event.target?.result as string);
+              setTranslatedImage(null);
+              toast.success("이미지가 붙여넣기되었습니다");
+            };
+            reader.readAsDataURL(file);
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -197,7 +223,10 @@ export const ImageTranslationTab = ({
             <Upload className="h-10 w-10 text-muted-foreground" />
             <div className="text-center">
               <p className="font-medium">이미지 업로드</p>
-              <p className="text-sm text-muted-foreground mt-1">클릭하여 이미지를 선택하세요</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                클릭하여 이미지를 선택하거나<br />
+                이미지를 복사 후 <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+V</kbd>로 붙여넣기
+              </p>
             </div>
           </button>
         ) : (

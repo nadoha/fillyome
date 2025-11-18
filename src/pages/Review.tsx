@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,8 @@ const Review = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const sessionStartTime = useRef<Date>(new Date());
+  const reviewedCount = useRef<number>(0);
 
   useEffect(() => {
     checkAuth();
@@ -104,6 +106,48 @@ const Review = () => {
     };
   };
 
+  const updateLearningSession = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const sessionEndTime = new Date();
+      const durationMinutes = Math.round(
+        (sessionEndTime.getTime() - sessionStartTime.current.getTime()) / 60000
+      );
+      const today = new Date().toISOString().split("T")[0];
+
+      // Check if session exists for today
+      const { data: existingSession } = await supabase
+        .from("learning_sessions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("session_date", today)
+        .maybeSingle();
+
+      if (existingSession) {
+        // Update existing session
+        await supabase
+          .from("learning_sessions")
+          .update({
+            study_duration_minutes: (existingSession.study_duration_minutes || 0) + durationMinutes,
+            words_reviewed: (existingSession.words_reviewed || 0) + reviewedCount.current,
+          })
+          .eq("id", existingSession.id);
+      } else {
+        // Create new session
+        await supabase.from("learning_sessions").insert({
+          user_id: user.id,
+          session_date: today,
+          study_duration_minutes: durationMinutes,
+          words_reviewed: reviewedCount.current,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update learning session:", error);
+    }
+  };
+
   const handleAnswer = async (quality: number) => {
     const currentWord = words[currentIndex];
     const updates = calculateNextReview(quality, currentWord);
@@ -127,11 +171,14 @@ const Review = () => {
         });
       }
 
+      reviewedCount.current += 1;
+
       // Move to next word
       if (currentIndex < words.length - 1) {
         setCurrentIndex(currentIndex + 1);
         setShowAnswer(false);
       } else {
+        await updateLearningSession();
         toast.success("복습 완료!");
         navigate("/learn");
       }

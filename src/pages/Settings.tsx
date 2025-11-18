@@ -1,4 +1,4 @@
-import { ArrowLeft, Volume2, Mic, Database, Globe } from "lucide-react";
+import { ArrowLeft, Volume2, Mic, Database, Globe, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { cleanAllCaches, getCacheStats, clearTranslationCache } from "@/utils/cacheManager";
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
@@ -45,9 +46,14 @@ export default function Settings() {
   };
 
   const clearCache = () => {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('tr_'));
-    keys.forEach(k => localStorage.removeItem(k));
-    toast.success(t("cacheCleared") || "캐시가 삭제되었습니다");
+    const count = clearTranslationCache();
+    toast.success(`${count}개의 번역 캐시가 삭제되었습니다`);
+  };
+
+  const optimizeCache = () => {
+    cleanAllCaches();
+    const stats = getCacheStats();
+    toast.success(`캐시 최적화 완료 (총 ${stats.total}개 항목)`);
   };
 
   const clearHistory = () => {
@@ -149,9 +155,19 @@ export default function Settings() {
                   variant="outline"
                   size="sm"
                   className="w-full justify-start h-9 text-sm"
+                  onClick={optimizeCache}
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  {t("optimizeCache") || "캐시 최적화"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start h-9 text-sm"
                   onClick={clearCache}
                 >
-                  {t("clearCache") || "캐시 삭제"}
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t("clearCache") || "번역 캐시 삭제"}
                 </Button>
                 <Button
                   variant="outline"

@@ -111,12 +111,13 @@ Return ONLY the preset ID (friend/business/polite/academic) that best fits this 
             Authorization: `Bearer ${LOVABLE_API_KEY}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              { role: "user", content: recommendationPrompt }
-            ],
-          }),
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite", // Use fastest model for recommendations
+        messages: [
+          { role: "user", content: recommendationPrompt }
+        ],
+        max_completion_tokens: 50, // Limit response size
+      }),
         });
 
         if (recResponse.ok) {
@@ -194,8 +195,7 @@ If source is ${langNames[sourceLang]}, you MUST output ${langNames[targetLang]}.
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        temperature: 0.3,
+        model: "google/gemini-2.5-flash", // Fast and balanced model
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `"${text}"` }

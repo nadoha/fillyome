@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { ArrowLeftRight, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +25,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TranslationStyleSelector } from "./TranslationStyleSelector";
+import { cleanAllCaches } from "@/utils/cacheManager";
 
 interface Translation {
   id: string;
@@ -85,6 +86,8 @@ export const TranslationInterface = () => {
     return saved ? JSON.parse(saved) : { formality: "formal", domain: "casual", translationType: "natural" };
   });
   const [recommendedPreset, setRecommendedPreset] = useState<string>("");
+  const lastRecommendationTextRef = useRef<string>("");
+  const translateTimeoutRef = useRef<NodeJS.Timeout>();
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
   const { addWord, isWordInVocabulary } = useVocabulary();
@@ -341,17 +344,21 @@ export const TranslationInterface = () => {
       }
     }
 
-    // Check cache second
-    const cacheKey = `tr_${sourceLang}_${targetLang}_${sourceText}`;
+    // Check cache second (now includes style)
+    const styleKey = JSON.stringify(translationStyle);
+    const cacheKey = `tr_${sourceLang}_${targetLang}_${styleKey}_${sourceText}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       try {
-        const { translation, literal, srcRom, tgtRom } = JSON.parse(cached);
-        setTargetText(translation);
-        setLiteralTranslation(literal);
-        setSourceRomanization(srcRom);
-        setTargetRomanization(tgtRom);
-        return;
+        const { translation, literal, srcRom, tgtRom, timestamp } = JSON.parse(cached);
+        // Use cache if less than 24 hours old
+        if (Date.now() - timestamp < 86400000) {
+          setTargetText(translation);
+          setLiteralTranslation(literal);
+          setSourceRomanization(srcRom);
+          setTargetRomanization(tgtRom);
+          return;
+        }
       } catch (e) {
         // Invalid cache, continue with API call
       }
@@ -396,15 +403,49 @@ export const TranslationInterface = () => {
       const srcRomanization = data.sourceRomanization || "";
       const tgtRomanization = data.targetRomanization || "";
       
-      // Cache result (limit cache size)
+      // Cache result with timestamp (limit cache size to 50 for faster performance)
       try {
-        const cacheData = { translation, literal, srcRom: srcRomanization, tgtRom: tgtRomanization };
+        const cacheData = { 
+          translation, 
+          literal, 
+          srcRom: srcRomanization, 
+          tgtRom: tgtRomanization,
+          timestamp: Date.now()
+        };
         localStorage.setItem(cacheKey, JSON.stringify(cacheData));
         
-        // Clean old cache entries (keep max 100)
+        // Clean old cache entries (keep max 50, remove entries older than 7 days)
         const keys = Object.keys(localStorage).filter(k => k.startsWith('tr_'));
-        if (keys.length > 100) {
-          keys.slice(0, keys.length - 100).forEach(k => localStorage.removeItem(k));
+        const now = Date.now();
+        const sevenDays = 7 * 86400000;
+        
+        // Remove old entries
+        keys.forEach(k => {
+          try {
+            const cached = JSON.parse(localStorage.getItem(k) || '{}');
+            if (!cached.timestamp || (now - cached.timestamp > sevenDays)) {
+              localStorage.removeItem(k);
+            }
+          } catch {
+            localStorage.removeItem(k);
+          }
+        });
+        
+        // If still too many, remove oldest
+        const remainingKeys = Object.keys(localStorage).filter(k => k.startsWith('tr_'));
+        if (remainingKeys.length > 50) {
+          const keysWithTime = remainingKeys.map(k => {
+            try {
+              const cached = JSON.parse(localStorage.getItem(k) || '{}');
+              return { key: k, time: cached.timestamp || 0 };
+            } catch {
+              return { key: k, time: 0 };
+            }
+          }).sort((a, b) => a.time - b.time);
+          
+          keysWithTime.slice(0, keysWithTime.length - 50).forEach(({ key }) => {
+            localStorage.removeItem(key);
+          });
         }
       } catch (e) {
         // Cache full or error, continue without caching
@@ -498,14 +539,24 @@ export const TranslationInterface = () => {
     return () => clearTimeout(detectTimer);
   }, [sourceText, sourceLang, updateLanguagePair]);
 
-  // Request AI style recommendation when source text changes
+  // Request AI style recommendation when source text changes (optimized - only when text is stable and different)
   useEffect(() => {
-    if (!sourceText.trim() || sourceText.trim().length < 5) {
-      setRecommendedPreset("");
+    if (!sourceText.trim() || sourceText.trim().length < 10) {
+      if (recommendedPreset) setRecommendedPreset("");
+      return;
+    }
+
+    // Skip if same text
+    if (lastRecommendationTextRef.current === sourceText) {
       return;
     }
 
     const timer = setTimeout(async () => {
+      // Double check text hasn't changed
+      if (lastRecommendationTextRef.current === sourceText) return;
+      
+      lastRecommendationTextRef.current = sourceText;
+      
       try {
         const { data } = await supabase.functions.invoke("translate", {
           body: {
@@ -522,10 +573,10 @@ export const TranslationInterface = () => {
       } catch (error) {
         console.error("Failed to get AI recommendation:", error);
       }
-    }, 1000);
+    }, 2000); // Increased debounce to reduce API calls
 
     return () => clearTimeout(timer);
-  }, [sourceText, sourceLang, targetLang]);
+  }, [sourceText, sourceLang, targetLang, recommendedPreset]);
 
   // Auto-translate with debounce
   useEffect(() => {
@@ -547,8 +598,11 @@ export const TranslationInterface = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceText, sourceLang, targetLang]);
 
-  // Auth state listener
+  // Auth state listener and cache cleanup on mount
   useEffect(() => {
+    // Clean expired caches on app start for better performance
+    cleanAllCaches();
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });

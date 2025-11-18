@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
@@ -58,7 +58,7 @@ interface TranslationStyleSelectorProps {
   onApplyRecommendation?: () => void;
 }
 
-export const TranslationStyleSelector = ({
+export const TranslationStyleSelector = memo(({
   selectedStyle,
   onStyleChange,
   recommendedPreset,
@@ -197,4 +197,6 @@ export const TranslationStyleSelector = ({
       )}
     </div>
   );
-};
+});
+
+TranslationStyleSelector.displayName = "TranslationStyleSelector";

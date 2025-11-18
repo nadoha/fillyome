@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Maximize2 } from "lucide-react";
+import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Maximize2, BookmarkPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -14,6 +14,7 @@ interface TranslationResultBoxProps {
   onSpeak: () => void;
   onTextSelect?: (selectedText: string, lang: string) => void;
   onFeedback?: (type: 'positive' | 'negative') => void;
+  onAddToVocabulary?: () => void;
   isTranslating?: boolean;
   placeholder?: string;
   sourceText?: string;
@@ -29,6 +30,7 @@ export const TranslationResultBox = memo(({
   onSpeak,
   onTextSelect,
   onFeedback,
+  onAddToVocabulary,
   isTranslating,
   placeholder,
   sourceText,
@@ -201,6 +203,25 @@ export const TranslationResultBox = memo(({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {onAddToVocabulary && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9 rounded-lg border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200"
+                    onClick={onAddToVocabulary}
+                  >
+                    <BookmarkPlus className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">단어장에 추가</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       )}
 

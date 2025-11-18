@@ -953,6 +953,22 @@ export const TranslationInterface = () => {
     addWord(word, language, entry);
   }, [addWord]);
 
+  const handleAddTranslationToVocabulary = useCallback(async () => {
+    if (!sourceText || !targetText) {
+      toast.error("번역 결과가 없습니다.");
+      return;
+    }
+
+    const definition = {
+      pos: "phrase",
+      definitions: [targetText],
+      romanization: targetRomanization || undefined,
+      example: literalTranslation || targetText,
+    };
+
+    await addWord(sourceText, sourceLang, definition);
+  }, [sourceText, targetText, sourceLang, targetRomanization, literalTranslation, addWord]);
+
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="h-screen flex w-full bg-gradient-to-br from-background via-background to-muted/20 overflow-hidden">
@@ -1089,6 +1105,7 @@ export const TranslationInterface = () => {
                         onCopy={() => handleCopy(targetText)}
                         onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)}
                         onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)}
+                        onAddToVocabulary={handleAddTranslationToVocabulary}
                         onFeedback={(type) => {
                           if (targetText) {
                             handleFeedback({

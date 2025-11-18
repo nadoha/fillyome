@@ -30,6 +30,26 @@ const Learn = () => {
   useEffect(() => {
     checkAuth();
     loadDailyStats();
+
+    // Subscribe to learning session changes for real-time updates
+    const channel = supabase
+      .channel('learning-sessions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'learning_sessions'
+        },
+        () => {
+          loadDailyStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const checkAuth = async () => {

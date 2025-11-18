@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ const Flashcards = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionStats, setSessionStats] = useState({ correct: 0, incorrect: 0 });
+  const sessionStartTime = useRef<Date>(new Date());
 
   useEffect(() => {
     checkAuth();
@@ -84,6 +85,52 @@ const Flashcards = () => {
     setIsFlipped(!isFlipped);
   };
 
+  const updateLearningSession = async (finalCorrect: number, finalIncorrect: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const sessionEndTime = new Date();
+      const durationMinutes = Math.round(
+        (sessionEndTime.getTime() - sessionStartTime.current.getTime()) / 60000
+      );
+      const today = new Date().toISOString().split("T")[0];
+
+      // Check if session exists for today
+      const { data: existingSession } = await supabase
+        .from("learning_sessions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("session_date", today)
+        .maybeSingle();
+
+      if (existingSession) {
+        // Update existing session
+        await supabase
+          .from("learning_sessions")
+          .update({
+            study_duration_minutes: (existingSession.study_duration_minutes || 0) + durationMinutes,
+            total_answers: (existingSession.total_answers || 0) + finalCorrect + finalIncorrect,
+            correct_answers: (existingSession.correct_answers || 0) + finalCorrect,
+            words_studied: (existingSession.words_studied || 0) + words.length,
+          })
+          .eq("id", existingSession.id);
+      } else {
+        // Create new session
+        await supabase.from("learning_sessions").insert({
+          user_id: user.id,
+          session_date: today,
+          study_duration_minutes: durationMinutes,
+          total_answers: finalCorrect + finalIncorrect,
+          correct_answers: finalCorrect,
+          words_studied: words.length,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update learning session:", error);
+    }
+  };
+
   const handleAnswer = async (wasCorrect: boolean) => {
     const currentWord = words[currentIndex];
     
@@ -102,17 +149,21 @@ const Flashcards = () => {
       console.error("Failed to record result:", error);
     }
 
-    setSessionStats(prev => ({
-      correct: prev.correct + (wasCorrect ? 1 : 0),
-      incorrect: prev.incorrect + (wasCorrect ? 0 : 1),
-    }));
+    const newCorrect = sessionStats.correct + (wasCorrect ? 1 : 0);
+    const newIncorrect = sessionStats.incorrect + (wasCorrect ? 0 : 1);
+
+    setSessionStats({
+      correct: newCorrect,
+      incorrect: newIncorrect,
+    });
 
     // Move to next card
     if (currentIndex < words.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setIsFlipped(false);
     } else {
-      toast.success(`학습 완료! 정답: ${sessionStats.correct + (wasCorrect ? 1 : 0)}개`);
+      await updateLearningSession(newCorrect, newIncorrect);
+      toast.success(`학습 완료! 정답: ${newCorrect}개`);
       navigate("/learn");
     }
   };
@@ -121,6 +172,7 @@ const Flashcards = () => {
     setCurrentIndex(0);
     setIsFlipped(false);
     setSessionStats({ correct: 0, incorrect: 0 });
+    sessionStartTime.current = new Date();
     const shuffled = [...words].sort(() => Math.random() - 0.5);
     setWords(shuffled);
   };

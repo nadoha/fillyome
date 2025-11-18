@@ -70,6 +70,7 @@ export const useVocabulary = () => {
           word,
           language,
           definition: definition as any,
+          user_id: user.id,
         }] as any);
 
       if (error) {

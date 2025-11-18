@@ -24,6 +24,7 @@ import { ImageTranslationTab } from "./ImageTranslationTab";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TranslationStyleSelector } from "./TranslationStyleSelector";
 
 interface Translation {
   id: string;
@@ -75,6 +76,15 @@ export const TranslationInterface = () => {
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [translationStyle, setTranslationStyle] = useState<{
+    formality: "formal" | "informal";
+    domain: "casual" | "business" | "academic";
+    translationType: "literal" | "natural";
+  }>(() => {
+    const saved = localStorage.getItem('translationStyle');
+    return saved ? JSON.parse(saved) : { formality: "formal", domain: "casual", translationType: "natural" };
+  });
+  const [recommendedPreset, setRecommendedPreset] = useState<string>("");
   
   const { lookupWord, currentEntry, currentWord, isLoading: isDictionaryLoading, reset: resetDictionary } = useDictionary();
   const { addWord, isWordInVocabulary } = useVocabulary();
@@ -368,6 +378,7 @@ export const TranslationInterface = () => {
           text: sourceText,
           sourceLang,
           targetLang,
+          style: translationStyle,
         },
       });
 
@@ -442,7 +453,7 @@ export const TranslationInterface = () => {
       setIsTranslating(false);
       setAbortController(null);
     }
-  }, [sourceText, sourceLang, targetLang, abortController, isOnline, t, saveTranslation]);
+  }, [sourceText, sourceLang, targetLang, translationStyle, abortController, isOnline, t, saveTranslation]);
 
   // Auto-detect language with improved sensitivity
   useEffect(() => {
@@ -486,6 +497,35 @@ export const TranslationInterface = () => {
 
     return () => clearTimeout(detectTimer);
   }, [sourceText, sourceLang, updateLanguagePair]);
+
+  // Request AI style recommendation when source text changes
+  useEffect(() => {
+    if (!sourceText.trim() || sourceText.trim().length < 5) {
+      setRecommendedPreset("");
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await supabase.functions.invoke("translate", {
+          body: {
+            text: sourceText,
+            sourceLang,
+            targetLang,
+            requestRecommendation: true,
+          },
+        });
+        
+        if (data?.recommendedPreset) {
+          setRecommendedPreset(data.recommendedPreset);
+        }
+      } catch (error) {
+        console.error("Failed to get AI recommendation:", error);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [sourceText, sourceLang, targetLang]);
 
   // Auto-translate with debounce
   useEffect(() => {
@@ -943,6 +983,28 @@ export const TranslationInterface = () => {
                       type="target"
                     />
                   </div>
+
+                  {/* Translation Style Selector */}
+                  <TranslationStyleSelector
+                    selectedStyle={translationStyle}
+                    onStyleChange={(newStyle) => {
+                      setTranslationStyle(newStyle);
+                      localStorage.setItem('translationStyle', JSON.stringify(newStyle));
+                    }}
+                    recommendedPreset={recommendedPreset}
+                    onApplyRecommendation={() => {
+                      const preset = [
+                        { id: "friend", style: { formality: "informal", domain: "casual", translationType: "natural" } },
+                        { id: "business", style: { formality: "formal", domain: "business", translationType: "natural" } },
+                        { id: "polite", style: { formality: "formal", domain: "casual", translationType: "natural" } },
+                        { id: "academic", style: { formality: "formal", domain: "academic", translationType: "literal" } }
+                      ].find(p => p.id === recommendedPreset);
+                      if (preset) {
+                        setTranslationStyle(preset.style as any);
+                        localStorage.setItem('translationStyle', JSON.stringify(preset.style));
+                      }
+                    }}
+                  />
                   
                   <div>
                     <TranslationBox

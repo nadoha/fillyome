@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, sourceLang, targetLang } = await req.json();
+    const { text, sourceLang, targetLang, style, requestRecommendation } = await req.json();
     
     // Input validation
     if (!text || !sourceLang || !targetLang) {
@@ -89,6 +89,82 @@ serve(async (req) => {
 
     console.log(`Translation request: ${langNames[sourceLang]} → ${langNames[targetLang]}`);
     
+    // If recommendation is requested, analyze the text first
+    if (requestRecommendation) {
+      const recommendationPrompt = `Analyze this text and recommend the most appropriate translation style preset:
+
+Text: "${text}"
+Source language: ${langNames[sourceLang]}
+
+Available presets:
+- friend: Informal, casual, natural (for chatting with friends)
+- business: Formal, business context, natural (for work emails/documents)
+- polite: Formal, casual context, natural (for polite conversation)
+- academic: Formal, academic context, literal (for research/papers)
+
+Return ONLY the preset ID (friend/business/polite/academic) that best fits this text's context and purpose.`;
+
+      try {
+        const recResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "user", content: recommendationPrompt }
+            ],
+          }),
+        });
+
+        if (recResponse.ok) {
+          const recData = await recResponse.json();
+          const recommendedPreset = recData.choices[0].message.content.trim().toLowerCase();
+          console.log(`AI recommended preset: ${recommendedPreset}`);
+          
+          return new Response(
+            JSON.stringify({ recommendedPreset }),
+            { 
+              status: 200, 
+              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            }
+          );
+        }
+      } catch (error) {
+        console.error("Recommendation failed:", error);
+      }
+    }
+
+    // Build style-aware system prompt
+    let styleInstructions = "";
+    
+    if (style) {
+      // Formality
+      if (style.formality === "formal") {
+        styleInstructions += "\n- Use FORMAL language (존댓말/敬語/formal tone)";
+      } else if (style.formality === "informal") {
+        styleInstructions += "\n- Use INFORMAL language (반말/タメ口/casual tone)";
+      }
+
+      // Domain
+      if (style.domain === "business") {
+        styleInstructions += "\n- Use BUSINESS terminology and professional expressions";
+      } else if (style.domain === "academic") {
+        styleInstructions += "\n- Use ACADEMIC terminology and scholarly expressions";
+      } else if (style.domain === "casual") {
+        styleInstructions += "\n- Use CASUAL everyday expressions";
+      }
+
+      // Translation type
+      if (style.translationType === "literal") {
+        styleInstructions += "\n- Prioritize LITERAL translation (word-for-word accuracy)";
+      } else if (style.translationType === "natural") {
+        styleInstructions += "\n- Prioritize NATURAL translation (idiomatic fluency)";
+      }
+    }
+    
     // CRITICAL: Enforce strict target language adherence
     const systemPrompt = `You are a professional translator. You MUST translate from ${langNames[sourceLang]} to ${langNames[targetLang]} ONLY.
 
@@ -105,7 +181,7 @@ TRANSLATION GUIDELINES:
 - Choose contextually appropriate expressions
 - Maintain style appropriate to specialized terminology and register
 - Reflect cultural differences and linguistic characteristics when necessary
-- Preserve emoticons and formatting
+- Preserve emoticons and formatting${styleInstructions}
 
 If source is ${langNames[sourceLang]}, you MUST output ${langNames[targetLang]}.`;
 

@@ -10,6 +10,11 @@ import Settings from "./pages/Settings";
 import DocumentTranslation from "./pages/DocumentTranslation";
 import Vocabulary from "./pages/Vocabulary";
 import Dictionary from "./pages/Dictionary";
+import Learn from "./pages/Learn";
+import Flashcards from "./pages/Flashcards";
+import Review from "./pages/Review";
+import Quiz from "./pages/Quiz";
+import Stats from "./pages/Stats";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +33,11 @@ const App = () => (
             <Route path="/document" element={<DocumentTranslation />} />
             <Route path="/vocabulary" element={<Vocabulary />} />
             <Route path="/dictionary" element={<Dictionary />} />
+            <Route path="/learn" element={<Learn />} />
+            <Route path="/flashcards" element={<Flashcards />} />
+            <Route path="/review" element={<Review />} />
+            <Route path="/quiz" element={<Quiz />} />
+            <Route path="/stats" element={<Stats />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

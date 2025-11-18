@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      learning_sessions: {
+        Row: {
+          correct_answers: number | null
+          created_at: string | null
+          id: string
+          session_date: string
+          study_duration_minutes: number | null
+          total_answers: number | null
+          updated_at: string | null
+          user_id: string
+          words_reviewed: number | null
+          words_studied: number | null
+        }
+        Insert: {
+          correct_answers?: number | null
+          created_at?: string | null
+          id?: string
+          session_date?: string
+          study_duration_minutes?: number | null
+          total_answers?: number | null
+          updated_at?: string | null
+          user_id: string
+          words_reviewed?: number | null
+          words_studied?: number | null
+        }
+        Update: {
+          correct_answers?: number | null
+          created_at?: string | null
+          id?: string
+          session_date?: string
+          study_duration_minutes?: number | null
+          total_answers?: number | null
+          updated_at?: string | null
+          user_id?: string
+          words_reviewed?: number | null
+          words_studied?: number | null
+        }
+        Relationships: []
+      }
+      quiz_results: {
+        Row: {
+          created_at: string | null
+          id: string
+          quiz_type: string
+          response_time_seconds: number | null
+          user_id: string
+          vocabulary_id: string | null
+          was_correct: boolean
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          quiz_type: string
+          response_time_seconds?: number | null
+          user_id: string
+          vocabulary_id?: string | null
+          was_correct: boolean
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          quiz_type?: string
+          response_time_seconds?: number | null
+          user_id?: string
+          vocabulary_id?: string | null
+          was_correct?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_results_vocabulary_id_fkey"
+            columns: ["vocabulary_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       translation_feedback: {
         Row: {
           created_at: string
@@ -110,27 +187,42 @@ export type Database = {
         Row: {
           created_at: string
           definition: Json
+          ease_factor: number | null
           id: string
+          interval_days: number | null
           language: string
+          last_reviewed: string | null
+          next_review: string | null
           notes: string | null
+          review_count: number | null
           user_id: string
           word: string
         }
         Insert: {
           created_at?: string
           definition: Json
+          ease_factor?: number | null
           id?: string
+          interval_days?: number | null
           language: string
+          last_reviewed?: string | null
+          next_review?: string | null
           notes?: string | null
+          review_count?: number | null
           user_id: string
           word: string
         }
         Update: {
           created_at?: string
           definition?: Json
+          ease_factor?: number | null
           id?: string
+          interval_days?: number | null
           language?: string
+          last_reviewed?: string | null
+          next_review?: string | null
           notes?: string | null
+          review_count?: number | null
           user_id?: string
           word?: string
         }

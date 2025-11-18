@@ -12,25 +12,25 @@ export const BottomNavigation = () => {
     { 
       path: "/", 
       icon: Home, 
-      label: t("translate") || "번역",
+      label: "번역",
       ariaLabel: "홈 - 번역"
     },
     { 
-      path: "/dictionary", 
+      path: "/learn", 
       icon: BookOpen, 
-      label: t("dictionary") || "사전",
-      ariaLabel: "사전 검색"
+      label: "학습",
+      ariaLabel: "학습 메인"
     },
     { 
       path: "/vocabulary", 
       icon: BookMarked, 
-      label: t("vocabulary") || "단어장",
+      label: "단어장",
       ariaLabel: "나의 단어장"
     },
     { 
       path: "/settings", 
       icon: Settings, 
-      label: t("settings") || "설정",
+      label: "설정",
       ariaLabel: "설정"
     },
   ];

@@ -995,7 +995,7 @@ export const TranslationInterface = () => {
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="border-b bg-background/95 backdrop-blur-lg sticky top-0 z-10 shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+          <header className="border-b bg-background/95 backdrop-blur-lg sticky top-0 z-10 shadow-sm pt-safe">
             <div className="px-3 sm:px-4 py-3 sm:py-3.5">
               <div className="flex items-center justify-between gap-3 sm:gap-4">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">

@@ -226,7 +226,7 @@ const CurrencyExchange = () => {
               />
             </div>
 
-            <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-end">
+            <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
               <div className="space-y-2">
                 <Label htmlFor="from">{t("fromCurrency")}</Label>
                 <Select value={fromCurrency} onValueChange={setFromCurrency}>
@@ -247,7 +247,7 @@ const CurrencyExchange = () => {
                 variant="ghost"
                 size="icon"
                 onClick={swapCurrencies}
-                className="mb-1"
+                className="mt-6 h-11 w-11"
                 aria-label={t("swapCurrencies")}
               >
                 <ArrowLeftRight className="w-5 h-5" />

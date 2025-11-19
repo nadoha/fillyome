@@ -1,4 +1,4 @@
-import { Menu, LogIn, LogOut, Moon, Sun, Settings, User as UserIcon, FileText, BookOpen, BookMarked } from "lucide-react";
+import { Menu, LogIn, LogOut, Moon, Sun, Settings, User as UserIcon, FileText, BookOpen, BookMarked, Coins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
@@ -146,6 +146,18 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
             >
               <BookOpen className="h-5 w-5" />
               <span>{t("dictionarySearch") || "사전 검색"}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 h-12"
+              onClick={() => {
+                navigate("/currency");
+                setOpen(false);
+              }}
+            >
+              <Coins className="h-5 w-5" />
+              <span>환율 계산기</span>
             </Button>
           </div>
         </div>

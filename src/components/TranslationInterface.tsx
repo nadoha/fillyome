@@ -53,6 +53,7 @@ export const TranslationInterface = () => {
   const [literalTranslation, setLiteralTranslation] = useState("");
   const [sourceRomanization, setSourceRomanization] = useState("");
   const [targetRomanization, setTargetRomanization] = useState("");
+  const [exampleSentence, setExampleSentence] = useState("");
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
     return (saved as any) || "ko";
@@ -322,6 +323,7 @@ export const TranslationInterface = () => {
         setLiteralTranslation(quickResult.literal || "");
         setSourceRomanization(quickResult.sourceRom || "");
         setTargetRomanization(quickResult.targetRom || "");
+        setExampleSentence("");
         
         // Auto-save quick translation to history
         const newTranslation: Translation = {
@@ -350,13 +352,14 @@ export const TranslationInterface = () => {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       try {
-        const { translation, literal, srcRom, tgtRom, timestamp } = JSON.parse(cached);
+        const { translation, literal, srcRom, tgtRom, example, timestamp } = JSON.parse(cached);
         // Use cache if less than 24 hours old
         if (Date.now() - timestamp < 86400000) {
           setTargetText(translation);
           setLiteralTranslation(literal);
           setSourceRomanization(srcRom);
           setTargetRomanization(tgtRom);
+          setExampleSentence(example || "");
           return;
         }
       } catch (e) {
@@ -402,6 +405,7 @@ export const TranslationInterface = () => {
       const literal = data.literalTranslation || "";
       const srcRomanization = data.sourceRomanization || "";
       const tgtRomanization = data.targetRomanization || "";
+      const example = data.exampleSentence || "";
       
       // Cache result with timestamp (limit cache size to 50 for faster performance)
       try {
@@ -410,6 +414,7 @@ export const TranslationInterface = () => {
           literal, 
           srcRom: srcRomanization, 
           tgtRom: tgtRomanization,
+          example,
           timestamp: Date.now()
         };
         localStorage.setItem(cacheKey, JSON.stringify(cacheData));
@@ -455,6 +460,7 @@ export const TranslationInterface = () => {
       setLiteralTranslation(literal);
       setSourceRomanization(srcRomanization);
       setTargetRomanization(tgtRomanization);
+      setExampleSentence(example);
 
       // Auto-save to history when translation completes
       const newTranslation: Translation = {
@@ -1102,6 +1108,7 @@ export const TranslationInterface = () => {
                         naturalTranslation={targetText}
                         literalTranslation={literalTranslation}
                         romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
+                        exampleSentence={exampleSentence}
                         onCopy={() => handleCopy(targetText)}
                         onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)}
                         onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)}

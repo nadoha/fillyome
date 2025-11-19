@@ -17,8 +17,10 @@ const CURRENCY_CODES = [
   { code: "EUR", symbol: "€" },
   { code: "JPY", symbol: "¥" },
   { code: "CNY", symbol: "¥" },
-  { code: "VND", symbol: "₫" },
+  { code: "THB", symbol: "฿" },
   { code: "PHP", symbol: "₱" },
+  { code: "GBP", symbol: "£" },
+  { code: "HKD", symbol: "HK$" },
 ];
 
 type HistoryData = {

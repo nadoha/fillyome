@@ -15,6 +15,7 @@ import Flashcards from "./pages/Flashcards";
 import Review from "./pages/Review";
 import Quiz from "./pages/Quiz";
 import Stats from "./pages/Stats";
+import CurrencyExchange from "./pages/CurrencyExchange";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/review" element={<Review />} />
             <Route path="/quiz" element={<Quiz />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/currency" element={<CurrencyExchange />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

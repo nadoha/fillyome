@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Upload, Loader2, Download, ArrowRight } from "lucide-react";
+import { Upload, Loader2, Download, ArrowRight, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,8 +33,11 @@ export const ImageTranslationTab = ({
   const [translatedImage, setTranslatedImage] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isCameraMode, setIsCameraMode] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -56,6 +59,57 @@ export const ImageTranslationTab = ({
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      setStream(mediaStream);
+      setIsCameraMode(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (error) {
+      toast.error("카메라에 접근할 수 없습니다");
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setIsCameraMode(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+            processImageFile(file);
+            stopCamera();
+          }
+        }, 'image/jpeg');
+      }
+    }
+  };
 
   const processImageFile = (file: File) => {
     const reader = new FileReader();
@@ -234,6 +288,49 @@ export const ImageTranslationTab = ({
     toast.success("이미지가 다운로드되었습니다");
   };
 
+  if (isCameraMode) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover"
+        />
+        <canvas ref={canvasRef} className="hidden" />
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-4 left-4 h-12 w-12 rounded-full bg-black/50 text-white hover:bg-black/70"
+          onClick={stopCamera}
+        >
+          <X className="h-6 w-6" />
+        </Button>
+
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+          <div className="flex gap-2 mb-4">
+            <div className="flex-1 bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white text-sm text-center">
+              {sourceLang === 'ko' ? '한국어' : sourceLang === 'ja' ? '日本語' : sourceLang === 'en' ? 'English' : sourceLang === 'zh' ? '中文' : sourceLang}
+            </div>
+            <ArrowRight className="h-5 w-5 text-white mt-2" />
+            <div className="flex-1 bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white text-sm text-center">
+              {targetLang === 'ko' ? '한국어' : targetLang === 'ja' ? '日本語' : targetLang === 'en' ? 'English' : targetLang === 'zh' ? '中文' : targetLang}
+            </div>
+          </div>
+          
+          <Button
+            onClick={capturePhoto}
+            className="w-full h-14 rounded-full bg-white text-black hover:bg-white/90 font-semibold"
+          >
+            <Camera className="mr-2 h-5 w-5" />
+            촬영
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Language Selector */}
@@ -271,24 +368,39 @@ export const ImageTranslationTab = ({
         />
         
         {!image ? (
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${
-              isDragging 
-                ? 'border-primary bg-primary/10' 
-                : 'border-border hover:border-primary/50 hover:bg-muted/30'
-            }`}
-          >
-            <Upload className="h-10 w-10 text-muted-foreground" />
-            <div className="text-center pointer-events-none">
-              <p className="font-medium">이미지 업로드</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                클릭하여 선택, 드래그 앤 드롭 또는<br />
-                <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+V</kbd>로 붙여넣기
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 h-12"
+                onClick={startCamera}
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                카메라
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 h-12"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mr-2 h-5 w-5" />
+                갤러리
+              </Button>
+            </div>
+            <div
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 transition-colors ${
+                isDragging 
+                  ? 'border-primary bg-primary/10' 
+                  : 'border-border'
+              }`}
+            >
+              <Upload className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground text-center px-4">
+                드래그 앤 드롭 또는 <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+V</kbd>
               </p>
             </div>
           </div>

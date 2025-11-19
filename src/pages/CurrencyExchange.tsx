@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const CURRENCY_CODES = [
   { code: "KRW", symbol: "₩" },
@@ -173,8 +174,9 @@ const CurrencyExchange = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <ScrollArea className="h-screen">
+      <div className="min-h-screen bg-background p-4 md:p-8 pb-20 md:pb-8">
+        <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-8 h-8 text-primary" />
@@ -422,7 +424,8 @@ const CurrencyExchange = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </ScrollArea>
   );
 };
 

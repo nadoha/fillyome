@@ -150,6 +150,8 @@
   "eur": "Euro",
   "jpy": "Japanese Yen",
   "cny": "Chinese Yuan",
-  "vnd": "Vietnamese Dong",
-  "php": "Philippine Peso"
+  "thb": "Thai Baht",
+  "php": "Philippine Peso",
+  "gbp": "British Pound",
+  "hkd": "Hong Kong Dollar"
 }

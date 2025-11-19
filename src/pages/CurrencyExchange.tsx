@@ -151,14 +151,22 @@ const CurrencyExchange = () => {
       const data = await response.json();
       const rates = data.rates;
       
-      const formattedData: HistoryData[] = Object.entries(rates).map(([date, rateData]: [string, any]) => ({
-        date,
-        rate: rateData[toCurrency]
-      }));
+      if (!rates || Object.keys(rates).length === 0) {
+        setHistoryData([]);
+        return;
+      }
+      
+      const formattedData: HistoryData[] = Object.entries(rates)
+        .map(([date, rateData]: [string, any]) => ({
+          date,
+          rate: rateData[toCurrency]
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
       setHistoryData(formattedData);
     } catch (error) {
       console.error("History fetch error:", error);
+      setHistoryData([]);
     } finally {
       setLoadingHistory(false);
     }
@@ -290,14 +298,31 @@ const CurrencyExchange = () => {
               </div>
             ) : null}
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               {lastUpdated && (
-                <div className="text-xs text-muted-foreground text-center">
-                  {t("lastUpdated")}: {lastUpdated.toLocaleTimeString()}
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span>{t("lastUpdated")}: {lastUpdated.toLocaleString()}</span>
                 </div>
               )}
-              <div className="text-xs text-muted-foreground text-center">
-                {t("exchangeRateDisclaimer")}
+              <div className="text-center p-3 bg-muted/50 rounded-lg border border-border">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="text-xs font-semibold text-primary">{t("dataSource")}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {t("dataSourceInfo")}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {t("frankfurterApi")}
+                </div>
+              </div>
+              <div className="text-center p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                <div className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">
+                  ⚠️ {t("disclaimer")}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {t("disclaimerText")}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -327,52 +352,71 @@ const CurrencyExchange = () => {
                 <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : historyData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={historyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                    tickFormatter={(value) => {
-                      const date = new Date(value);
-                      if (selectedPeriod === "1d" || selectedPeriod === "1w") {
-                        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                      } else if (selectedPeriod === "1m") {
-                        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                      } else {
-                        return date.toLocaleDateString(undefined, { year: '2-digit', month: 'short' });
-                      }
-                    }}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                    domain={['auto', 'auto']}
-                    tickFormatter={(value) => value.toFixed(2)}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--foreground))'
-                    }}
-                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                    formatter={(value: number) => [value.toFixed(4), `${fromCurrency}/${toCurrency}`]}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="rate" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={historyData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="hsl(var(--muted-foreground))"
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        if (selectedPeriod === "1d") {
+                          return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                        } else if (selectedPeriod === "1w" || selectedPeriod === "1m") {
+                          return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                        } else {
+                          return date.toLocaleDateString(undefined, { year: '2-digit', month: 'short' });
+                        }
+                      }}
+                    />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))"
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                      domain={['dataMin - 5', 'dataMax + 5']}
+                      tickFormatter={(value) => value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      width={60}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        color: 'hsl(var(--popover-foreground))',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
+                      labelFormatter={(value) => {
+                        const date = new Date(value);
+                        return date.toLocaleDateString(undefined, { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        });
+                      }}
+                      formatter={(value: number) => [
+                        `${value.toFixed(4)} ${toCurrency}`,
+                        `1 ${fromCurrency}`
+                      ]}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="rate" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(var(--primary))', r: 3 }}
+                      activeDot={{ r: 5, fill: 'hsl(var(--primary))' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="mt-4 text-center text-xs text-muted-foreground">
+                  {historyData.length} {t("dataSource")} • {fromCurrency}/{toCurrency}
+                </div>
+              </div>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                {t("noHistoryData")}
+              <div className="h-[300px] flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <TrendingUp className="w-12 h-12 opacity-20" />
+                <p className="text-sm">{t("noHistoryData")}</p>
               </div>
             )}
           </CardContent>

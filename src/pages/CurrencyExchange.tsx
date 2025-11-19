@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeftRight, TrendingUp } from "lucide-react";
+import { ArrowLeftRight, TrendingUp, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 
 const CURRENCY_CODES = [
   { code: "KRW", symbol: "₩" },
@@ -26,6 +27,8 @@ const CurrencyExchange = () => {
   const [result, setResult] = useState<number | null>(null);
   const [rate, setRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -33,6 +36,16 @@ const CurrencyExchange = () => {
       convertCurrency();
     }
   }, [amount, fromCurrency, toCurrency]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      convertCurrency();
+    }, 60000); // 1분마다 자동 갱신
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, amount, fromCurrency, toCurrency]);
 
   const convertCurrency = async () => {
     if (!amount || isNaN(Number(amount))) {
@@ -60,6 +73,7 @@ const CurrencyExchange = () => {
 
       setRate(exchangeRate);
       setResult(Number(amount) * exchangeRate);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error("Exchange rate error:", error);
       toast({
@@ -82,9 +96,32 @@ const CurrencyExchange = () => {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-2 mb-6">
-          <TrendingUp className="w-8 h-8 text-primary" />
-          <h1 className="text-3xl font-bold">{t("currencyExchange")}</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-8 h-8 text-primary" />
+            <h1 className="text-3xl font-bold">{t("currencyExchange")}</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={autoRefresh}
+                onCheckedChange={setAutoRefresh}
+                id="auto-refresh"
+              />
+              <Label htmlFor="auto-refresh" className="text-sm cursor-pointer">
+                {t("autoRefresh")}
+              </Label>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => convertCurrency()}
+              disabled={loading}
+              title={t("refreshRate")}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -179,8 +216,15 @@ const CurrencyExchange = () => {
               </div>
             ) : null}
 
-            <div className="text-xs text-muted-foreground text-center">
-              {t("exchangeRateDisclaimer")}
+            <div className="space-y-1">
+              {lastUpdated && (
+                <div className="text-xs text-muted-foreground text-center">
+                  {t("lastUpdated")}: {lastUpdated.toLocaleTimeString()}
+                </div>
+              )}
+              <div className="text-xs text-muted-foreground text-center">
+                {t("exchangeRateDisclaimer")}
+              </div>
             </div>
           </CardContent>
         </Card>

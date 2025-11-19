@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,17 +8,18 @@ import { ArrowLeftRight, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-const CURRENCIES = [
-  { code: "KRW", name: "한국 원", symbol: "₩" },
-  { code: "USD", name: "미국 달러", symbol: "$" },
-  { code: "EUR", name: "유로", symbol: "€" },
-  { code: "JPY", name: "일본 엔", symbol: "¥" },
-  { code: "CNY", name: "중국 위안", symbol: "¥" },
-  { code: "VND", name: "베트남 동", symbol: "₫" },
-  { code: "PHP", name: "필리핀 페소", symbol: "₱" },
+const CURRENCY_CODES = [
+  { code: "KRW", symbol: "₩" },
+  { code: "USD", symbol: "$" },
+  { code: "EUR", symbol: "€" },
+  { code: "JPY", symbol: "¥" },
+  { code: "CNY", symbol: "¥" },
+  { code: "VND", symbol: "₫" },
+  { code: "PHP", symbol: "₱" },
 ];
 
 const CurrencyExchange = () => {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState<string>("1");
   const [fromCurrency, setFromCurrency] = useState<string>("USD");
   const [toCurrency, setToCurrency] = useState<string>("KRW");
@@ -46,23 +48,23 @@ const CurrencyExchange = () => {
       );
       
       if (!response.ok) {
-        throw new Error("환율 정보를 가져올 수 없습니다");
+        throw new Error(t("exchangeRateError"));
       }
 
       const data = await response.json();
       const exchangeRate = data.rates[toCurrency];
       
       if (!exchangeRate) {
-        throw new Error("환율 정보를 찾을 수 없습니다");
+        throw new Error(t("exchangeRateNotFound"));
       }
 
       setRate(exchangeRate);
       setResult(Number(amount) * exchangeRate);
     } catch (error) {
-      console.error("환율 변환 오류:", error);
+      console.error("Exchange rate error:", error);
       toast({
-        title: "오류",
-        description: "환율 정보를 가져오는데 실패했습니다",
+        title: t("authError"),
+        description: t("exchangeRateFetchError"),
         variant: "destructive",
       });
       setResult(null);
@@ -82,20 +84,20 @@ const CurrencyExchange = () => {
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-2 mb-6">
           <TrendingUp className="w-8 h-8 text-primary" />
-          <h1 className="text-3xl font-bold">환율 계산기</h1>
+          <h1 className="text-3xl font-bold">{t("currencyExchange")}</h1>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>통화 변환</CardTitle>
+            <CardTitle>{t("currencyConverter")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="amount">금액</Label>
+              <Label htmlFor="amount">{t("amount")}</Label>
               <Input
                 id="amount"
                 type="number"
-                placeholder="금액을 입력하세요"
+                placeholder={t("enterAmount")}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 min="0"
@@ -105,15 +107,15 @@ const CurrencyExchange = () => {
 
             <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-end">
               <div className="space-y-2">
-                <Label htmlFor="from">보내는 통화</Label>
+                <Label htmlFor="from">{t("fromCurrency")}</Label>
                 <Select value={fromCurrency} onValueChange={setFromCurrency}>
                   <SelectTrigger id="from">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CURRENCIES.map((currency) => (
+                    {CURRENCY_CODES.map((currency) => (
                       <SelectItem key={currency.code} value={currency.code}>
-                        {currency.symbol} {currency.name}
+                        {currency.symbol} {t(currency.code.toLowerCase())}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -125,20 +127,21 @@ const CurrencyExchange = () => {
                 size="icon"
                 onClick={swapCurrencies}
                 className="mb-1"
+                aria-label={t("swapCurrencies")}
               >
                 <ArrowLeftRight className="w-5 h-5" />
               </Button>
 
               <div className="space-y-2">
-                <Label htmlFor="to">받는 통화</Label>
+                <Label htmlFor="to">{t("toCurrency")}</Label>
                 <Select value={toCurrency} onValueChange={setToCurrency}>
                   <SelectTrigger id="to">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CURRENCIES.map((currency) => (
+                    {CURRENCY_CODES.map((currency) => (
                       <SelectItem key={currency.code} value={currency.code}>
-                        {currency.symbol} {currency.name}
+                        {currency.symbol} {t(currency.code.toLowerCase())}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -148,20 +151,20 @@ const CurrencyExchange = () => {
 
             {loading ? (
               <div className="text-center text-muted-foreground">
-                환율 정보를 가져오는 중...
+                {t("fetchingExchangeRate")}
               </div>
             ) : result !== null ? (
               <div className="space-y-4 p-6 bg-muted rounded-lg">
                 <div className="text-center">
                   <div className="text-sm text-muted-foreground mb-2">
-                    변환 결과
+                    {t("conversionResult")}
                   </div>
                   <div className="text-3xl font-bold text-primary">
                     {result.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}{" "}
-                    {CURRENCIES.find((c) => c.code === toCurrency)?.symbol}
+                    {CURRENCY_CODES.find((c) => c.code === toCurrency)?.symbol}
                   </div>
                 </div>
                 {rate && (
@@ -177,7 +180,7 @@ const CurrencyExchange = () => {
             ) : null}
 
             <div className="text-xs text-muted-foreground text-center">
-              환율은 실시간으로 변동될 수 있습니다
+              {t("exchangeRateDisclaimer")}
             </div>
           </CardContent>
         </Card>

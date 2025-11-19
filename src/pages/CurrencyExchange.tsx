@@ -8,6 +8,7 @@ import { ArrowLeftRight, TrendingUp, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const CURRENCY_CODES = [
   { code: "KRW", symbol: "₩" },
@@ -19,6 +20,13 @@ const CURRENCY_CODES = [
   { code: "PHP", symbol: "₱" },
 ];
 
+type HistoryData = {
+  date: string;
+  rate: number;
+};
+
+type Period = "1d" | "1w" | "1m" | "1y" | "5y";
+
 const CurrencyExchange = () => {
   const { t } = useTranslation();
   const [amount, setAmount] = useState<string>("1");
@@ -29,23 +37,28 @@ const CurrencyExchange = () => {
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [historyData, setHistoryData] = useState<HistoryData[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<Period>("1w");
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (amount && fromCurrency && toCurrency) {
       convertCurrency();
+      fetchHistoryData();
     }
-  }, [amount, fromCurrency, toCurrency]);
+  }, [amount, fromCurrency, toCurrency, selectedPeriod]);
 
   useEffect(() => {
     if (!autoRefresh) return;
     
     const interval = setInterval(() => {
       convertCurrency();
+      fetchHistoryData();
     }, 60000); // 1분마다 자동 갱신
 
     return () => clearInterval(interval);
-  }, [autoRefresh, amount, fromCurrency, toCurrency]);
+  }, [autoRefresh, amount, fromCurrency, toCurrency, selectedPeriod]);
 
   const convertCurrency = async () => {
     if (!amount || isNaN(Number(amount))) {
@@ -93,6 +106,64 @@ const CurrencyExchange = () => {
     setToCurrency(fromCurrency);
   };
 
+  const getDateRange = (period: Period) => {
+    const end = new Date();
+    const start = new Date();
+    
+    switch (period) {
+      case "1d":
+        start.setDate(end.getDate() - 1);
+        break;
+      case "1w":
+        start.setDate(end.getDate() - 7);
+        break;
+      case "1m":
+        start.setMonth(end.getMonth() - 1);
+        break;
+      case "1y":
+        start.setFullYear(end.getFullYear() - 1);
+        break;
+      case "5y":
+        start.setFullYear(end.getFullYear() - 5);
+        break;
+    }
+    
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    };
+  };
+
+  const fetchHistoryData = async () => {
+    if (!fromCurrency || !toCurrency) return;
+    
+    setLoadingHistory(true);
+    try {
+      const { start, end } = getDateRange(selectedPeriod);
+      const response = await fetch(
+        `https://api.frankfurter.app/${start}..${end}?from=${fromCurrency}&to=${toCurrency}`
+      );
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch history");
+      }
+
+      const data = await response.json();
+      const rates = data.rates;
+      
+      const formattedData: HistoryData[] = Object.entries(rates).map(([date, rateData]: [string, any]) => ({
+        date,
+        rate: rateData[toCurrency]
+      }));
+      
+      setHistoryData(formattedData);
+    } catch (error) {
+      console.error("History fetch error:", error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -115,7 +186,10 @@ const CurrencyExchange = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => convertCurrency()}
+              onClick={() => {
+                convertCurrency();
+                fetchHistoryData();
+              }}
               disabled={loading}
               title={t("refreshRate")}
             >
@@ -226,6 +300,81 @@ const CurrencyExchange = () => {
                 {t("exchangeRateDisclaimer")}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>{t("exchangeRateHistory")}</CardTitle>
+              <div className="flex gap-2">
+                {(["1d", "1w", "1m", "1y", "5y"] as Period[]).map((period) => (
+                  <Button
+                    key={period}
+                    variant={selectedPeriod === period ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedPeriod(period)}
+                  >
+                    {t(`period${period}`)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingHistory ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : historyData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={historyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="hsl(var(--muted-foreground))"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      if (selectedPeriod === "1d" || selectedPeriod === "1w") {
+                        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                      } else if (selectedPeriod === "1m") {
+                        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                      } else {
+                        return date.toLocaleDateString(undefined, { year: '2-digit', month: 'short' });
+                      }
+                    }}
+                  />
+                  <YAxis 
+                    stroke="hsl(var(--muted-foreground))"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    domain={['auto', 'auto']}
+                    tickFormatter={(value) => value.toFixed(2)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                    formatter={(value: number) => [value.toFixed(4), `${fromCurrency}/${toCurrency}`]}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="rate" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                {t("noHistoryData")}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -10,6 +10,7 @@ interface TranslationResultBoxProps {
   naturalTranslation: string;
   literalTranslation?: string;
   romanization?: string;
+  exampleSentence?: string;
   onCopy: () => void;
   onSpeak: () => void;
   onTextSelect?: (selectedText: string, lang: string) => void;
@@ -26,6 +27,7 @@ export const TranslationResultBox = memo(({
   naturalTranslation,
   literalTranslation,
   romanization,
+  exampleSentence,
   onCopy,
   onSpeak,
   onTextSelect,
@@ -116,6 +118,20 @@ export const TranslationResultBox = memo(({
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Example Sentence */}
+            {exampleSentence && (
+              <div className="pt-2 border-t border-border/40 animate-fade-in">
+                <div className="bg-gradient-to-br from-muted/40 to-muted/20 backdrop-blur-sm rounded-lg p-3">
+                  <div className="text-xs font-medium text-muted-foreground mb-1.5">
+                    💡 {t("exampleUsage") || "예시 문장"}
+                  </div>
+                  <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    {exampleSentence}
+                  </p>
+                </div>
               </div>
             )}
 

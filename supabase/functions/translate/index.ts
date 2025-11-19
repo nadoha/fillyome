@@ -224,9 +224,13 @@ If source is ${langNames[sourceLang]}, you MUST output ${langNames[targetLang]}.
                   target_rom: { 
                     type: "string", 
                     description: needsRom(targetLang) ? "Romanization of target text" : "Empty string" 
+                  },
+                  example_sentence: {
+                    type: "string",
+                    description: `A natural example sentence in ${langNames[targetLang]} that demonstrates how the translated word/phrase is used in context. Should be practical and relevant to everyday usage.`
                   }
                 },
-                required: ["translation", "literal", "source_rom", "target_rom"]
+                required: ["translation", "literal", "source_rom", "target_rom", "example_sentence"]
               }
             }
           }
@@ -287,14 +291,16 @@ If source is ${langNames[sourceLang]}, you MUST output ${langNames[targetLang]}.
     const literalTranslation = result.literal || "";
     const sourceRomanization = result.source_rom || "";
     const targetRomanization = result.target_rom || "";
+    const exampleSentence = result.example_sentence || "";
 
     return new Response(
       JSON.stringify({ 
         translation,
         literalTranslation,
         sourceRomanization,
-        targetRomanization
-      }), 
+        targetRomanization,
+        exampleSentence
+      }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }

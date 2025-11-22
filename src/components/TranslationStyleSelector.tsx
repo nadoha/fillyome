@@ -1,5 +1,6 @@
 import { memo } from "react";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export interface TranslationStyle {
   formality: "formal" | "informal";
@@ -17,33 +18,25 @@ export const TranslationStyleSelector = memo(({
   selectedStyle,
   onStyleChange,
 }: TranslationStyleSelectorProps) => {
-  const handleToggle = (formality: "formal" | "informal") => {
+  const handleToggle = (checked: boolean) => {
     onStyleChange({ 
       ...selectedStyle, 
-      formality,
+      formality: checked ? "formal" : "informal",
       domain: "casual",
       translationType: "natural"
     });
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant={selectedStyle.formality === "formal" ? "default" : "outline"}
-        size="sm"
-        onClick={() => handleToggle("formal")}
-        className="flex-1 h-9"
-      >
-        격식체
-      </Button>
-      <Button
-        variant={selectedStyle.formality === "informal" ? "default" : "outline"}
-        size="sm"
-        onClick={() => handleToggle("informal")}
-        className="flex-1 h-9"
-      >
-        반말체
-      </Button>
+    <div className="flex items-center justify-between gap-3 px-1">
+      <Label htmlFor="formality-toggle" className="text-sm font-medium">
+        {selectedStyle.formality === "formal" ? "격식체" : "반말체"}
+      </Label>
+      <Switch
+        id="formality-toggle"
+        checked={selectedStyle.formality === "formal"}
+        onCheckedChange={handleToggle}
+      />
     </div>
   );
 });

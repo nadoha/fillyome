@@ -1067,19 +1067,6 @@ export const TranslationInterface = () => {
                       setTranslationStyle(newStyle);
                       localStorage.setItem('translationStyle', JSON.stringify(newStyle));
                     }}
-                    recommendedPreset={recommendedPreset}
-                    onApplyRecommendation={() => {
-                      const preset = [
-                        { id: "friend", style: { formality: "informal", domain: "casual", translationType: "natural" } },
-                        { id: "business", style: { formality: "formal", domain: "business", translationType: "natural" } },
-                        { id: "polite", style: { formality: "formal", domain: "casual", translationType: "natural" } },
-                        { id: "academic", style: { formality: "formal", domain: "academic", translationType: "literal" } }
-                      ].find(p => p.id === recommendedPreset);
-                      if (preset) {
-                        setTranslationStyle(preset.style as any);
-                        localStorage.setItem('translationStyle', JSON.stringify(preset.style));
-                      }
-                    }}
                   />
                   
                   <div>

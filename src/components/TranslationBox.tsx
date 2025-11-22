@@ -82,18 +82,18 @@ export const TranslationBox = memo(({
               });
             });
           }}
-          className={`h-full min-h-[240px] max-h-[600px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pb-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''}`} 
+          className={`h-full min-h-[240px] max-h-[600px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pr-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''}`} 
           autoFocus 
         />
-          <div className="absolute bottom-3 right-3 flex gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
+          <div className="absolute top-3 right-3 flex flex-col gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
           {onMicClick && <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" className={`h-12 w-12 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm shadow-sm transition-all duration-200 ${isListening ? 'bg-destructive text-destructive-foreground border-destructive animate-pulse' : 'hover:bg-primary hover:text-primary-foreground hover:border-primary'}`} onClick={onMicClick}>
-                    {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                  <Button variant="outline" size="icon" className={`h-10 w-10 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm shadow-sm transition-all duration-200 ${isListening ? 'bg-destructive text-destructive-foreground border-destructive animate-pulse' : 'hover:bg-primary hover:text-primary-foreground hover:border-primary'}`} onClick={onMicClick}>
+                    {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">
+                <TooltipContent side="left">
                   <p className="text-xs">{isListening ? '중지' : '음성'}</p>
                 </TooltipContent>
               </Tooltip>
@@ -102,11 +102,11 @@ export const TranslationBox = memo(({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={onCopy}>
-                      <Copy className="h-5 w-5" />
+                    <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={onCopy}>
+                      <Copy className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">
+                  <TooltipContent side="left">
                     <p className="text-xs">복사</p>
                   </TooltipContent>
                 </Tooltip>
@@ -114,11 +114,11 @@ export const TranslationBox = memo(({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={onSpeak}>
-                      <Volume2 className="h-5 w-5" />
+                    <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={onSpeak}>
+                      <Volume2 className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">
+                  <TooltipContent side="left">
                     <p className="text-xs">듣기</p>
                   </TooltipContent>
                 </Tooltip>
@@ -128,7 +128,7 @@ export const TranslationBox = memo(({
       </div>;
   }
   return <div className="relative group animate-fade-in flex-1">
-      <div className="h-full min-h-[280px] max-h-[600px] overflow-y-auto border border-border/50 bg-muted/30 backdrop-blur-sm rounded-2xl p-4 pb-16 select-text transition-all duration-200 hover:bg-muted/40 hover:border-primary/30 shadow-sm" onMouseUp={onTextSelect}>
+      <div className="h-full min-h-[280px] max-h-[600px] overflow-y-auto border border-border/50 bg-muted/30 backdrop-blur-sm rounded-2xl p-4 pr-16 select-text transition-all duration-200 hover:bg-muted/40 hover:border-primary/30 shadow-sm" onMouseUp={onTextSelect}>
         <div className="text-base sm:text-lg leading-relaxed" style={{
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word'
@@ -142,19 +142,19 @@ export const TranslationBox = memo(({
             {romanization}
           </div>}
       </div>
-      {isTranslating && <div className="absolute top-3 right-3 text-sm text-muted-foreground flex items-center gap-2 animate-fade-in backdrop-blur-sm bg-background/80 px-3 py-1.5 rounded-lg shadow-sm z-20">
+      {isTranslating && <div className="absolute top-3 right-16 text-sm text-muted-foreground flex items-center gap-2 animate-fade-in backdrop-blur-sm bg-background/80 px-3 py-1.5 rounded-lg shadow-sm z-20">
           <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <span className="hidden xs:inline">번역중...</span>
         </div>}
-      {!isTranslating && value && <div className="absolute bottom-3 right-3 flex gap-1.5 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
+      {!isTranslating && value && <div className="absolute top-3 right-3 flex flex-col gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={onCopy}>
-                  <Copy className="h-5 w-5" />
+                <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={onCopy}>
+                  <Copy className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
+              <TooltipContent side="left">
                 <p className="text-xs">복사</p>
               </TooltipContent>
             </Tooltip>
@@ -162,11 +162,11 @@ export const TranslationBox = memo(({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={onSpeak}>
-                  <Volume2 className="h-5 w-5" />
+                <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={onSpeak}>
+                  <Volume2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
+              <TooltipContent side="left">
                 <p className="text-xs">듣기</p>
               </TooltipContent>
             </Tooltip>
@@ -174,11 +174,11 @@ export const TranslationBox = memo(({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={() => setIsFullScreen(true)}>
-                  <Maximize2 className="h-5 w-5" />
+                <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-border/60 bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm transition-all duration-200" onClick={() => setIsFullScreen(true)}>
+                  <Maximize2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
+              <TooltipContent side="left">
                 <p className="text-xs">전체 화면</p>
               </TooltipContent>
             </Tooltip>

@@ -55,7 +55,7 @@ export const TranslationResultBox = memo(({
   return (
     <div className="relative group animate-fade-in flex-1">
       <div 
-        className="h-full min-h-[180px] sm:min-h-[220px] max-h-[600px] overflow-y-auto border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-4 pr-[110px] transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
+        className="h-full min-h-[180px] sm:min-h-[220px] max-h-[600px] overflow-y-auto border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-4 pr-16 transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
         onMouseUp={handleTextSelect}
       >
         {isTranslating ? (
@@ -167,7 +167,7 @@ export const TranslationResultBox = memo(({
       
       {/* Copy, Speak, and Fullscreen Buttons */}
       {!isTranslating && naturalTranslation && (
-        <div className="absolute top-3 right-3 flex gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
+        <div className="absolute top-3 right-3 flex flex-col gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -180,7 +180,7 @@ export const TranslationResultBox = memo(({
                   <Copy className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
+              <TooltipContent side="left">
                 <p className="text-xs">복사</p>
               </TooltipContent>
             </Tooltip>
@@ -197,7 +197,7 @@ export const TranslationResultBox = memo(({
                   <Volume2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
+              <TooltipContent side="left">
                 <p className="text-xs">듣기</p>
               </TooltipContent>
             </Tooltip>
@@ -214,7 +214,7 @@ export const TranslationResultBox = memo(({
                   <Maximize2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
+              <TooltipContent side="left">
                 <p className="text-xs">전체 화면</p>
               </TooltipContent>
             </Tooltip>
@@ -232,7 +232,7 @@ export const TranslationResultBox = memo(({
                     <BookmarkPlus className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">
+                <TooltipContent side="left">
                   <p className="text-xs">단어장에 추가</p>
                 </TooltipContent>
               </Tooltip>

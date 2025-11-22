@@ -28,7 +28,7 @@ export const TranslationStyleSelector = memo(({
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 px-1">
+    <div className="flex items-center gap-2">
       <Label htmlFor="formality-toggle" className="text-sm font-medium">
         {selectedStyle.formality === "formal" ? "격식체" : "반말체"}
       </Label>

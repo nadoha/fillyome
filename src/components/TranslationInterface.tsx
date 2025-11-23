@@ -926,10 +926,10 @@ export const TranslationInterface = () => {
     await addWord(sourceText, sourceLang, definition);
   }, [sourceText, targetText, sourceLang, targetRomanization, literalTranslation, addWord]);
   return <SidebarProvider defaultOpen={false}>
-      <div className="h-screen w-full bg-gradient-to-br from-background via-background to-muted/20 overflow-hidden flex flex-row">
+      <div className="h-screen w-full bg-gradient-to-br from-background via-background to-muted/20 overflow-hidden">
         <AppSidebar recentTranslations={recentTranslations} selectedIds={selectedIds} showLiteral={showLiteral} onToggleSelect={toggleSelect} onToggleLiteral={toggleLiteral} onToggleFavorite={toggleFavorite} onDelete={handleDelete} onBulkDelete={handleBulkDelete} onCopy={handleCopy} onSpeak={handleSpeak} onTextSelect={handleTextSelection} onFeedback={handleFeedback} noRomanizationLangs={noRomanizationLangs} />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="h-full flex flex-col overflow-hidden">
           <header className="border-b bg-background/95 backdrop-blur-lg sticky top-0 z-10 shadow-sm pt-safe">
             <div className="px-3 sm:px-4 py-3 sm:py-3.5">
               <div className="flex items-center justify-between gap-3 sm:gap-4">

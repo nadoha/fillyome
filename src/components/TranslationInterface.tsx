@@ -12,6 +12,7 @@ import { useVocabulary } from "@/hooks/useVocabulary";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { attemptQuickTranslation, shouldUseQuickTranslation } from "@/utils/quickTranslation";
+import { splitIntoChunks, combineChunks, shouldChunkText } from "@/utils/textChunking";
 import { DictionarySheet } from "./DictionarySheet";
 import { TranslationBox } from "./TranslationBox";
 import { TranslationResultBox } from "./TranslationResultBox";
@@ -390,31 +391,81 @@ export const TranslationInterface = () => {
     const controller = new AbortController();
     setAbortController(controller);
 
-    // Set timeout for request (15 seconds)
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke("translate", {
-        body: {
-          text: sourceText,
-          sourceLang,
-          targetLang,
-          style: translationStyle
+      let translation = "";
+      let literal = "";
+      let srcRomanization = "";
+      let tgtRomanization = "";
+      let example = "";
+
+      // Check if text should be chunked for parallel processing
+      if (shouldChunkText(sourceText)) {
+        const chunks = splitIntoChunks(sourceText);
+        
+        // Parallel translation of chunks with timeout
+        const chunkPromises = chunks.map((chunk, index) => 
+          Promise.race([
+            supabase.functions.invoke("translate", {
+              body: {
+                text: chunk,
+                sourceLang,
+                targetLang,
+                style: translationStyle
+              }
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Chunk timeout')), 10000)
+            )
+          ]).then(result => ({ index, result }))
+        );
+
+        const results = await Promise.all(chunkPromises);
+        
+        // Combine results in order
+        const translatedChunks: string[] = [];
+        const literalChunks: string[] = [];
+        
+        for (const { index, result } of results.sort((a, b) => a.index - b.index)) {
+          const data = (result as any).data;
+          if (data?.translation) {
+            translatedChunks.push(data.translation);
+            if (data.literalTranslation) literalChunks.push(data.literalTranslation);
+          }
         }
-      });
-      clearTimeout(timeoutId);
-      if (error) throw error;
-      if (data?.error) {
-        toast.error(data.error);
-        return;
+
+        translation = combineChunks(translatedChunks);
+        literal = literalChunks.length > 0 ? combineChunks(literalChunks) : "";
+        
+        // Use first chunk's romanization and example
+        const firstData = (results[0]?.result as any)?.data;
+        srcRomanization = firstData?.sourceRomanization || "";
+        tgtRomanization = firstData?.targetRomanization || "";
+        example = firstData?.exampleSentence || "";
+      } else {
+        // Single request for short text with timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const { data, error } = await supabase.functions.invoke("translate", {
+          body: {
+            text: sourceText,
+            sourceLang,
+            targetLang,
+            style: translationStyle
+          }
+        });
+        clearTimeout(timeoutId);
+        
+        if (error) throw error;
+        if (data?.error) {
+          toast.error(data.error);
+          return;
+        }
+        
+        translation = data.translation;
+        literal = data.literalTranslation || "";
+        srcRomanization = data.sourceRomanization || "";
+        tgtRomanization = data.targetRomanization || "";
+        example = data.exampleSentence || "";
       }
-      const translation = data.translation;
-      const literal = data.literalTranslation || "";
-      const srcRomanization = data.sourceRomanization || "";
-      const tgtRomanization = data.targetRomanization || "";
-      const example = data.exampleSentence || "";
 
       // Cache result with timestamp (limit cache size to 50 for faster performance)
       try {
@@ -495,7 +546,6 @@ export const TranslationInterface = () => {
       };
       await saveTranslation(newTranslation);
     } catch (error: any) {
-      clearTimeout(timeoutId);
       console.error("Translation error:", error);
 
       // Handle timeout or network errors with retry

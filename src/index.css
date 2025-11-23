@@ -169,6 +169,17 @@ All colors MUST be HSL.
     content: attr(data-placeholder);
     @apply text-muted-foreground;
   }
+  
+  /* Sidebar offcanvas width */
+  [data-sidebar="sidebar"][data-side="left"][data-variant="sidebar"] {
+    width: min(85vw, 24rem);
+  }
+  
+  @media (min-width: 640px) {
+    [data-sidebar="sidebar"][data-side="left"][data-variant="sidebar"] {
+      width: min(66vw, 28rem);
+    }
+  }
 }
 
 @keyframes fade-in {

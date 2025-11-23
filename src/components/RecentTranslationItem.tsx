@@ -67,7 +67,7 @@ export const RecentTranslationItem = memo(({
         <div className="space-y-1">
           <div className="flex items-start gap-1.5 group/text">
             <p 
-              className="text-sm text-muted-foreground leading-relaxed flex-1 select-text"
+              className="text-sm text-muted-foreground leading-relaxed flex-1 select-text tracking-normal"
               onMouseUp={(e) => onTextSelect(e, translation.source_lang, translation.source_text)}
             >
               {translation.source_text}
@@ -82,7 +82,7 @@ export const RecentTranslationItem = memo(({
             </div>
           </div>
           {!noRomanization && translation.source_romanization && (
-            <p className="text-xs text-muted-foreground/60 italic ml-1">{translation.source_romanization}</p>
+            <p className="text-xs text-muted-foreground/60 italic ml-1 tracking-normal">{translation.source_romanization}</p>
           )}
         </div>
 
@@ -90,7 +90,7 @@ export const RecentTranslationItem = memo(({
         <div className="space-y-2">
           <div className="flex items-start gap-1.5 group/text">
             <p 
-              className="text-base text-foreground leading-relaxed font-medium flex-1 select-text"
+              className="text-base text-foreground leading-relaxed font-medium flex-1 select-text tracking-normal"
               onMouseUp={(e) => onTextSelect(e, translation.target_lang, translation.target_text)}
             >
               {translation.target_text}
@@ -108,7 +108,7 @@ export const RecentTranslationItem = memo(({
           {/* Target Romanization - Always Visible */}
           {!noRomanization && translation.target_romanization && (
             <div className="pt-1 border-t border-border/20">
-              <p className="text-sm text-muted-foreground/70 pl-2">{translation.target_romanization}</p>
+              <p className="text-sm text-muted-foreground/70 pl-2 tracking-normal">{translation.target_romanization}</p>
             </div>
           )}
 
@@ -119,7 +119,7 @@ export const RecentTranslationItem = memo(({
                 variant="ghost"
                 size="sm"
                 onClick={onToggleLiteral}
-                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2"
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2 tracking-normal"
                 >
                   {showLiteral ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
                   {t("literalTranslation")}
@@ -127,7 +127,7 @@ export const RecentTranslationItem = memo(({
               {showLiteral && (
                 <div className="mt-1 pl-2 border-l-2 border-primary/30 bg-primary/5 rounded-r py-1.5 pr-2">
                   <p 
-                    className="text-sm text-foreground/70 leading-relaxed select-text"
+                    className="text-sm text-foreground/70 leading-relaxed select-text tracking-normal"
                     onMouseUp={(e) => onTextSelect(e, translation.target_lang, translation.literal_translation || "")}
                   >
                     {translation.literal_translation}
@@ -140,7 +140,7 @@ export const RecentTranslationItem = memo(({
           
         {/* Feedback - Visually Separated */}
         <div className="pt-2 border-t border-border/20 flex items-center gap-2">
-          <span className="text-xs text-muted-foreground mr-0.5">{t("howsThis")}</span>
+          <span className="text-xs text-muted-foreground mr-0.5 tracking-normal">{t("howsThis")}</span>
           <Button 
             variant="ghost" 
             size="icon" 

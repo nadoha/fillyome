@@ -983,12 +983,13 @@ export const TranslationInterface = () => {
                   localStorage.setItem('translationStyle', JSON.stringify(newStyle));
                 }} />
                   
-                  <div>
-                    <TranslationBox key={`source-${sourceLang}`} value={sourceText} onChange={setSourceText} onCopy={() => handleCopy(sourceText)} onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)} onTextSelect={e => sourceText && handleTextSelection(e, sourceLang, sourceText)} placeholder={t("enterText")} isEditable romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined} onMicClick={handleMicClick} isListening={isListening} noiseCancellation={noiseCancellation} onToggleNoiseCancellation={toggleNoiseCancellation} audioLevel={audioLevel} />
-                  </div>
-                  
-                  {sourceText.trim() && <div>
-                      <TranslationResultBox key={`target-${targetLang}`} naturalTranslation={targetText} literalTranslation={literalTranslation} romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} exampleSentence={exampleSentence} onCopy={() => handleCopy(targetText)} onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)} onAddToVocabulary={handleAddTranslationToVocabulary} onFeedback={type => {
+                  <div className="flex flex-col md:flex-row gap-4 w-full">
+                    <div className="flex-1">
+                      <TranslationBox key={`source-${sourceLang}`} value={sourceText} onChange={setSourceText} onCopy={() => handleCopy(sourceText)} onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)} onTextSelect={e => sourceText && handleTextSelection(e, sourceLang, sourceText)} placeholder={t("enterText")} isEditable romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined} onMicClick={handleMicClick} isListening={isListening} noiseCancellation={noiseCancellation} onToggleNoiseCancellation={toggleNoiseCancellation} audioLevel={audioLevel} />
+                    </div>
+                    
+                    {sourceText.trim() && <div className="flex-1">
+                        <TranslationResultBox key={`target-${targetLang}`} naturalTranslation={targetText} literalTranslation={literalTranslation} romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} exampleSentence={exampleSentence} onCopy={() => handleCopy(targetText)} onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)} onAddToVocabulary={handleAddTranslationToVocabulary} onFeedback={type => {
                     if (targetText) {
                       handleFeedback({
                         id: crypto.randomUUID(),
@@ -1007,7 +1008,8 @@ export const TranslationInterface = () => {
                       }, type);
                     }
                   }} isTranslating={isTranslating} sourceLang={sourceLang} targetLang={targetLang} />
-                    </div>}
+                      </div>}
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="image">

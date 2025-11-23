@@ -1,13 +1,16 @@
 // Quick translation dictionary for common words and phrases
 const quickDictionary: Record<string, Record<string, string>> = {
-  // Korean to English
+  // Korean to English (expanded dictionary for faster translations)
   "ko-en": {
     "안녕": "Hello",
     "안녕하세요": "Hello",
     "감사합니다": "Thank you",
     "고맙습니다": "Thank you",
+    "고마워": "Thanks",
+    "감사": "Thank you",
     "네": "Yes",
     "아니오": "No",
+    "아니": "No",
     "예": "Yes",
     "좋아": "Good",
     "좋아요": "Good",
@@ -17,8 +20,10 @@ const quickDictionary: Record<string, Record<string, string>> = {
     "사랑해": "I love you",
     "미안": "Sorry",
     "미안해": "Sorry",
+    "미안해요": "Sorry",
     "죄송합니다": "I'm sorry",
     "괜찮아": "It's okay",
+    "괜찮아요": "It's okay",
     "물": "Water",
     "밥": "Rice",
     "음식": "Food",
@@ -30,6 +35,18 @@ const quickDictionary: Record<string, Record<string, string>> = {
     "오늘": "Today",
     "내일": "Tomorrow",
     "어제": "Yesterday",
+    "뭐해": "What are you doing",
+    "잘자": "Good night",
+    "잘자요": "Good night",
+    "잘 지내": "How are you",
+    "어디": "Where",
+    "언제": "When",
+    "왜": "Why",
+    "누구": "Who",
+    "뭐": "What",
+    "어떻게": "How",
+    "맞아": "Right",
+    "틀려": "Wrong",
   },
   // English to Korean
   "en-ko": {

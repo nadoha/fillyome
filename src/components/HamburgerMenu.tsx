@@ -58,7 +58,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
           <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[300px] sm:w-[350px]">
+      <SheetContent side="right" className="w-2/3">
         <SheetHeader>
           <SheetTitle>{t("menu") || "메뉴"}</SheetTitle>
         </SheetHeader>

@@ -50,18 +50,18 @@ export function AppSidebar({
   onFeedback,
   noRomanizationLangs
 }: AppSidebarProps) {
-  const { t } = useTranslation();
-  const { open } = useSidebar();
+  const {
+    t
+  } = useTranslation();
+  const {
+    open
+  } = useSidebar();
   const navigate = useNavigate();
-
   const favoriteTranslations = recentTranslations.filter(t => t.is_favorite);
   const allTranslations = recentTranslations;
-
-  return (
-    <Sidebar className="border-r bg-card/50 backdrop-blur-sm" collapsible="offcanvas">
+  return <Sidebar collapsible="offcanvas" className="border-r bg-card/50 backdrop-blur-sm mx-[40px]">
       <SidebarHeader className="border-b px-4 py-4 bg-gradient-to-br from-primary/5 to-primary/10">
-        {open ? (
-          <div className="space-y-3 animate-fade-in">
+        {open ? <div className="space-y-3 animate-fade-in">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-primary/10 p-2">
                 <History className="h-5 w-5 text-primary" />
@@ -71,59 +71,39 @@ export function AppSidebar({
                 <p className="text-xs text-muted-foreground">{t("max50")}</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/vocabulary")}
-              className="w-full justify-start"
-            >
+            <Button variant="outline" size="sm" onClick={() => navigate("/vocabulary")} className="w-full justify-start">
               <BookMarked className="h-4 w-4 mr-2" />
               나의 단어장
             </Button>
-          </div>
-        ) : (
-          <div className="flex justify-center py-2">
+          </div> : <div className="flex justify-center py-2">
             <div className="rounded-lg bg-primary/10 p-2">
               <History className="h-5 w-5 text-primary" />
             </div>
-          </div>
-        )}
+          </div>}
       </SidebarHeader>
 
       <SidebarContent className="px-4 py-4">
         <div className="space-y-4">
-          {selectedIds.size > 0 && (
-            <div className="flex gap-2 animate-fade-in">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const allIds = new Set(recentTranslations.map(t => t.id));
-                  if (selectedIds.size === allIds.size) {
-                    recentTranslations.forEach(t => onToggleSelect(t.id));
-                  } else {
-                    allIds.forEach(id => {
-                      if (!selectedIds.has(id)) {
-                        onToggleSelect(id);
-                      }
-                    });
-                  }
-                }}
-                className="flex-1"
-              >
+          {selectedIds.size > 0 && <div className="flex gap-2 animate-fade-in">
+              <Button variant="outline" size="sm" onClick={() => {
+            const allIds = new Set(recentTranslations.map(t => t.id));
+            if (selectedIds.size === allIds.size) {
+              recentTranslations.forEach(t => onToggleSelect(t.id));
+            } else {
+              allIds.forEach(id => {
+                if (!selectedIds.has(id)) {
+                  onToggleSelect(id);
+                }
+              });
+            }
+          }} className="flex-1">
                 {selectedIds.size === recentTranslations.length ? t("deselectAll") || "전체 해제" : t("selectAll") || "전체 선택"}
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={onBulkDelete}
-                className="flex-1"
-              >
+              <Button variant="destructive" size="sm" onClick={onBulkDelete} className="flex-1">
                 <Trash2 className="h-4 w-4 mr-2" />
                 {t("deleteSelected")} ({selectedIds.size})
               </Button>
-            </div>
-          )}
+            </div>}
         </div>
         
         <Tabs defaultValue="all" className="w-full">
@@ -141,30 +121,9 @@ export function AppSidebar({
           <TabsContent value="all" className="mt-0">
             <SidebarGroup>
               <SidebarGroupContent className="space-y-2">
-                {allTranslations.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
+                {allTranslations.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">
                     {t("noHistory")}
-                  </p>
-                ) : (
-                  allTranslations.map((translation) => (
-                    <RecentTranslationItem
-                      key={translation.id}
-                      translation={translation}
-                      isSelected={selectedIds.has(translation.id)}
-                      showLiteral={showLiteral[translation.id] || false}
-                      onToggleSelect={() => onToggleSelect(translation.id)}
-                      onToggleLiteral={() => onToggleLiteral(translation.id, translation.source_lang, translation.target_lang)}
-                      onToggleFavorite={() => onToggleFavorite(translation.id)}
-                      onDelete={() => onDelete(translation.id)}
-                      onCopy={onCopy}
-                      onSpeak={onSpeak}
-                      onTextSelect={onTextSelect}
-                      onFeedback={(type) => onFeedback(translation, type)}
-                      noRomanization={noRomanizationLangs.includes(translation.source_lang) && noRomanizationLangs.includes(translation.target_lang)}
-                      t={t}
-                    />
-                  ))
-                )}
+                  </p> : allTranslations.map(translation => <RecentTranslationItem key={translation.id} translation={translation} isSelected={selectedIds.has(translation.id)} showLiteral={showLiteral[translation.id] || false} onToggleSelect={() => onToggleSelect(translation.id)} onToggleLiteral={() => onToggleLiteral(translation.id, translation.source_lang, translation.target_lang)} onToggleFavorite={() => onToggleFavorite(translation.id)} onDelete={() => onDelete(translation.id)} onCopy={onCopy} onSpeak={onSpeak} onTextSelect={onTextSelect} onFeedback={type => onFeedback(translation, type)} noRomanization={noRomanizationLangs.includes(translation.source_lang) && noRomanizationLangs.includes(translation.target_lang)} t={t} />)}
               </SidebarGroupContent>
             </SidebarGroup>
           </TabsContent>
@@ -172,35 +131,13 @@ export function AppSidebar({
           <TabsContent value="favorites" className="mt-0">
             <SidebarGroup>
               <SidebarGroupContent className="space-y-2">
-                {favoriteTranslations.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
+                {favoriteTranslations.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">
                     {t("noFavorites")}
-                  </p>
-                ) : (
-                  favoriteTranslations.map((translation) => (
-                    <RecentTranslationItem
-                      key={translation.id}
-                      translation={translation}
-                      isSelected={selectedIds.has(translation.id)}
-                      showLiteral={showLiteral[translation.id] || false}
-                      onToggleSelect={() => onToggleSelect(translation.id)}
-                      onToggleLiteral={() => onToggleLiteral(translation.id, translation.source_lang, translation.target_lang)}
-                      onToggleFavorite={() => onToggleFavorite(translation.id)}
-                      onDelete={() => onDelete(translation.id)}
-                      onCopy={onCopy}
-                      onSpeak={onSpeak}
-                      onTextSelect={onTextSelect}
-                      onFeedback={(type) => onFeedback(translation, type)}
-                      noRomanization={noRomanizationLangs.includes(translation.source_lang) && noRomanizationLangs.includes(translation.target_lang)}
-                      t={t}
-                    />
-                  ))
-                )}
+                  </p> : favoriteTranslations.map(translation => <RecentTranslationItem key={translation.id} translation={translation} isSelected={selectedIds.has(translation.id)} showLiteral={showLiteral[translation.id] || false} onToggleSelect={() => onToggleSelect(translation.id)} onToggleLiteral={() => onToggleLiteral(translation.id, translation.source_lang, translation.target_lang)} onToggleFavorite={() => onToggleFavorite(translation.id)} onDelete={() => onDelete(translation.id)} onCopy={onCopy} onSpeak={onSpeak} onTextSelect={onTextSelect} onFeedback={type => onFeedback(translation, type)} noRomanization={noRomanizationLangs.includes(translation.source_lang) && noRomanizationLangs.includes(translation.target_lang)} t={t} />)}
               </SidebarGroupContent>
             </SidebarGroup>
           </TabsContent>
         </Tabs>
       </SidebarContent>
-    </Sidebar>
-  );
+    </Sidebar>;
 }

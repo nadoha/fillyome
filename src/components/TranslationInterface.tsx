@@ -346,15 +346,15 @@ export const TranslationInterface = () => {
       }
     }
 
-    // Check cache second (now includes style)
+    // Check cache second (now includes style) - prioritize cache for speed
     const styleKey = JSON.stringify(translationStyle);
     const cacheKey = `tr_${sourceLang}_${targetLang}_${styleKey}_${sourceText}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       try {
         const { translation, literal, srcRom, tgtRom, example, timestamp } = JSON.parse(cached);
-        // Use cache if less than 24 hours old
-        if (Date.now() - timestamp < 86400000) {
+        // Use cache if less than 7 days old (extended for better performance)
+        if (Date.now() - timestamp < 604800000) {
           setTargetText(translation);
           setLiteralTranslation(literal);
           setSourceRomanization(srcRom);
@@ -584,7 +584,7 @@ export const TranslationInterface = () => {
     return () => clearTimeout(timer);
   }, [sourceText, sourceLang, targetLang, recommendedPreset]);
 
-  // Auto-translate with debounce
+  // Auto-translate with debounce (optimized for speed)
   useEffect(() => {
     if (!sourceText.trim() || sourceText.trim().length < 2) {
       setTargetText("");
@@ -594,8 +594,8 @@ export const TranslationInterface = () => {
       return;
     }
 
-    // Use shorter delay for immediate feedback, longer for complex AI translations
-    const delay = shouldUseQuickTranslation(sourceText) ? 200 : 400;
+    // Shorter delays for faster translation
+    const delay = shouldUseQuickTranslation(sourceText) ? 100 : 250;
     const translateTimer = setTimeout(() => {
       handleTranslate();
     }, delay);

@@ -18,25 +18,43 @@ export const TranslationStyleSelector = memo(({
   selectedStyle,
   onStyleChange,
 }: TranslationStyleSelectorProps) => {
-  const handleToggle = (checked: boolean) => {
+  const handleFormalityToggle = (checked: boolean) => {
     onStyleChange({ 
       ...selectedStyle, 
-      formality: checked ? "formal" : "informal",
-      domain: "casual",
-      translationType: "natural"
+      formality: checked ? "formal" : "informal"
+    });
+  };
+
+  const handleTranslationTypeToggle = (checked: boolean) => {
+    onStyleChange({ 
+      ...selectedStyle, 
+      translationType: checked ? "natural" : "literal"
     });
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <Label htmlFor="formality-toggle" className="text-sm font-medium">
-        {selectedStyle.formality === "formal" ? "격식체" : "반말체"}
-      </Label>
-      <Switch
-        id="formality-toggle"
-        checked={selectedStyle.formality === "formal"}
-        onCheckedChange={handleToggle}
-      />
+    <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <Label htmlFor="formality-toggle" className="text-sm font-medium">
+          {selectedStyle.formality === "formal" ? "격식체" : "반말체"}
+        </Label>
+        <Switch
+          id="formality-toggle"
+          checked={selectedStyle.formality === "formal"}
+          onCheckedChange={handleFormalityToggle}
+        />
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <Label htmlFor="context-toggle" className="text-sm font-medium">
+          {selectedStyle.translationType === "natural" ? "고맥락" : "저맥락"}
+        </Label>
+        <Switch
+          id="context-toggle"
+          checked={selectedStyle.translationType === "natural"}
+          onCheckedChange={handleTranslationTypeToggle}
+        />
+      </div>
     </div>
   );
 });

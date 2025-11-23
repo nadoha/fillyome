@@ -73,7 +73,12 @@ export const TranslationBox = memo(({
         <Textarea 
           placeholder={placeholder} 
           value={value} 
-          onChange={e => onChange?.(e.target.value)} 
+          onChange={e => {
+            onChange?.(e.target.value);
+            // Auto-resize based on content
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, 600) + 'px';
+          }} 
           onFocus={(e) => {
             const target = e.target;
             requestAnimationFrame(() => {
@@ -82,8 +87,9 @@ export const TranslationBox = memo(({
               });
             });
           }}
-          className={`h-full min-h-[240px] max-h-[600px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pr-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''}`} 
+          className={`w-full min-h-[180px] max-h-[600px] resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pr-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-200 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''}`} 
           autoFocus 
+          style={{ overflow: 'hidden' }}
         />
           <div className="absolute top-3 right-3 flex flex-col gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-20">
           {onMicClick && <TooltipProvider>
@@ -127,8 +133,8 @@ export const TranslationBox = memo(({
         </div>
       </div>;
   }
-  return <div className="relative group animate-fade-in flex-1">
-      <div className="h-full min-h-[280px] max-h-[600px] overflow-y-auto border border-border/50 bg-muted/30 backdrop-blur-sm rounded-2xl p-4 pr-16 select-text transition-all duration-200 hover:bg-muted/40 hover:border-primary/30 shadow-sm" onMouseUp={onTextSelect}>
+  return <div className="relative group animate-fade-in flex-1 min-h-[180px]">
+      <div className="min-h-[180px] max-h-[600px] overflow-y-auto border border-border/50 bg-muted/30 backdrop-blur-sm rounded-2xl p-4 pr-16 select-text transition-all duration-200 hover:bg-muted/40 hover:border-primary/30 shadow-sm" onMouseUp={onTextSelect}>
         <div className="text-base sm:text-lg leading-relaxed" style={{
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word'

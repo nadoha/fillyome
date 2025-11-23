@@ -59,7 +59,7 @@ export function AppSidebar({
   const navigate = useNavigate();
   const favoriteTranslations = recentTranslations.filter(t => t.is_favorite);
   const allTranslations = recentTranslations;
-  return <Sidebar collapsible="offcanvas" className="border-r bg-card/50 backdrop-blur-sm mx-[40px]">
+  return <Sidebar collapsible="offcanvas" className="w-2/3 border-r bg-card/50 backdrop-blur-sm mx-[40px]">
       <SidebarHeader className="border-b px-4 py-4 bg-gradient-to-br from-primary/5 to-primary/10">
         {open ? <div className="space-y-3 animate-fade-in">
             <div className="flex items-center gap-3">

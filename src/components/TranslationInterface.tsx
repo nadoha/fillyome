@@ -169,11 +169,12 @@ export const TranslationInterface = () => {
   }, [detectedLangFromSpeech, sourceLang, isListening, stopListening, startListening]);
 
   // Update sourceText when speech recognition transcript changes
+  // Only update if actively listening to avoid cursor issues during manual typing
   useEffect(() => {
-    if (transcript) {
+    if (transcript && isListening) {
       setSourceText(transcript);
     }
-  }, [transcript]);
+  }, [transcript, isListening]);
 
   // Handle microphone button click
   const handleMicClick = useCallback(() => {
@@ -625,6 +626,10 @@ export const TranslationInterface = () => {
     return () => clearTimeout(timer);
   }, [sourceText, sourceLang, targetLang, recommendedPreset]);
 
+  // Track previous language values to detect language changes
+  const prevSourceLangRef = useRef(sourceLang);
+  const prevTargetLangRef = useRef(targetLang);
+
   // Auto-translate with debounce (optimized for speed)
   useEffect(() => {
     if (!sourceText.trim() || sourceText.trim().length < 2) {
@@ -635,8 +640,20 @@ export const TranslationInterface = () => {
       return;
     }
 
-    // Shorter delays for faster translation
-    const delay = shouldUseQuickTranslation(sourceText) ? 100 : 250;
+    // Check if language changed - if so, clear previous result immediately and translate faster
+    const languageChanged = prevSourceLangRef.current !== sourceLang || prevTargetLangRef.current !== targetLang;
+    prevSourceLangRef.current = sourceLang;
+    prevTargetLangRef.current = targetLang;
+
+    if (languageChanged) {
+      // Clear previous translation immediately when language changes
+      setTargetText("");
+      setLiteralTranslation("");
+      setTargetRomanization("");
+    }
+
+    // Shorter delays for faster translation, immediate for language changes
+    const delay = languageChanged ? 50 : (shouldUseQuickTranslation(sourceText) ? 100 : 250);
     const translateTimer = setTimeout(() => {
       handleTranslate();
     }, delay);

@@ -1052,11 +1052,11 @@ export const TranslationInterface = () => {
                   
                   <div className="flex flex-col md:flex-row gap-4 w-full">
                     <div className="flex-1">
-                      <TranslationBox key={`source-${sourceLang}`} value={sourceText} onChange={setSourceText} onCopy={() => handleCopy(sourceText)} onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)} onTextSelect={e => sourceText && handleTextSelection(e, sourceLang, sourceText)} placeholder={t("enterText")} isEditable romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined} onMicClick={handleMicClick} isListening={isListening} noiseCancellation={noiseCancellation} onToggleNoiseCancellation={toggleNoiseCancellation} audioLevel={audioLevel} />
+                      <TranslationBox value={sourceText} onChange={setSourceText} onCopy={() => handleCopy(sourceText)} onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)} onTextSelect={e => sourceText && handleTextSelection(e, sourceLang, sourceText)} placeholder={t("enterText")} isEditable romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined} onMicClick={handleMicClick} isListening={isListening} noiseCancellation={noiseCancellation} onToggleNoiseCancellation={toggleNoiseCancellation} audioLevel={audioLevel} />
                     </div>
                     
                     <div className="flex-1">
-                      <TranslationResultBox key={`target-${targetLang}`} naturalTranslation={targetText} literalTranslation={literalTranslation} romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} exampleSentence={exampleSentence} onCopy={() => handleCopy(targetText)} onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)} onAddToVocabulary={handleAddTranslationToVocabulary} onFeedback={type => {
+                      <TranslationResultBox naturalTranslation={targetText} literalTranslation={literalTranslation} romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} exampleSentence={exampleSentence} onCopy={() => handleCopy(targetText)} onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)} onAddToVocabulary={handleAddTranslationToVocabulary} onFeedback={type => {
                     if (targetText) {
                       handleFeedback({
                         id: crypto.randomUUID(),

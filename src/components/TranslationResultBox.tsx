@@ -53,9 +53,9 @@ export const TranslationResultBox = memo(({
   const { t } = useTranslation();
 
   return (
-    <div className="relative group animate-fade-in flex-1 min-h-[180px]">
+    <div className="relative group animate-fade-in flex-1 min-h-[180px] h-full">
       <div 
-        className="min-h-[180px] max-h-[600px] overflow-y-auto border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-4 pr-16 transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
+        className="h-full min-h-[180px] max-h-[600px] overflow-y-auto border border-border/50 bg-gradient-to-br from-card/60 to-muted/20 backdrop-blur-sm rounded-2xl p-4 pr-16 transition-all duration-300 hover:border-primary/40 shadow-sm hover:shadow-md"
         onMouseUp={handleTextSelect}
       >
         {isTranslating ? (

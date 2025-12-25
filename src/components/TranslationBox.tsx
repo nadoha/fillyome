@@ -45,7 +45,7 @@ export const TranslationBox = memo(({
   const [isFullScreen, setIsFullScreen] = useState(false);
 
   if (isEditable) {
-    return <div className={`relative group animate-fade-in flex-1 transition-all duration-300 ${isCompact ? 'min-h-[60px]' : ''}`}>
+    return <div className={`relative group animate-fade-in flex-1 transition-all duration-300 ${isCompact ? 'min-h-[80px]' : 'min-h-[180px]'}`}>
         {isListening && <div className="absolute inset-0 rounded-2xl bg-primary/5 animate-pulse pointer-events-none z-10 border-2 border-primary/30" />}
         {isListening && <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 px-3 py-2 bg-primary/95 text-primary-foreground rounded-xl text-xs font-medium shadow-lg animate-fade-in backdrop-blur-sm border border-primary-foreground/20 max-w-[calc(100%-2rem)]">
             <div className="flex items-center gap-2">
@@ -82,8 +82,10 @@ export const TranslationBox = memo(({
           onChange={e => {
             onChange?.(e.target.value);
             // Auto-resize based on content
-            e.target.style.height = 'auto';
-            e.target.style.height = Math.min(e.target.scrollHeight, 600) + 'px';
+            if (!isCompact) {
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 600) + 'px';
+            }
           }} 
           onFocus={(e) => {
             onFocus?.();
@@ -95,11 +97,11 @@ export const TranslationBox = memo(({
             });
           }}
           onKeyDown={onKeyDown}
-          className={`w-full resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pr-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-300 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''} ${isCompact ? 'min-h-[60px] max-h-[80px]' : 'min-h-[180px] max-h-[600px]'}`} 
-          autoFocus 
-          style={{ overflow: 'hidden' }}
+          className={`w-full h-full resize-none text-base sm:text-lg leading-relaxed border border-border/50 bg-card/30 backdrop-blur-sm rounded-2xl p-4 pr-16 focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-md transition-all duration-300 ${isListening ? 'border-primary/60 ring-2 ring-primary/20' : ''} ${isCompact ? 'min-h-[80px]' : 'min-h-[180px] max-h-[600px]'}`} 
+          autoFocus={!isCompact}
+          style={{ overflow: isCompact ? 'hidden' : 'auto' }}
         />
-          <div className={`absolute top-3 right-3 flex flex-col gap-1.5 transition-all duration-200 z-20 ${isCompact ? 'opacity-0' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}>
+          <div className={`absolute top-3 right-3 flex flex-col gap-1.5 transition-all duration-200 z-20 ${isCompact ? 'opacity-50' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}>
           {onMicClick && <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

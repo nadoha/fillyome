@@ -97,6 +97,10 @@ export const TranslationInterface = () => {
   const [recommendedPreset, setRecommendedPreset] = useState<string>("");
   const lastRecommendationTextRef = useRef<string>("");
   const translateTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Papago-style UI states
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [hasTranslated, setHasTranslated] = useState(false);
   const {
     lookupWord,
     currentEntry,
@@ -1044,38 +1048,68 @@ export const TranslationInterface = () => {
                   }} recentPairs={recentLangPairs} type="target" />
                   </div>
 
-                  {/* Translation Style Selector */}
-                  <TranslationStyleSelector selectedStyle={translationStyle} onStyleChange={newStyle => {
-                  setTranslationStyle(newStyle);
-                  localStorage.setItem('translationStyle', JSON.stringify(newStyle));
-                }} />
+                  {/* Translation Style Selector - Only show after translation */}
+                  {hasTranslated && (
+                    <div className="animate-fade-in">
+                      <TranslationStyleSelector selectedStyle={translationStyle} onStyleChange={newStyle => {
+                        setTranslationStyle(newStyle);
+                        localStorage.setItem('translationStyle', JSON.stringify(newStyle));
+                      }} />
+                    </div>
+                  )}
                   
-                  <div className="flex flex-col md:flex-row gap-4 w-full">
+                  <div className={`flex flex-col gap-4 w-full transition-all duration-300 ${isInputFocused || hasTranslated ? 'md:flex-row' : ''}`}>
                     <div className="flex-1">
-                      <TranslationBox value={sourceText} onChange={setSourceText} onCopy={() => handleCopy(sourceText)} onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)} onTextSelect={e => sourceText && handleTextSelection(e, sourceLang, sourceText)} placeholder={t("enterText")} isEditable romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined} onMicClick={handleMicClick} isListening={isListening} noiseCancellation={noiseCancellation} onToggleNoiseCancellation={toggleNoiseCancellation} audioLevel={audioLevel} />
+                      <TranslationBox 
+                        value={sourceText} 
+                        onChange={setSourceText} 
+                        onCopy={() => handleCopy(sourceText)} 
+                        onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)} 
+                        onTextSelect={e => sourceText && handleTextSelection(e, sourceLang, sourceText)} 
+                        placeholder={t("enterText")} 
+                        isEditable 
+                        romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined} 
+                        onMicClick={handleMicClick} 
+                        isListening={isListening} 
+                        noiseCancellation={noiseCancellation} 
+                        onToggleNoiseCancellation={toggleNoiseCancellation} 
+                        audioLevel={audioLevel}
+                        onFocus={() => setIsInputFocused(true)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey && sourceText.trim()) {
+                            e.preventDefault();
+                            setHasTranslated(true);
+                            handleTranslate();
+                          }
+                        }}
+                        isCompact={!isInputFocused && !hasTranslated}
+                      />
                     </div>
                     
-                    <div className="flex-1">
-                      <TranslationResultBox naturalTranslation={targetText} literalTranslation={literalTranslation} romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} exampleSentence={exampleSentence} onCopy={() => handleCopy(targetText)} onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)} onAddToVocabulary={handleAddTranslationToVocabulary} onFeedback={type => {
-                    if (targetText) {
-                      handleFeedback({
-                        id: crypto.randomUUID(),
-                        source_text: sourceText,
-                        target_text: targetText,
-                        source_lang: sourceLang,
-                        target_lang: targetLang,
-                        is_favorite: false,
-                        created_at: new Date().toISOString(),
-                        content_classification: 'safe',
-                        masked_source_text: null,
-                        masked_target_text: null,
-                        source_romanization: sourceRomanization,
-                        target_romanization: targetRomanization,
-                        literal_translation: literalTranslation
-                      }, type);
-                    }
-                  }} isTranslating={isTranslating} sourceLang={sourceLang} targetLang={targetLang} />
-                    </div>
+                    {/* Only show result box after focus or translation */}
+                    {(isInputFocused || hasTranslated) && (
+                      <div className="flex-1 animate-fade-in">
+                        <TranslationResultBox naturalTranslation={targetText} literalTranslation={literalTranslation} romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} exampleSentence={exampleSentence} onCopy={() => handleCopy(targetText)} onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)} onAddToVocabulary={handleAddTranslationToVocabulary} onFeedback={type => {
+                          if (targetText) {
+                            handleFeedback({
+                              id: crypto.randomUUID(),
+                              source_text: sourceText,
+                              target_text: targetText,
+                              source_lang: sourceLang,
+                              target_lang: targetLang,
+                              is_favorite: false,
+                              created_at: new Date().toISOString(),
+                              content_classification: 'safe',
+                              masked_source_text: null,
+                              masked_target_text: null,
+                              source_romanization: sourceRomanization,
+                              target_romanization: targetRomanization,
+                              literal_translation: literalTranslation
+                            }, type);
+                          }
+                        }} isTranslating={isTranslating} sourceLang={sourceLang} targetLang={targetLang} />
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 

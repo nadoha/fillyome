@@ -1058,8 +1058,8 @@ export const TranslationInterface = () => {
                     </div>
                   )}
                   
-                  <div className={`flex flex-col gap-4 w-full transition-all duration-300 ${isInputFocused || hasTranslated ? 'md:flex-row' : ''}`}>
-                    <div className="flex-1">
+                  <div className={`flex flex-col gap-4 w-full transition-all duration-300 ${isInputFocused || hasTranslated ? 'md:flex-row md:items-stretch' : ''}`}>
+                    <div className={`${isInputFocused || hasTranslated ? 'flex-1 md:w-1/2' : 'w-full'}`}>
                       <TranslationBox 
                         value={sourceText} 
                         onChange={setSourceText} 
@@ -1088,26 +1088,41 @@ export const TranslationInterface = () => {
                     
                     {/* Only show result box after focus or translation */}
                     {(isInputFocused || hasTranslated) && (
-                      <div className="flex-1 animate-fade-in">
-                        <TranslationResultBox naturalTranslation={targetText} literalTranslation={literalTranslation} romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} exampleSentence={exampleSentence} onCopy={() => handleCopy(targetText)} onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)} onAddToVocabulary={handleAddTranslationToVocabulary} onFeedback={type => {
-                          if (targetText) {
-                            handleFeedback({
-                              id: crypto.randomUUID(),
-                              source_text: sourceText,
-                              target_text: targetText,
-                              source_lang: sourceLang,
-                              target_lang: targetLang,
-                              is_favorite: false,
-                              created_at: new Date().toISOString(),
-                              content_classification: 'safe',
-                              masked_source_text: null,
-                              masked_target_text: null,
-                              source_romanization: sourceRomanization,
-                              target_romanization: targetRomanization,
-                              literal_translation: literalTranslation
-                            }, type);
-                          }
-                        }} isTranslating={isTranslating} sourceLang={sourceLang} targetLang={targetLang} />
+                      <div className="flex-1 md:w-1/2 animate-fade-in">
+                        <TranslationResultBox 
+                          naturalTranslation={targetText} 
+                          literalTranslation={literalTranslation} 
+                          romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} 
+                          exampleSentence={exampleSentence} 
+                          onCopy={() => handleCopy(targetText)} 
+                          onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} 
+                          onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)} 
+                          onAddToVocabulary={handleAddTranslationToVocabulary} 
+                          onFeedback={type => {
+                            if (targetText) {
+                              handleFeedback({
+                                id: crypto.randomUUID(),
+                                source_text: sourceText,
+                                target_text: targetText,
+                                source_lang: sourceLang,
+                                target_lang: targetLang,
+                                is_favorite: false,
+                                created_at: new Date().toISOString(),
+                                content_classification: 'safe',
+                                masked_source_text: null,
+                                masked_target_text: null,
+                                source_romanization: sourceRomanization,
+                                target_romanization: targetRomanization,
+                                literal_translation: literalTranslation
+                              }, type);
+                            }
+                          }} 
+                          isTranslating={isTranslating} 
+                          sourceText={sourceText}
+                          sourceLang={sourceLang} 
+                          targetLang={targetLang} 
+                          placeholder={t("translationResult") || "번역 결과가 여기에 표시됩니다"}
+                        />
                       </div>
                     )}
                   </div>

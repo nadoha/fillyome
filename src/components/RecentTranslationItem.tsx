@@ -43,66 +43,76 @@ export const RecentTranslationItem = memo(({
   noRomanization = false,
   t
 }: RecentTranslationItemProps) => {
-  return <div className="flex items-start gap-2 p-3 rounded-lg bg-card/50 hover:bg-card transition-colors group">
-      <Checkbox checked={isSelected} onCheckedChange={onToggleSelect} className="mt-0.5" />
-      
-      <div className="flex-1 min-w-0 space-y-3">
-        {/* Source - Smaller, Secondary */}
-        <div className="space-y-1">
-          <div className="flex items-start gap-1.5 group/text">
-            <p className="text-sm text-muted-foreground leading-relaxed flex-1 select-text tracking-normal" onMouseUp={e => onTextSelect(e, translation.source_lang, translation.source_text)}>
-              {translation.source_text}
-            </p>
-            <div className="flex gap-0.5 opacity-0 group-hover/text:opacity-100">
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onCopy(translation.source_text)}>
-                <Copy className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onSpeak(translation.source_text, translation.source_lang, translation.source_romanization || undefined)}>
-                <Volume2 className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-          {!noRomanization && translation.source_romanization && <p className="text-xs text-muted-foreground/60 italic ml-1 tracking-normal">{translation.source_romanization}</p>}
+  return <div className="p-3 rounded-lg bg-card/50 hover:bg-card transition-colors group space-y-2">
+      {/* Header: Checkbox + Favorite + Delete */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Checkbox checked={isSelected} onCheckedChange={onToggleSelect} />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={`h-6 w-6 ${translation.is_favorite ? 'text-yellow-500' : 'text-muted-foreground'}`}
+            onClick={onToggleFavorite}
+          >
+            <Star className={`h-3.5 w-3.5 ${translation.is_favorite ? 'fill-current' : ''}`} />
+          </Button>
         </div>
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={onDelete}>
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
 
-        {/* Target - Larger, Primary */}
-        <div className="space-y-2">
-          <div className="flex items-start gap-1.5 group/text">
-            <p className="text-base text-foreground leading-relaxed font-medium flex-1 select-text tracking-normal" onMouseUp={e => onTextSelect(e, translation.target_lang, translation.target_text)}>
-              {translation.target_text}
-            </p>
-            <div className="flex gap-0.5 opacity-0 group-hover/text:opacity-100">
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onCopy(translation.target_text)}>
-                <Copy className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onSpeak(translation.target_text, translation.target_lang, translation.target_romanization || undefined)}>
-                <Volume2 className="h-3 w-3" />
-              </Button>
+      {/* Source Text - Full Width */}
+      <div 
+        className="text-sm text-muted-foreground leading-relaxed select-text break-words" 
+        onMouseUp={e => onTextSelect(e, translation.source_lang, translation.source_text)}
+      >
+        {translation.source_text}
+      </div>
+      {!noRomanization && translation.source_romanization && (
+        <p className="text-xs text-muted-foreground/60 italic">{translation.source_romanization}</p>
+      )}
+
+      {/* Target Text - Full Width, Emphasized */}
+      <div 
+        className="text-base text-foreground leading-relaxed font-medium select-text break-words" 
+        onMouseUp={e => onTextSelect(e, translation.target_lang, translation.target_text)}
+      >
+        {translation.target_text}
+      </div>
+      {!noRomanization && translation.target_romanization && (
+        <p className="text-sm text-muted-foreground/70">{translation.target_romanization}</p>
+      )}
+
+      {/* Literal Translation - Collapsible */}
+      {translation.literal_translation && (
+        <div className="pt-1 border-t border-border/20">
+          <Button variant="ghost" size="sm" onClick={onToggleLiteral} className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2">
+            {showLiteral ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+            {t("literalTranslation")}
+          </Button>
+          {showLiteral && (
+            <div className="mt-1 pl-2 border-l-2 border-primary/30 bg-primary/5 rounded-r py-1.5 pr-2">
+              <p className="text-sm text-foreground/70 leading-relaxed select-text break-words" onMouseUp={e => onTextSelect(e, translation.target_lang, translation.literal_translation || "")}>
+                {translation.literal_translation}
+              </p>
             </div>
-          </div>
-
-          {/* Target Romanization - Always Visible */}
-          {!noRomanization && translation.target_romanization && <div className="pt-1 border-t border-border/20">
-              <p className="text-sm text-muted-foreground/70 pl-2 tracking-normal">{translation.target_romanization}</p>
-            </div>}
-
-          {/* Literal Translation - Collapsible */}
-          {translation.literal_translation && <div className="pt-1 border-t border-border/20">
-              <Button variant="ghost" size="sm" onClick={onToggleLiteral} className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2 tracking-normal">
-                  {showLiteral ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                  {t("literalTranslation")}
-                </Button>
-              {showLiteral && <div className="mt-1 pl-2 border-l-2 border-primary/30 bg-primary/5 rounded-r py-1.5 pr-2">
-                  <p className="text-sm text-foreground/70 leading-relaxed select-text tracking-normal" onMouseUp={e => onTextSelect(e, translation.target_lang, translation.literal_translation || "")}>
-                    {translation.literal_translation}
-                  </p>
-                </div>}
-            </div>}
+          )}
         </div>
-          
-        {/* Feedback - Visually Separated */}
-        <div className="pt-2 border-t border-border/20 flex items-center gap-2">
-          <span className="text-xs text-muted-foreground mr-0.5 tracking-normal">{t("howsThis")}</span>
+      )}
+
+      {/* Bottom Actions: Copy, Speak, Feedback */}
+      <div className="pt-2 border-t border-border/20 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(translation.target_text)}>
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onSpeak(translation.target_text, translation.target_lang, translation.target_romanization || undefined)}>
+            <Volume2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground mr-1">{t("howsThis")}</span>
           <Button variant="ghost" size="icon" onClick={() => onFeedback('positive')} className="h-7 w-7 hover:bg-green-500/10 hover:text-green-600" aria-label={t("good")}>
             <ThumbsUp className="h-3.5 w-3.5" />
           </Button>
@@ -111,10 +121,6 @@ export const RecentTranslationItem = memo(({
           </Button>
         </div>
       </div>
-
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0" onClick={onDelete}>
-        <Trash2 className="h-3 w-3" />
-      </Button>
     </div>;
 });
 RecentTranslationItem.displayName = "RecentTranslationItem";

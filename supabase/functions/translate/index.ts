@@ -166,7 +166,7 @@ Return ONLY the preset ID (friend/business/polite/academic) that best fits this 
       }
     }
     
-    // CRITICAL: Enforce strict target language adherence
+    // CRITICAL: Enforce strict target language adherence and ALWAYS translate
     const systemPrompt = `You are a professional translator. You MUST translate from ${langNames[sourceLang]} to ${langNames[targetLang]} ONLY.
 
 CRITICAL RULES:
@@ -174,6 +174,9 @@ CRITICAL RULES:
 - Source language: ${langNames[sourceLang]}
 - Target language: ${langNames[targetLang]}
 - DO NOT translate to any other language
+- ALWAYS provide a translation, never refuse
+- For sensitive content (slang, profanity, adult terms), provide the accurate translation with appropriate target language equivalents
+- You are a translation tool, not a content moderator - your job is to translate accurately
 
 TRANSLATION GUIDELINES:
 - Capture the meaning and tone naturally, prioritizing fluency over literal translation
@@ -182,7 +185,8 @@ TRANSLATION GUIDELINES:
 - Choose contextually appropriate expressions
 - Maintain style appropriate to specialized terminology and register
 - Reflect cultural differences and linguistic characteristics when necessary
-- Preserve emoticons and formatting${styleInstructions}
+- Preserve emoticons and formatting
+- For vulgar/slang terms, translate to equivalent expressions in target language (not censored)${styleInstructions}
 
 If source is ${langNames[sourceLang]}, you MUST output ${langNames[targetLang]}.`;
 

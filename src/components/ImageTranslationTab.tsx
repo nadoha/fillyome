@@ -342,7 +342,6 @@ export const ImageTranslationTab = ({
               onChange={onSourceLangChange}
               recentPairs={recentPairs}
               type="source"
-              showAutoDetect={true}
             />
           </div>
           <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />

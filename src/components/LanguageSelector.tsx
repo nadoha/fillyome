@@ -5,17 +5,15 @@ import { useTranslation } from "react-i18next";
 interface LanguageSelectorProps {
   value: string;
   onChange: (value: string) => void;
-  recentPairs: Array<{ source: string; target: string }>;
-  type: "source" | "target";
-  showAutoDetect?: boolean;
+  recentPairs?: Array<{ source: string; target: string }>;
+  type?: "source" | "target";
 }
 
 export const LanguageSelector = memo(({
   value,
   onChange,
-  recentPairs,
-  type,
-  showAutoDetect = false
+  recentPairs = [],
+  type = "source"
 }: LanguageSelectorProps) => {
   const { t } = useTranslation();
 
@@ -42,37 +40,14 @@ export const LanguageSelector = memo(({
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="min-w-[100px] sm:min-w-[120px] h-9 sm:h-10 bg-background/50 backdrop-blur-sm border-0 border-b-2 border-border/30 rounded-none font-medium text-sm sm:text-base transition-all hover:border-primary/50 focus:border-primary touch-manipulation">
+      <SelectTrigger className="w-auto min-w-[80px] h-9 bg-transparent border-0 font-medium text-sm hover:bg-muted/50 focus:ring-0 focus:ring-offset-0">
         <SelectValue>
-          <span className="truncate">{selectedLang?.label || value}</span>
-          {showAutoDetect && type === "source" && (
-            <span className="ml-1.5 sm:ml-2 text-xs text-primary font-semibold">(자동)</span>
-          )}
+          <span>{selectedLang?.label || value}</span>
         </SelectValue>
       </SelectTrigger>
-      <SelectContent className="max-h-[350px] sm:max-h-[450px] bg-popover/95 backdrop-blur-md border border-border/50 shadow-xl z-[100]">
-        {recentPairs.length > 0 && (
-          <>
-            <div className="px-3 py-2 text-xs sm:text-sm font-semibold text-muted-foreground sticky top-0 bg-popover border-b border-border/50">
-              {t("recent3")} ({recentPairs.length}/3)
-            </div>
-            {recentPairs.map((pair, idx) => {
-              const val = type === "source" ? pair.source : pair.target;
-              const lang = languages.find(l => l.code === val);
-              return (
-                <SelectItem key={idx} value={val} className="pl-6 sm:pl-8 py-2.5 sm:py-3 text-sm sm:text-base touch-manipulation">
-                  {lang?.label || val}
-                </SelectItem>
-              );
-            })}
-            <div className="my-1 h-px bg-border" />
-          </>
-        )}
-        <div className="px-3 py-2 text-xs sm:text-sm font-semibold text-muted-foreground sticky top-0 bg-popover border-b border-border/50">
-          {t("allLanguages")}
-        </div>
+      <SelectContent className="max-h-[300px]">
         {languages.map((lang) => (
-          <SelectItem key={lang.code} value={lang.code} className="py-2.5 sm:py-3 text-sm sm:text-base touch-manipulation">
+          <SelectItem key={lang.code} value={lang.code} className="text-sm">
             {lang.label}
           </SelectItem>
         ))}

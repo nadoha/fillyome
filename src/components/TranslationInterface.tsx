@@ -997,82 +997,76 @@ export const TranslationInterface = () => {
     await addWord(sourceText, sourceLang, definition);
   }, [sourceText, targetText, sourceLang, targetRomanization, literalTranslation, addWord]);
   return <SidebarProvider defaultOpen={false}>
-      <div className="h-screen w-full bg-gradient-to-br from-background via-background to-muted/20 overflow-hidden">
+      <div className="h-screen w-full bg-background overflow-hidden">
         <AppSidebar recentTranslations={recentTranslations} selectedIds={selectedIds} showLiteral={showLiteral} onToggleSelect={toggleSelect} onToggleLiteral={toggleLiteral} onToggleFavorite={toggleFavorite} onDelete={handleDelete} onBulkDelete={handleBulkDelete} onCopy={handleCopy} onSpeak={handleSpeak} onTextSelect={handleTextSelection} onFeedback={handleFeedback} noRomanizationLangs={noRomanizationLangs} />
 
         <div className="h-full flex flex-col overflow-hidden">
-          <header className="border-b bg-background/95 backdrop-blur-lg sticky top-0 z-10 shadow-sm pt-safe">
-            <div className="px-3 sm:px-4 py-3 sm:py-3.5">
-              <div className="flex items-center justify-between gap-3 sm:gap-4">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                  <SidebarTrigger className="h-10 w-10 sm:h-11 sm:w-11 shrink-0" />
-                  <h1 className="text-base sm:text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent truncate">
-                    {t("translator") || "번역기"}
-                  </h1>
+          <header className="border-b border-border/50 bg-background sticky top-0 z-10 pt-safe">
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger className="h-9 w-9" />
                 </div>
-                
                 <HamburgerMenu user={user} onUserChange={setUser} />
               </div>
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col items-center justify-start px-3 sm:px-4 py-4 sm:py-6 pb-20 md:pb-6 animate-fade-in overflow-y-auto touch-pan-y overscroll-contain">
-            <div className="w-full max-w-4xl flex flex-col gap-4 sm:gap-5">
-              {!isOnline && <Alert className="bg-warning/10 border-warning/30 animate-fade-in">
+          <main className="flex-1 flex flex-col items-center px-4 py-6 pb-20 md:pb-6 overflow-y-auto">
+            <div className="w-full max-w-3xl flex flex-col gap-4">
+              {!isOnline && <Alert className="bg-warning/10 border-warning/30">
                   <WifiOff className="h-4 w-4 text-warning" />
                   <AlertDescription className="text-warning text-sm">
-                    {t("offlineMode") || "오프라인 모드 - 최근 번역과 캐시된 번역만 조회할 수 있습니다"}
+                    {t("offlineMode") || "오프라인 모드"}
                   </AlertDescription>
                 </Alert>}
 
               <Tabs defaultValue="text" className="w-full">
-                <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-4">
-                  <TabsTrigger value="text">{t("textTranslation") || "텍스트 번역"}</TabsTrigger>
-                  <TabsTrigger value="image">{t("imageTranslation") || "이미지 번역"}</TabsTrigger>
+                <TabsList className="grid w-full max-w-xs mx-auto grid-cols-2 h-9 mb-6">
+                  <TabsTrigger value="text" className="text-sm">{t("textTranslation") || "텍스트"}</TabsTrigger>
+                  <TabsTrigger value="image" className="text-sm">{t("imageTranslation") || "이미지"}</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="text" className="flex flex-col gap-4 sm:gap-5">
-                  <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <TabsContent value="text" className="space-y-4">
+                  {/* Language selector row */}
+                  <div className="flex items-center justify-center gap-3">
                     <LanguageSelector value={sourceLang} onChange={newLang => {
                     setSourceLang(newLang as any);
                     updateLanguagePair(newLang, targetLang);
-                  }} recentPairs={recentLangPairs} type="source" showAutoDetect={sourceText.trim().length >= 2} />
+                  }} />
                     
-                    <Button variant="ghost" size="icon" onClick={swapLanguages} className="h-9 w-9 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300 shrink-0">
+                    <Button variant="ghost" size="icon" onClick={swapLanguages} className="h-8 w-8 rounded-full hover:bg-muted shrink-0">
                       <ArrowLeftRight className="h-4 w-4" />
                     </Button>
                     
                     <LanguageSelector value={targetLang} onChange={newLang => {
                     setTargetLang(newLang as any);
                     updateLanguagePair(sourceLang, newLang);
-                  }} recentPairs={recentLangPairs} type="target" />
+                  }} />
                   </div>
 
-                  {/* Translation Style Selector - Only show after translation */}
+                  {/* Translation style - minimal */}
                   {hasTranslated && (
-                    <div className="animate-fade-in">
+                    <div className="flex justify-center">
                       <TranslationStyleSelector selectedStyle={translationStyle} onStyleChange={newStyle => {
                         setTranslationStyle(newStyle);
                         localStorage.setItem('translationStyle', JSON.stringify(newStyle));
                       }} />
                     </div>
                   )}
-                  
-                  <div className={`flex flex-col gap-4 w-full transition-all duration-300 ${isInputFocused || hasTranslated ? 'md:flex-row md:items-stretch' : ''}`}>
-                    <div className={`${isInputFocused || hasTranslated ? 'flex-1 md:w-1/2' : 'w-full'}`}>
+                  {/* Translation boxes */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Source input */}
+                    <div className="border border-border/50 rounded-lg overflow-hidden">
                       <TranslationBox 
                         value={sourceText} 
                         onChange={setSourceText} 
                         onCopy={() => handleCopy(sourceText)} 
                         onSpeak={() => handleSpeak(sourceText, sourceLang, sourceRomanization)} 
-                        onTextSelect={e => sourceText && handleTextSelection(e, sourceLang, sourceText)} 
                         placeholder={t("enterText")} 
                         isEditable 
-                        romanization={!noRomanizationLangs.includes(sourceLang) ? sourceRomanization : undefined} 
                         onMicClick={handleMicClick} 
                         isListening={isListening} 
-                        noiseCancellation={noiseCancellation} 
-                        onToggleNoiseCancellation={toggleNoiseCancellation} 
                         audioLevel={audioLevel}
                         onFocus={() => setIsInputFocused(true)}
                         onKeyDown={(e) => {
@@ -1082,61 +1076,50 @@ export const TranslationInterface = () => {
                             handleTranslate();
                           }
                         }}
-                        isCompact={!isInputFocused && !hasTranslated}
                       />
                     </div>
                     
-                    {/* Only show result box after focus or translation */}
-                    {(isInputFocused || hasTranslated) && (
-                      <div className="flex-1 md:w-1/2 animate-fade-in">
-                        <TranslationResultBox 
-                          naturalTranslation={targetText} 
-                          literalTranslation={literalTranslation} 
-                          romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} 
-                          exampleSentence={exampleSentence} 
-                          onCopy={() => handleCopy(targetText)} 
-                          onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} 
-                          onTextSelect={(selectedText, lang) => handleTextSelectionFromResult(selectedText, lang)} 
-                          onAddToVocabulary={handleAddTranslationToVocabulary} 
-                          onFeedback={type => {
-                            if (targetText) {
-                              handleFeedback({
-                                id: crypto.randomUUID(),
-                                source_text: sourceText,
-                                target_text: targetText,
-                                source_lang: sourceLang,
-                                target_lang: targetLang,
-                                is_favorite: false,
-                                created_at: new Date().toISOString(),
-                                content_classification: 'safe',
-                                masked_source_text: null,
-                                masked_target_text: null,
-                                source_romanization: sourceRomanization,
-                                target_romanization: targetRomanization,
-                                literal_translation: literalTranslation
-                              }, type);
-                            }
-                          }} 
-                          isTranslating={isTranslating} 
-                          sourceText={sourceText}
-                          sourceLang={sourceLang} 
-                          targetLang={targetLang} 
-                          placeholder={t("translationResult") || "번역 결과가 여기에 표시됩니다"}
-                        />
-                      </div>
-                    )}
+                    {/* Result */}
+                    <TranslationResultBox 
+                      naturalTranslation={targetText} 
+                      literalTranslation={literalTranslation} 
+                      romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} 
+                      onCopy={() => handleCopy(targetText)} 
+                      onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} 
+                      onFeedback={type => {
+                        if (targetText) {
+                          handleFeedback({
+                            id: crypto.randomUUID(),
+                            source_text: sourceText,
+                            target_text: targetText,
+                            source_lang: sourceLang,
+                            target_lang: targetLang,
+                            is_favorite: false,
+                            created_at: new Date().toISOString(),
+                            content_classification: 'safe',
+                            masked_source_text: null,
+                            masked_target_text: null,
+                            source_romanization: sourceRomanization,
+                            target_romanization: targetRomanization,
+                            literal_translation: literalTranslation
+                          }, type);
+                        }
+                      }} 
+                      isTranslating={isTranslating} 
+                      placeholder={t("translationResult") || "번역 결과"}
+                    />
                   </div>
                 </TabsContent>
 
                 <TabsContent value="image">
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <LanguageSelector value={sourceLang} onChange={newLang => setSourceLang(newLang as any)} recentPairs={recentLangPairs} type="source" />
+                  <div className="flex items-center justify-center gap-3 mb-6">
+                    <LanguageSelector value={sourceLang} onChange={newLang => setSourceLang(newLang as any)} />
                     
-                    <Button variant="ghost" size="icon" onClick={swapLanguages} className="h-9 w-9 rounded-full hover:bg-accent hover:rotate-180 transition-all duration-300 shrink-0">
+                    <Button variant="ghost" size="icon" onClick={swapLanguages} className="h-8 w-8 rounded-full hover:bg-muted shrink-0">
                       <ArrowLeftRight className="h-4 w-4" />
                     </Button>
                     
-                    <LanguageSelector value={targetLang} onChange={newLang => setTargetLang(newLang as any)} recentPairs={recentLangPairs} type="target" />
+                    <LanguageSelector value={targetLang} onChange={newLang => setTargetLang(newLang as any)} />
                   </div>
 
                   <ImageTranslationTab sourceLang={sourceLang} targetLang={targetLang} onSourceLangChange={setSourceLang} onTargetLangChange={setTargetLang} recentPairs={recentLangPairs} />

@@ -13,8 +13,29 @@ serve(async (req) => {
   try {
     const { text, lang } = await req.json();
 
-    if (!text) {
-      throw new Error('Text is required');
+    // Input validation
+    if (!text || typeof text !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Text is required and must be a string' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const trimmedText = text.trim();
+    
+    // Length validation (1-4096 characters, typical TTS limit)
+    if (trimmedText.length < 1) {
+      return new Response(
+        JSON.stringify({ error: 'Text cannot be empty' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (trimmedText.length > 4096) {
+      return new Response(
+        JSON.stringify({ error: 'Text exceeds maximum length of 4096 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
@@ -38,7 +59,7 @@ serve(async (req) => {
 
     const voice = voiceMap[lang] || 'alloy'
 
-    console.log(`Generating speech for text: ${text.substring(0, 50)}... with voice: ${voice}`)
+    console.log(`Generating speech for text (${trimmedText.length} chars) with voice: ${voice}`)
 
     // Generate speech from text using OpenAI
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
@@ -49,7 +70,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'tts-1',
-        input: text,
+        input: trimmedText,
         voice: voice,
         response_format: 'mp3',
       }),

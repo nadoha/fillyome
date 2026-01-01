@@ -97,6 +97,9 @@ export const TranslationInterface = () => {
   const [recommendedPreset, setRecommendedPreset] = useState<string>("");
   const lastRecommendationTextRef = useRef<string>("");
   const translateTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastSavedTextRef = useRef<string>("");
+  const pendingTranslationRef = useRef<Translation | null>(null);
   
   // Papago-style UI states
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -251,14 +254,17 @@ export const TranslationInterface = () => {
     }
   }, [user]);
 
-  // Save translation to DB or localStorage
+  // Save translation to DB or localStorage (only called after stable state)
   const saveTranslation = useCallback(async (translation: Translation) => {
+    // Skip if already saved same text
+    if (lastSavedTextRef.current === translation.source_text) {
+      return;
+    }
+    
     if (user) {
       // Save to database
       try {
-        const {
-          error
-        } = await supabase.from("translations").insert({
+        const { error } = await supabase.from("translations").insert({
           user_id: user.id,
           source_text: translation.source_text,
           target_text: translation.target_text,
@@ -273,6 +279,7 @@ export const TranslationInterface = () => {
           masked_target_text: translation.masked_target_text
         });
         if (error) throw error;
+        lastSavedTextRef.current = translation.source_text;
         await loadTranslations();
       } catch (error) {
         console.error("Failed to save translation:", error);
@@ -287,9 +294,40 @@ export const TranslationInterface = () => {
       const filtered = translations.filter((t: Translation) => !(t.source_text === translation.source_text && t.source_lang === translation.source_lang && t.target_lang === translation.target_lang));
       filtered.unshift(translation);
       localStorage.setItem('translations', JSON.stringify(filtered));
+      lastSavedTextRef.current = translation.source_text;
       loadTranslations();
     }
   }, [user, loadTranslations, t]);
+
+  // Schedule save after stable state (1 second of no typing)
+  const scheduleSave = useCallback((translation: Translation) => {
+    // Clear previous save timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Store pending translation
+    pendingTranslationRef.current = translation;
+    
+    // Schedule save after 1 second of stability
+    saveTimeoutRef.current = setTimeout(() => {
+      if (pendingTranslationRef.current) {
+        saveTranslation(pendingTranslationRef.current);
+        pendingTranslationRef.current = null;
+      }
+    }, 1000);
+  }, [saveTranslation]);
+
+  // Save pending translation when user leaves or changes context
+  const flushPendingTranslation = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    if (pendingTranslationRef.current) {
+      saveTranslation(pendingTranslationRef.current);
+      pendingTranslationRef.current = null;
+    }
+  }, [saveTranslation]);
 
   // Save language pair to localStorage and update recent pairs
   const updateLanguagePair = useCallback((source: string, target: string) => {
@@ -309,13 +347,16 @@ export const TranslationInterface = () => {
     });
   }, []);
   const swapLanguages = useCallback(() => {
+    // Flush pending translation before language swap
+    flushPendingTranslation();
+    
     const newSource = targetLang;
     const newTarget = sourceLang;
     setSourceLang(newSource);
     setTargetLang(newTarget);
     setTargetText("");
     updateLanguagePair(newSource, newTarget);
-  }, [sourceLang, targetLang, updateLanguagePair]);
+  }, [sourceLang, targetLang, updateLanguagePair, flushPendingTranslation]);
   const handleTranslate = useCallback(async (retryCount = 0) => {
     if (!sourceText.trim()) {
       return;
@@ -336,7 +377,7 @@ export const TranslationInterface = () => {
         setTargetRomanization(quickResult.targetRom || "");
         setExampleSentence("");
 
-        // Auto-save quick translation to history
+        // Schedule save (will save after 1 second of no activity)
         const newTranslation: Translation = {
           id: Date.now().toString(),
           source_text: sourceText,
@@ -352,7 +393,7 @@ export const TranslationInterface = () => {
           target_romanization: "",
           literal_translation: quickResult.literal || ""
         };
-        await saveTranslation(newTranslation);
+        scheduleSave(newTranslation);
         return;
       }
     }
@@ -533,7 +574,7 @@ export const TranslationInterface = () => {
       setTargetRomanization(tgtRomanization);
       setExampleSentence(example);
 
-      // Auto-save to history when translation completes
+      // Schedule save (will save after 1 second of no activity)
       const newTranslation: Translation = {
         id: Date.now().toString(),
         source_text: sourceText,
@@ -549,7 +590,7 @@ export const TranslationInterface = () => {
         target_romanization: tgtRomanization,
         literal_translation: literal
       };
-      await saveTranslation(newTranslation);
+      scheduleSave(newTranslation);
     } catch (error: any) {
       console.error("Translation error:", error);
 
@@ -568,7 +609,7 @@ export const TranslationInterface = () => {
       setIsTranslating(false);
       setAbortController(null);
     }
-  }, [sourceText, sourceLang, targetLang, translationStyle, abortController, isOnline, t, saveTranslation]);
+  }, [sourceText, sourceLang, targetLang, translationStyle, abortController, isOnline, t, scheduleSave]);
 
   // Auto-detect language with improved sensitivity
   useEffect(() => {
@@ -580,6 +621,27 @@ export const TranslationInterface = () => {
       let detectedLang: "ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr" | null = null;
       if (detected === "kor") detectedLang = "ko";else if (detected === "jpn") detectedLang = "ja";else if (detected === "eng") detectedLang = "en";else if (detected === "cmn") detectedLang = "zh";else if (detected === "spa") detectedLang = "es";else if (detected === "fra") detectedLang = "fr";else if (detected === "deu") detectedLang = "de";else if (detected === "por") detectedLang = "pt";else if (detected === "ita") detectedLang = "it";else if (detected === "rus") detectedLang = "ru";else if (detected === "arb") detectedLang = "ar";else if (detected === "tha") detectedLang = "th";else if (detected === "vie") detectedLang = "vi";else if (detected === "ind") detectedLang = "id";else if (detected === "hin") detectedLang = "hi";else if (detected === "tur") detectedLang = "tr";
       if (detectedLang && detectedLang !== sourceLang) {
+        // Flush pending translation before language change
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        if (pendingTranslationRef.current) {
+          // Immediate save for pending translation
+          const translation = pendingTranslationRef.current;
+          const stored = localStorage.getItem('translations');
+          const translations = stored ? JSON.parse(stored) : [];
+          const filtered = translations.filter((t: Translation) => 
+            !(t.source_text === translation.source_text && 
+              t.source_lang === translation.source_lang && 
+              t.target_lang === translation.target_lang));
+          if (lastSavedTextRef.current !== translation.source_text) {
+            filtered.unshift(translation);
+            localStorage.setItem('translations', JSON.stringify(filtered));
+            lastSavedTextRef.current = translation.source_text;
+          }
+          pendingTranslationRef.current = null;
+        }
+        
         let newTargetLang: typeof targetLang;
         if (detectedLang === "ko") newTargetLang = "en";else if (detectedLang === "ja") newTargetLang = "ko";else if (detectedLang === "en") newTargetLang = "ko";else if (detectedLang === "zh") newTargetLang = "en";else newTargetLang = "en";
         setSourceLang(detectedLang);
@@ -683,7 +745,27 @@ export const TranslationInterface = () => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
-    return () => subscription.unsubscribe();
+    
+    // Cleanup: save pending translation and clear timeouts on unmount
+    return () => {
+      subscription.unsubscribe();
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      // Save any pending translation before unmount
+      if (pendingTranslationRef.current) {
+        // Use immediate save for unmount (can't await in cleanup)
+        const translation = pendingTranslationRef.current;
+        const stored = localStorage.getItem('translations');
+        const translations = stored ? JSON.parse(stored) : [];
+        const filtered = translations.filter((t: Translation) => 
+          !(t.source_text === translation.source_text && 
+            t.source_lang === translation.source_lang && 
+            t.target_lang === translation.target_lang));
+        filtered.unshift(translation);
+        localStorage.setItem('translations', JSON.stringify(filtered));
+      }
+    };
   }, []);
 
   // Load translations when user changes

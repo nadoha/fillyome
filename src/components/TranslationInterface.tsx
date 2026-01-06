@@ -973,29 +973,31 @@ export const TranslationInterface = () => {
   }, [user, recentTranslations, loadTranslations, t]);
   const handleFeedback = useCallback(async (translation: Translation, feedbackType: 'positive' | 'negative') => {
     try {
-      console.log('Submitting feedback:', {
-        translation_id: translation.id,
-        source_text: translation.source_text,
-        natural_translation: translation.target_text,
-        literal_translation: translation.literal_translation,
-        feedback_type: feedbackType,
-        user_id: user?.id || null
-      });
-      const {
-        data,
-        error
-      } = await supabase.from("translation_feedback").insert({
-        source_text: translation.source_text,
-        natural_translation: translation.target_text,
-        literal_translation: translation.literal_translation,
-        feedback_type: feedbackType,
-        user_id: user?.id || null
-      }).select();
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+      const MAX_FEEDBACK_TEXT_LEN = 5000;
+
+      const sourceText = (translation.source_text ?? "").trim();
+      const naturalTranslation = (translation.target_text ?? "").trim();
+      const literalTranslation = translation.literal_translation?.trim() ?? null;
+
+      if (
+        sourceText.length > MAX_FEEDBACK_TEXT_LEN ||
+        naturalTranslation.length > MAX_FEEDBACK_TEXT_LEN ||
+        (literalTranslation !== null && literalTranslation.length > MAX_FEEDBACK_TEXT_LEN)
+      ) {
+        toast.error(t("feedbackTooLong", { max: MAX_FEEDBACK_TEXT_LEN }));
+        return;
       }
-      console.log('Feedback submitted successfully:', data);
+
+      const { error } = await supabase.from("translation_feedback").insert({
+        source_text: sourceText,
+        natural_translation: naturalTranslation,
+        literal_translation: literalTranslation,
+        feedback_type: feedbackType,
+        user_id: user?.id ?? null
+      });
+
+      if (error) throw error;
+
       toast.success(feedbackType === 'positive' ? t("feedbackThanks") : t("feedbackReceived"));
     } catch (error) {
       console.error('Feedback submission failed:', error);

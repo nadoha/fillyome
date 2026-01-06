@@ -44,6 +44,7 @@
   "feedbackThanks": "Thanks for your feedback!",
   "feedbackReceived": "Feedback received",
   "feedbackError": "Failed to send feedback",
+  "feedbackTooLong": "Feedback can be up to {{max}} characters",
   "loginRequired": "Please log in to submit feedback",
   "login": "Login",
   "signup": "Sign Up",

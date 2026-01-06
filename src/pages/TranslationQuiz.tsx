@@ -1,0 +1,325 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { ArrowLeft, CheckCircle, XCircle, Shuffle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+
+interface FrequentWord {
+  word: string;
+  translation: string;
+  source_lang: string;
+  target_lang: string;
+  count: number;
+}
+
+interface QuizQuestion {
+  word: string;
+  options: string[];
+  correctAnswer: string;
+  source_lang: string;
+  target_lang: string;
+}
+
+const TranslationQuiz = () => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [showResult, setShowResult] = useState(false);
+  const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [wrongAnswers, setWrongAnswers] = useState<QuizQuestion[]>([]);
+
+  useEffect(() => {
+    checkAuth();
+    loadTranslationQuiz();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error(t("auth.loginRequired"));
+      navigate("/auth");
+    }
+  };
+
+  const extractWords = (text: string): string[] => {
+    // Split by common delimiters and filter short words
+    return text
+      .split(/[\s,.\-!?;:'"()[\]{}\/\\]+/)
+      .map(w => w.trim().toLowerCase())
+      .filter(w => w.length >= 2 && w.length <= 30);
+  };
+
+  const loadTranslationQuiz = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get recent translations
+      const { data: translations, error } = await supabase
+        .from("translations")
+        .select("source_text, target_text, source_lang, target_lang")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      if (!translations || translations.length < 4) {
+        toast.error("퀴즈를 만들기에 번역 기록이 부족합니다 (최소 4개 필요)");
+        navigate("/learn");
+        return;
+      }
+
+      // Count word frequency
+      const wordMap = new Map<string, FrequentWord>();
+
+      translations.forEach((t) => {
+        const sourceWords = extractWords(t.source_text);
+        const targetWords = extractWords(t.target_text);
+
+        // Use simple word pairs (first word of source to first meaningful target word)
+        if (sourceWords.length > 0 && targetWords.length > 0) {
+          const key = `${sourceWords[0]}_${t.source_lang}`;
+          const existing = wordMap.get(key);
+          
+          if (existing) {
+            existing.count++;
+          } else {
+            wordMap.set(key, {
+              word: sourceWords[0],
+              translation: targetWords.slice(0, 3).join(" "),
+              source_lang: t.source_lang,
+              target_lang: t.target_lang,
+              count: 1,
+            });
+          }
+        }
+      });
+
+      // Get top frequent words
+      const frequentWords = Array.from(wordMap.values())
+        .filter(w => w.count >= 1)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 20);
+
+      if (frequentWords.length < 4) {
+        toast.error("충분한 단어가 없습니다. 더 많은 번역을 해보세요!");
+        navigate("/learn");
+        return;
+      }
+
+      // Shuffle and select 10 questions
+      const shuffled = frequentWords.sort(() => Math.random() - 0.5).slice(0, 10);
+
+      // Create quiz questions
+      const quizQuestions: QuizQuestion[] = shuffled.map((word) => {
+        const correctAnswer = word.translation;
+        
+        // Get 3 random wrong answers from other words
+        const wrongAnswers = frequentWords
+          .filter((w) => w.word !== word.word)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3)
+          .map((w) => w.translation);
+
+        // Shuffle options
+        const options = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
+
+        return {
+          word: word.word,
+          options,
+          correctAnswer,
+          source_lang: word.source_lang,
+          target_lang: word.target_lang,
+        };
+      });
+
+      setQuestions(quizQuestions);
+    } catch (error) {
+      console.error("Failed to load quiz:", error);
+      toast.error("퀴즈를 불러오는데 실패했습니다");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAnswer = async (answer: string) => {
+    setSelectedAnswer(answer);
+    setShowResult(true);
+
+    const currentQuestion = questions[currentIndex];
+    const isCorrect = answer === currentQuestion.correctAnswer;
+    
+    setScore((prev) => ({
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      total: prev.total + 1,
+    }));
+
+    // Track wrong answers
+    if (!isCorrect) {
+      setWrongAnswers(prev => [...prev, currentQuestion]);
+    }
+
+    // Record result
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("quiz_results").insert({
+          user_id: user.id,
+          vocabulary_id: null,
+          was_correct: isCorrect,
+          quiz_type: "translation_quiz",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to record result:", error);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setSelectedAnswer(null);
+      setShowResult(false);
+    } else {
+      const percentage = Math.round((score.correct / score.total) * 100);
+      toast.success(`퀴즈 완료! 정답률: ${percentage}%`);
+      
+      // Store wrong answers in session storage for wrong answer review
+      if (wrongAnswers.length > 0) {
+        sessionStorage.setItem("lastWrongAnswers", JSON.stringify(wrongAnswers));
+      }
+      
+      navigate("/learn");
+    }
+  };
+
+  const handleRetry = () => {
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setShowResult(false);
+    setScore({ correct: 0, total: 0 });
+    setWrongAnswers([]);
+    setIsLoading(true);
+    loadTranslationQuiz();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">퀴즈 생성 중...</p>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-muted-foreground">퀴즈가 없습니다</p>
+        <Button onClick={() => navigate("/learn")}>돌아가기</Button>
+      </div>
+    );
+  }
+
+  const currentQuestion = questions[currentIndex];
+  const progress = ((currentIndex + 1) / questions.length) * 100;
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <div className="container max-w-2xl mx-auto p-4 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/learn")}
+              aria-label="뒤로 가기"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-2xl font-bold">번역 퀴즈</h1>
+          </div>
+          <Button variant="ghost" size="icon" onClick={handleRetry}>
+            <Shuffle className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Progress */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>문제 {currentIndex + 1} / {questions.length}</span>
+            <span>정답: {score.correct} / {score.total}</span>
+          </div>
+          <Progress value={progress} />
+        </div>
+
+        {/* Question */}
+        <Card className="overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+              {currentQuestion.source_lang} → {currentQuestion.target_lang}
+            </p>
+          </div>
+          <CardContent className="p-6">
+            <p className="text-3xl font-bold text-center mb-2">
+              {currentQuestion.word}
+            </p>
+            <p className="text-center text-muted-foreground mb-6">
+              이 단어의 번역은?
+            </p>
+
+            <div className="space-y-3">
+              {currentQuestion.options.map((option, idx) => {
+                const isSelected = selectedAnswer === option;
+                const isCorrect = option === currentQuestion.correctAnswer;
+                const showCorrect = showResult && isCorrect;
+                const showWrong = showResult && isSelected && !isCorrect;
+
+                return (
+                  <Button
+                    key={idx}
+                    variant={showCorrect ? "default" : showWrong ? "destructive" : "outline"}
+                    className="w-full h-auto p-4 text-left justify-start transition-all"
+                    onClick={() => !showResult && handleAnswer(option)}
+                    disabled={showResult}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      {showResult && (
+                        <>
+                          {showCorrect && <CheckCircle className="h-5 w-5 flex-shrink-0 text-primary-foreground" />}
+                          {showWrong && <XCircle className="h-5 w-5 flex-shrink-0" />}
+                        </>
+                      )}
+                      <span className="flex-1 break-words">{option}</span>
+                    </div>
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Next Button */}
+        {showResult && (
+          <Button onClick={handleNext} className="w-full" size="lg">
+            {currentIndex < questions.length - 1 ? "다음 문제" : "완료"}
+          </Button>
+        )}
+      </div>
+
+      <BottomNavigation />
+    </div>
+  );
+};
+
+export default TranslationQuiz;

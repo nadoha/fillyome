@@ -14,6 +14,8 @@ import Learn from "./pages/Learn";
 import Flashcards from "./pages/Flashcards";
 import Review from "./pages/Review";
 import Quiz from "./pages/Quiz";
+import TranslationQuiz from "./pages/TranslationQuiz";
+import WrongAnswers from "./pages/WrongAnswers";
 import Stats from "./pages/Stats";
 import CurrencyExchange from "./pages/CurrencyExchange";
 import NotFound from "./pages/NotFound";
@@ -38,6 +40,8 @@ const App = () => (
             <Route path="/flashcards" element={<Flashcards />} />
             <Route path="/review" element={<Review />} />
             <Route path="/quiz" element={<Quiz />} />
+            <Route path="/translation-quiz" element={<TranslationQuiz />} />
+            <Route path="/wrong-answers" element={<WrongAnswers />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/currency" element={<CurrencyExchange />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

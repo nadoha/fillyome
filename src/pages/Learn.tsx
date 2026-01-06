@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { BookOpen, Brain, Trophy, TrendingUp, ArrowLeft, Zap } from "lucide-react";
+import { BookOpen, Brain, Trophy, TrendingUp, ArrowLeft, Zap, Languages, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface DailyStats {
@@ -14,6 +14,7 @@ interface DailyStats {
   wordsStudied: number;
   dailyGoal: number;
   streak: number;
+  wrongAnswerCount: number;
 }
 
 const Learn = () => {
@@ -24,6 +25,7 @@ const Learn = () => {
     wordsStudied: 0,
     dailyGoal: 20,
     streak: 0,
+    wrongAnswerCount: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -86,11 +88,19 @@ const Learn = () => {
 
       if (sessionError && sessionError.code !== "PGRST116") throw sessionError;
 
+      // Get wrong answer count
+      const { count: wrongCount } = await supabase
+        .from("quiz_results")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("was_correct", false);
+
       setStats({
         wordsToReview: reviewWords?.length || 0,
         wordsStudied: todaySession?.words_studied || 0,
         dailyGoal: 20,
         streak: 7, // TODO: Calculate actual streak
+        wrongAnswerCount: wrongCount || 0,
       });
     } catch (error) {
       console.error("Failed to load stats:", error);
@@ -189,20 +199,60 @@ const Learn = () => {
 
           <Card 
             className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate("/quiz")}
+            onClick={() => navigate("/translation-quiz")}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Trophy className="h-5 w-5 text-accent" />
-                퀴즈
+                <Languages className="h-5 w-5 text-accent" />
+                번역 퀴즈
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-3">
-                학습한 단어 테스트하기
+                자주 번역한 단어로 퀴즈 풀기
+              </p>
+              <Button className="w-full" variant="default">
+                퀴즈 시작
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate("/quiz")}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Trophy className="h-5 w-5 text-primary" />
+                단어장 퀴즈
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">
+                저장한 단어 테스트하기
               </p>
               <Button className="w-full" variant="outline">
                 퀴즈 시작
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow border-destructive/30"
+            onClick={() => navigate("/wrong-answers")}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <XCircle className="h-5 w-5 text-destructive" />
+                오답노트
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">
+                {stats.wrongAnswerCount > 0 ? `${stats.wrongAnswerCount}개의 틀린 문제` : "틀린 문제 복습하기"}
+              </p>
+              <Button className="w-full" variant="outline">
+                오답 보기
               </Button>
             </CardContent>
           </Card>
@@ -213,7 +263,7 @@ const Learn = () => {
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <TrendingUp className="h-5 w-5 text-primary" />
+                <TrendingUp className="h-5 w-5 text-secondary" />
                 학습 통계
               </CardTitle>
             </CardHeader>

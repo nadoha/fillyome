@@ -299,23 +299,33 @@ export const TranslationInterface = () => {
     }
   }, [user, loadTranslations, t]);
 
-  // Schedule save after stable state (1 second of no typing)
+  // Track if user is still typing
+  const isTypingRef = useRef(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Schedule save after user stops typing completely (3 seconds of no activity)
   const scheduleSave = useCallback((translation: Translation) => {
     // Clear previous save timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
     
+    // Don't save if user is still typing
+    if (isTypingRef.current) {
+      return;
+    }
+    
     // Store pending translation
     pendingTranslationRef.current = translation;
     
-    // Schedule save after 1 second of stability
+    // Schedule save after 3 seconds of stability (increased from 1 second)
     saveTimeoutRef.current = setTimeout(() => {
-      if (pendingTranslationRef.current) {
+      // Double check user stopped typing before saving
+      if (pendingTranslationRef.current && !isTypingRef.current) {
         saveTranslation(pendingTranslationRef.current);
         pendingTranslationRef.current = null;
       }
-    }, 1000);
+    }, 3000);
   }, [saveTranslation]);
 
   // Save pending translation when user leaves or changes context
@@ -357,10 +367,17 @@ export const TranslationInterface = () => {
     setTargetText("");
     updateLanguagePair(newSource, newTarget);
   }, [sourceLang, targetLang, updateLanguagePair, flushPendingTranslation]);
+  // Track current translation request to avoid race conditions
+  const currentTranslationIdRef = useRef<number>(0);
+  
   const handleTranslate = useCallback(async (retryCount = 0) => {
     if (!sourceText.trim()) {
       return;
     }
+
+    // Generate unique ID for this translation request
+    const translationId = Date.now();
+    currentTranslationIdRef.current = translationId;
 
     // Cancel previous request if exists
     if (abortController) {
@@ -371,13 +388,17 @@ export const TranslationInterface = () => {
     if (shouldUseQuickTranslation(sourceText)) {
       const quickResult = attemptQuickTranslation(sourceText, sourceLang, targetLang);
       if (quickResult) {
+        // Check if this is still the current request
+        if (currentTranslationIdRef.current !== translationId) return;
+        
         setTargetText(quickResult.translation);
         setLiteralTranslation(quickResult.literal || "");
         setSourceRomanization(quickResult.sourceRom || "");
         setTargetRomanization(quickResult.targetRom || "");
         setExampleSentence("");
+        setHasTranslated(true);
 
-        // Schedule save (will save after 1 second of no activity)
+        // Schedule save (will save after user stops typing)
         const newTranslation: Translation = {
           id: Date.now().toString(),
           source_text: sourceText,
@@ -394,7 +415,7 @@ export const TranslationInterface = () => {
           literal_translation: quickResult.literal || ""
         };
         scheduleSave(newTranslation);
-        return;
+        return; // Important: return here to prevent AI translation
       }
     }
 
@@ -414,11 +435,15 @@ export const TranslationInterface = () => {
         } = JSON.parse(cached);
         // Use cache if less than 7 days old (extended for better performance)
         if (Date.now() - timestamp < 604800000) {
+          // Check if this is still the current request
+          if (currentTranslationIdRef.current !== translationId) return;
+          
           setTargetText(translation);
           setLiteralTranslation(literal);
           setSourceRomanization(srcRom);
           setTargetRomanization(tgtRom);
           setExampleSentence(example || "");
+          setHasTranslated(true);
           return;
         }
       } catch (e) {
@@ -568,13 +593,18 @@ export const TranslationInterface = () => {
       } catch (e) {
         // Cache full or error, continue without caching
       }
+      
+      // Check if this is still the current request before updating state
+      if (currentTranslationIdRef.current !== translationId) return;
+      
       setTargetText(translation);
       setLiteralTranslation(literal);
       setSourceRomanization(srcRomanization);
       setTargetRomanization(tgtRomanization);
       setExampleSentence(example);
+      setHasTranslated(true);
 
-      // Schedule save (will save after 1 second of no activity)
+      // Schedule save (will save after user stops typing)
       const newTranslation: Translation = {
         id: Date.now().toString(),
         source_text: sourceText,
@@ -697,6 +727,35 @@ export const TranslationInterface = () => {
   const prevTargetLangRef = useRef(targetLang);
   const prevSourceTextRef = useRef(sourceText);
 
+  // Track typing state to prevent saving incomplete input
+  useEffect(() => {
+    if (sourceText.trim()) {
+      isTypingRef.current = true;
+      
+      // Clear previous save timeout when typing
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      pendingTranslationRef.current = null;
+      
+      // Clear previous typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Mark as not typing after 3 seconds of no changes
+      typingTimeoutRef.current = setTimeout(() => {
+        isTypingRef.current = false;
+      }, 3000);
+    }
+    
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [sourceText]);
+
   // Auto-translate with debounce (optimized for speed)
   useEffect(() => {
     if (!sourceText.trim() || sourceText.trim().length < 2) {
@@ -725,6 +784,11 @@ export const TranslationInterface = () => {
       if (translateTimeoutRef.current) {
         clearTimeout(translateTimeoutRef.current);
       }
+      // Clear pending save
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      pendingTranslationRef.current = null;
       // Clear previous translation immediately when language changes
       setTargetText("");
       setLiteralTranslation("");
@@ -733,7 +797,7 @@ export const TranslationInterface = () => {
     }
 
     // Shorter delays for faster translation, immediate for language changes
-    const delay = languageChanged ? 50 : (shouldUseQuickTranslation(sourceText) ? 100 : 250);
+    const delay = languageChanged ? 50 : (shouldUseQuickTranslation(sourceText) ? 100 : 350);
     
     translateTimeoutRef.current = setTimeout(() => {
       handleTranslate();

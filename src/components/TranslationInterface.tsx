@@ -695,6 +695,7 @@ export const TranslationInterface = () => {
   // Track previous language values to detect language changes
   const prevSourceLangRef = useRef(sourceLang);
   const prevTargetLangRef = useRef(targetLang);
+  const prevSourceTextRef = useRef(sourceText);
 
   // Auto-translate with debounce (optimized for speed)
   useEffect(() => {
@@ -708,22 +709,41 @@ export const TranslationInterface = () => {
 
     // Check if language changed - if so, clear previous result immediately and translate faster
     const languageChanged = prevSourceLangRef.current !== sourceLang || prevTargetLangRef.current !== targetLang;
+    const textChanged = prevSourceTextRef.current !== sourceText;
+    
     prevSourceLangRef.current = sourceLang;
     prevTargetLangRef.current = targetLang;
+    prevSourceTextRef.current = sourceText;
 
     if (languageChanged) {
+      // Cancel any ongoing request immediately when language changes
+      if (abortController) {
+        abortController.abort();
+        setAbortController(null);
+      }
+      // Clear previous timeout
+      if (translateTimeoutRef.current) {
+        clearTimeout(translateTimeoutRef.current);
+      }
       // Clear previous translation immediately when language changes
       setTargetText("");
       setLiteralTranslation("");
       setTargetRomanization("");
+      setIsTranslating(false);
     }
 
     // Shorter delays for faster translation, immediate for language changes
     const delay = languageChanged ? 50 : (shouldUseQuickTranslation(sourceText) ? 100 : 250);
-    const translateTimer = setTimeout(() => {
+    
+    translateTimeoutRef.current = setTimeout(() => {
       handleTranslate();
     }, delay);
-    return () => clearTimeout(translateTimer);
+    
+    return () => {
+      if (translateTimeoutRef.current) {
+        clearTimeout(translateTimeoutRef.current);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceText, sourceLang, targetLang]);
 
@@ -1079,10 +1099,10 @@ export const TranslationInterface = () => {
     await addWord(sourceText, sourceLang, definition);
   }, [sourceText, targetText, sourceLang, targetRomanization, literalTranslation, addWord]);
   return <SidebarProvider defaultOpen={false}>
-      <div className="h-screen w-full bg-background overflow-hidden">
+      <div className="h-screen w-full bg-background overflow-hidden flex">
         <AppSidebar recentTranslations={recentTranslations} selectedIds={selectedIds} showLiteral={showLiteral} onToggleSelect={toggleSelect} onToggleLiteral={toggleLiteral} onToggleFavorite={toggleFavorite} onDelete={handleDelete} onBulkDelete={handleBulkDelete} onCopy={handleCopy} onSpeak={handleSpeak} onTextSelect={handleTextSelection} onFeedback={handleFeedback} noRomanizationLangs={noRomanizationLangs} />
 
-        <div className="h-full flex flex-col overflow-hidden">
+        <div className="h-full flex-1 flex flex-col overflow-hidden">
           <header className="border-b border-border/50 bg-background sticky top-0 z-10 pt-safe">
             <div className="px-4 py-3">
               <div className="flex items-center justify-between">

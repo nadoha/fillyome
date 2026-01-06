@@ -44,6 +44,7 @@
   "feedbackThanks": "フィードバックありがとうございます！",
   "feedbackReceived": "フィードバックを受け付けました",
   "feedbackError": "フィードバックの送信に失敗しました",
+  "feedbackTooLong": "フィードバックは最大{{max}}文字まで送信できます",
   "loginRequired": "フィードバックを送信するにはログインしてください",
   "login": "ログイン",
   "signup": "新規登録",

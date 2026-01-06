@@ -44,6 +44,7 @@
   "feedbackThanks": "피드백 감사합니다!",
   "feedbackReceived": "피드백이 접수되었습니다",
   "feedbackError": "피드백 전송에 실패했습니다",
+  "feedbackTooLong": "피드백은 최대 {{max}}자까지 보낼 수 있어요",
   "loginRequired": "피드백을 제출하려면 로그인하세요",
   "login": "로그인",
   "signup": "회원가입",

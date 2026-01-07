@@ -2,6 +2,12 @@ import { memo, useState } from "react";
 import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TranslationResultBoxProps {
   naturalTranslation: string;
@@ -12,7 +18,18 @@ interface TranslationResultBoxProps {
   onFeedback?: (type: 'positive' | 'negative') => void;
   isTranslating?: boolean;
   placeholder?: string;
+  speechSpeed?: number;
+  onSpeedChange?: (speed: number) => void;
 }
+
+const SPEED_OPTIONS = [
+  { value: 0.5, label: "0.5x" },
+  { value: 0.75, label: "0.75x" },
+  { value: 1.0, label: "1x" },
+  { value: 1.25, label: "1.25x" },
+  { value: 1.5, label: "1.5x" },
+  { value: 2.0, label: "2x" },
+];
 
 export const TranslationResultBox = memo(({
   naturalTranslation,
@@ -23,8 +40,12 @@ export const TranslationResultBox = memo(({
   onFeedback,
   isTranslating,
   placeholder,
+  speechSpeed = 1.0,
+  onSpeedChange,
 }: TranslationResultBoxProps) => {
   const [showLiteral, setShowLiteral] = useState(false);
+
+  const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
 
   return (
     <div className="relative h-full min-h-[160px] p-4 bg-muted/30 rounded-lg">
@@ -96,6 +117,31 @@ export const TranslationResultBox = memo(({
       {/* Action buttons */}
       {!isTranslating && naturalTranslation && (
         <div className="absolute top-3 right-3 flex items-center gap-1">
+          {/* Speed selector */}
+          {onSpeedChange && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {currentSpeedLabel}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[80px]">
+                {SPEED_OPTIONS.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => onSpeedChange(option.value)}
+                    className={speechSpeed === option.value ? "bg-accent" : ""}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <Button 
             variant="ghost" 
             size="icon" 

@@ -95,6 +95,10 @@ export const TranslationInterface = () => {
     };
   });
   const [recommendedPreset, setRecommendedPreset] = useState<string>("");
+  const [speechSpeed, setSpeechSpeed] = useState<number>(() => {
+    const saved = localStorage.getItem('speechSpeed');
+    return saved ? parseFloat(saved) : 1.0;
+  });
   const lastRecommendationTextRef = useRef<string>("");
   const translateTimeoutRef = useRef<NodeJS.Timeout>();
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -1008,8 +1012,13 @@ export const TranslationInterface = () => {
     navigator.clipboard.writeText(text);
     toast.success(t("copied"));
   }, [t]);
+  // Save speech speed to localStorage
+  useEffect(() => {
+    localStorage.setItem('speechSpeed', speechSpeed.toString());
+  }, [speechSpeed]);
+
   // Use OpenAI TTS for high-quality speech (especially for Asian languages)
-  const speakWithOpenAI = useCallback(async (text: string, lang: string): Promise<boolean> => {
+  const speakWithOpenAI = useCallback(async (text: string, lang: string, speed: number): Promise<boolean> => {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/text-to-speech`,
@@ -1020,7 +1029,7 @@ export const TranslationInterface = () => {
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ text, lang }),
+          body: JSON.stringify({ text, lang, speed }),
         }
       );
 
@@ -1044,7 +1053,7 @@ export const TranslationInterface = () => {
   }, []);
 
   // Fallback to browser Web Speech API
-  const speakWithBrowser = useCallback((text: string, lang: string) => {
+  const speakWithBrowser = useCallback((text: string, lang: string, speed: number) => {
     if (!('speechSynthesis' in window)) {
       toast.error(t('browserNotSupported') || '브라우저가 음성 재생을 지원하지 않습니다');
       return;
@@ -1076,7 +1085,7 @@ export const TranslationInterface = () => {
     if (selectedVoice) {
       utterance.voice = selectedVoice;
     }
-    utterance.rate = 0.95;
+    utterance.rate = speed;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
 
@@ -1094,17 +1103,17 @@ export const TranslationInterface = () => {
       const openAIPreferredLangs = ['ja', 'ko', 'zh', 'en', 'es', 'fr', 'de', 'it', 'pt', 'ru'];
 
       if (openAIPreferredLangs.includes(lang)) {
-        const success = await speakWithOpenAI(textToSpeak, lang);
+        const success = await speakWithOpenAI(textToSpeak, lang, speechSpeed);
         if (success) return;
       }
 
       // Fallback to browser TTS
-      speakWithBrowser(textToSpeak, lang);
+      speakWithBrowser(textToSpeak, lang, speechSpeed);
     } catch (error) {
       console.error('Text-to-speech error:', error);
       toast.error(t('translation.speakError') || '음성 재생에 실패했습니다');
     }
-  }, [speakWithOpenAI, speakWithBrowser, t]);
+  }, [speakWithOpenAI, speakWithBrowser, speechSpeed, t]);
   const handleTextSelection = useCallback((e: React.MouseEvent, lang: string, context: string) => {
     // Dictionary only supports ko, ja, en, zh
     const supportedDictionaryLangs = ['ko', 'ja', 'en', 'zh'];
@@ -1278,6 +1287,8 @@ export const TranslationInterface = () => {
                       }} 
                       isTranslating={isTranslating} 
                       placeholder={t("translationResult") || "번역 결과"}
+                      speechSpeed={speechSpeed}
+                      onSpeedChange={setSpeechSpeed}
                     />
                   </div>
                 </TabsContent>

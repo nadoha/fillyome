@@ -1008,100 +1008,103 @@ export const TranslationInterface = () => {
     navigator.clipboard.writeText(text);
     toast.success(t("copied"));
   }, [t]);
-  const handleSpeak = useCallback(async (text: string, lang: string, romanization?: string) => {
+  // Use OpenAI TTS for high-quality speech (especially for Asian languages)
+  const speakWithOpenAI = useCallback(async (text: string, lang: string): Promise<boolean> => {
     try {
-      // Check if browser supports Web Speech API
-      if (!('speechSynthesis' in window)) {
-        toast.error('브라우저가 음성 재생을 지원하지 않습니다');
-        return;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/text-to-speech`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text, lang }),
+        }
+      );
+
+      if (!response.ok) {
+        console.error('OpenAI TTS failed:', response.status);
+        return false;
       }
 
-      // Cancel any ongoing speech
-      window.speechSynthesis.cancel();
+      const data = await response.json();
+      if (data.audioContent) {
+        const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+        const audio = new Audio(audioUrl);
+        await audio.play();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('OpenAI TTS error:', error);
+      return false;
+    }
+  }, []);
 
-      // For Japanese, prefer romanization if available to reduce pronunciation errors
-      const textToSpeak = lang === 'ja' && romanization ? romanization : text;
+  // Fallback to browser Web Speech API
+  const speakWithBrowser = useCallback((text: string, lang: string) => {
+    if (!('speechSynthesis' in window)) {
+      toast.error(t('browserNotSupported') || '브라우저가 음성 재생을 지원하지 않습니다');
+      return;
+    }
 
-      // Create speech utterance
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
 
-      // Map language codes to speech synthesis language codes
-      const langMap: Record<string, string> = {
-        'ko': 'ko-KR',
-        'ja': 'ja-JP',
-        'en': 'en-US',
-        'zh': 'zh-CN',
-        'es': 'es-ES',
-        'fr': 'fr-FR',
-        'de': 'de-DE',
-        'pt': 'pt-PT',
-        'it': 'it-IT',
-        'ru': 'ru-RU',
-        'ar': 'ar-SA',
-        'th': 'th-TH',
-        'vi': 'vi-VN',
-        'id': 'id-ID',
-        'hi': 'hi-IN',
-        'tr': 'tr-TR'
-      };
-      const targetLang = langMap[lang] || 'en-US';
-      utterance.lang = targetLang;
+    const langMap: Record<string, string> = {
+      'ko': 'ko-KR',
+      'ja': 'ja-JP',
+      'en': 'en-US',
+      'zh': 'zh-CN',
+      'es': 'es-ES',
+      'fr': 'fr-FR',
+      'de': 'de-DE',
+      'pt': 'pt-PT',
+      'it': 'it-IT',
+      'ru': 'ru-RU',
+    };
+    utterance.lang = langMap[lang] || 'en-US';
 
-      // Wait for voices to load if not already loaded
-      const getVoices = (): SpeechSynthesisVoice[] => {
-        return window.speechSynthesis.getVoices();
-      };
-      let voices = getVoices();
+    const voices = window.speechSynthesis.getVoices();
+    const languageVoices = voices.filter(v => v.lang.startsWith(lang));
+    const selectedVoice = languageVoices.find(v => v.name.includes('Google') && !v.localService)
+      || languageVoices.find(v => !v.localService)
+      || languageVoices[0];
 
-      // If voices not loaded yet, wait for them
-      if (voices.length === 0) {
-        await new Promise<void>(resolve => {
-          window.speechSynthesis.onvoiceschanged = () => {
-            voices = getVoices();
-            resolve();
-          };
-          // Fallback timeout
-          setTimeout(resolve, 1000);
-        });
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    window.speechSynthesis.speak(utterance);
+  }, [t]);
+
+  const handleSpeak = useCallback(async (text: string, lang: string, _romanization?: string) => {
+    try {
+      if (!text?.trim()) return;
+
+      // Always use original text (not romanization) for proper pronunciation
+      const textToSpeak = text.trim();
+
+      // Languages that benefit most from OpenAI TTS (proper native pronunciation)
+      const openAIPreferredLangs = ['ja', 'ko', 'zh', 'en', 'es', 'fr', 'de', 'it', 'pt', 'ru'];
+
+      if (openAIPreferredLangs.includes(lang)) {
+        const success = await speakWithOpenAI(textToSpeak, lang);
+        if (success) return;
       }
 
-      // Select the best quality voice for the language
-      // Prefer Google voices (online, high quality) over local voices
-      const languageVoices = voices.filter(voice => voice.lang.startsWith(targetLang.split('-')[0]));
-      let selectedVoice: SpeechSynthesisVoice | null = null;
-
-      // Priority 1: Google voices (online, neural TTS)
-      selectedVoice = languageVoices.find(voice => voice.name.includes('Google') && !voice.localService) || null;
-
-      // Priority 2: Microsoft voices (also good quality)
-      if (!selectedVoice) {
-        selectedVoice = languageVoices.find(voice => voice.name.includes('Microsoft') && !voice.localService) || null;
-      }
-
-      // Priority 3: Any online voice
-      if (!selectedVoice) {
-        selectedVoice = languageVoices.find(voice => !voice.localService) || null;
-      }
-
-      // Priority 4: Any voice matching the language
-      if (!selectedVoice) {
-        selectedVoice = languageVoices[0] || null;
-      }
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        console.log('Selected voice:', selectedVoice.name, selectedVoice.lang);
-      }
-      utterance.rate = 0.95; // Slightly slower for better clarity
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-
-      // Speak the text
-      window.speechSynthesis.speak(utterance);
+      // Fallback to browser TTS
+      speakWithBrowser(textToSpeak, lang);
     } catch (error) {
       console.error('Text-to-speech error:', error);
-      toast.error(t('translation.speakError'));
+      toast.error(t('translation.speakError') || '음성 재생에 실패했습니다');
     }
-  }, [t]);
+  }, [speakWithOpenAI, speakWithBrowser, t]);
   const handleTextSelection = useCallback((e: React.MouseEvent, lang: string, context: string) => {
     // Dictionary only supports ko, ja, en, zh
     const supportedDictionaryLangs = ['ko', 'ja', 'en', 'zh'];

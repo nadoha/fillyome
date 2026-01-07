@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, lang } = await req.json();
+    const { text, lang, speed = 1.0 } = await req.json();
 
     // Input validation
     if (!text || typeof text !== 'string') {
@@ -38,6 +38,9 @@ serve(async (req) => {
       );
     }
 
+    // Speed validation (OpenAI supports 0.25 to 4.0)
+    const validSpeed = Math.min(4.0, Math.max(0.25, Number(speed) || 1.0));
+
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not configured')
@@ -59,7 +62,7 @@ serve(async (req) => {
 
     const voice = voiceMap[lang] || 'alloy'
 
-    console.log(`Generating speech for text (${trimmedText.length} chars) with voice: ${voice}`)
+    console.log(`Generating speech for text (${trimmedText.length} chars) with voice: ${voice}, speed: ${validSpeed}`)
 
     // Generate speech from text using OpenAI
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
@@ -73,6 +76,7 @@ serve(async (req) => {
         input: trimmedText,
         voice: voice,
         response_format: 'mp3',
+        speed: validSpeed,
       }),
     })
 

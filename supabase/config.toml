@@ -14,3 +14,15 @@ verify_jwt = false
 
 [functions.verify-quiz]
 verify_jwt = false
+
+[functions.generate-learning-questions]
+verify_jwt = false
+
+[functions.get-learning-questions]
+verify_jwt = false
+
+[functions.replenish-question-queue]
+verify_jwt = false
+
+[functions.image-translate]
+verify_jwt = false

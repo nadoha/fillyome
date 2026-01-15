@@ -19,15 +19,19 @@ export type Database = {
           created_at: string
           difficulty_level: string
           id: string
+          is_from_template: boolean | null
           original_translation_id: string | null
           original_vocabulary_id: string | null
           question_data: Json
           question_text: string
           question_type: string
+          queued_at: string | null
+          served_at: string | null
           source_label: string
           source_lang: string
           source_type: string
           target_lang: string
+          template_question_id: string | null
           user_id: string
           was_answered: boolean | null
           was_correct: boolean | null
@@ -36,15 +40,19 @@ export type Database = {
           created_at?: string
           difficulty_level?: string
           id?: string
+          is_from_template?: boolean | null
           original_translation_id?: string | null
           original_vocabulary_id?: string | null
           question_data: Json
           question_text: string
           question_type: string
+          queued_at?: string | null
+          served_at?: string | null
           source_label: string
           source_lang: string
           source_type: string
           target_lang: string
+          template_question_id?: string | null
           user_id: string
           was_answered?: boolean | null
           was_correct?: boolean | null
@@ -53,15 +61,19 @@ export type Database = {
           created_at?: string
           difficulty_level?: string
           id?: string
+          is_from_template?: boolean | null
           original_translation_id?: string | null
           original_vocabulary_id?: string | null
           question_data?: Json
           question_text?: string
           question_type?: string
+          queued_at?: string | null
+          served_at?: string | null
           source_label?: string
           source_lang?: string
           source_type?: string
           target_lang?: string
+          template_question_id?: string | null
           user_id?: string
           was_answered?: boolean | null
           was_correct?: boolean | null
@@ -79,6 +91,13 @@ export type Database = {
             columns: ["original_vocabulary_id"]
             isOneToOne: false
             referencedRelation: "vocabulary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_questions_template_question_id_fkey"
+            columns: ["template_question_id"]
+            isOneToOne: false
+            referencedRelation: "template_questions"
             referencedColumns: ["id"]
           },
         ]
@@ -198,6 +217,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      template_questions: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          jlpt_level: string
+          question_data: Json
+          question_text: string
+          question_type: string
+          source_lang: string
+          target_lang: string
+          usage_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          jlpt_level?: string
+          question_data: Json
+          question_text: string
+          question_type: string
+          source_lang?: string
+          target_lang?: string
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          jlpt_level?: string
+          question_data?: Json
+          question_text?: string
+          question_type?: string
+          source_lang?: string
+          target_lang?: string
+          usage_count?: number | null
+        }
+        Relationships: []
       }
       translation_feedback: {
         Row: {

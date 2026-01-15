@@ -62,14 +62,28 @@ const MicroLesson = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("generate-learning-questions", {
+      // Use cached queue endpoint (no real-time AI generation)
+      const { data, error } = await supabase.functions.invoke("get-learning-questions", {
         body: { questionCount: 5 },
       });
 
       if (error) throw error;
 
+      // Check if queue needs replenishment (background, non-blocking)
+      if (data?.queueStatus?.needsReplenishment) {
+        // Fire and forget - don't await
+        supabase.functions.invoke("replenish-question-queue", {
+          body: { targetQueueSize: 10 },
+        }).catch(console.error);
+      }
+
       if (!data?.questions || data.questions.length === 0) {
-        toast.error("문제를 생성할 수 없습니다. 번역을 더 해보세요!");
+        // No cached questions - trigger generation and show message
+        supabase.functions.invoke("replenish-question-queue", {
+          body: { targetQueueSize: 10 },
+        }).catch(console.error);
+        
+        toast.info("문제를 준비 중이에요. 잠시 후 다시 시도해주세요!");
         navigate("/learn");
         return;
       }

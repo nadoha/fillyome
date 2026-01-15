@@ -14,6 +14,7 @@ import { DynamicLearningSection } from "@/components/learn/DynamicLearningSectio
 import { LearningLockedScreen } from "@/components/learn/LearningLockedScreen";
 import { useStreak } from "@/hooks/useStreak";
 import { useLearningUnlock } from "@/hooks/useLearningUnlock";
+import { useTargetLanguage } from "@/hooks/useTargetLanguage";
 
 interface DailyStats {
   wordsToReview: number;
@@ -28,6 +29,7 @@ const Learn = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { streak, todayCompleted, refreshStreak } = useStreak();
+  const { targetLanguageName } = useTargetLanguage();
   const {
     isUnlocked,
     isLoading: isUnlockLoading,
@@ -258,13 +260,13 @@ const Learn = () => {
               <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 -ml-2">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-xl font-semibold">학습</h1>
+              <h1 className="text-xl font-semibold">{t("learn")}</h1>
             </div>
             {/* Simple streak indicator */}
             {streak > 0 && (
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{streak}일</span>
-                <span>연속</span>
+                <span className="font-medium text-foreground">{streak}</span>
+                <span>{t("consecutiveDays")}</span>
               </div>
             )}
           </header>
@@ -272,26 +274,26 @@ const Learn = () => {
           {/* Current Level - Subtle, informational */}
           <div className="flex items-center justify-between py-3 border-b border-border">
             <div>
-              <p className="text-xs text-muted-foreground mb-0.5">현재 학습 수준</p>
+              <p className="text-xs text-muted-foreground mb-0.5">{t("currentLevel")}</p>
               <p className="text-sm font-medium">{currentLevel} · {
-                currentLevel === "N5" ? "입문" :
-                currentLevel === "N4" ? "초급" :
-                currentLevel === "N3" ? "중급" :
-                currentLevel === "N2" ? "상급" : "고급"
+                currentLevel === "N5" ? t("beginner") :
+                currentLevel === "N4" ? t("elementary") :
+                currentLevel === "N3" ? t("intermediate") :
+                currentLevel === "N2" ? t("advanced") : t("expert")
               }</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-muted-foreground mb-0.5">저장한 표현</p>
-              <p className="text-sm font-medium">{stats.totalVocabulary}개</p>
+              <p className="text-xs text-muted-foreground mb-0.5">{t("savedExpressions")}</p>
+              <p className="text-sm font-medium">{stats.totalVocabulary}</p>
             </div>
           </div>
 
           {/* Today's Progress - Clean card */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-medium text-muted-foreground">오늘의 학습</h2>
+              <h2 className="text-sm font-medium text-muted-foreground">{t("todaysLearning")}</h2>
               {todayCompleted && (
-                <span className="text-xs text-primary font-medium">목표 달성</span>
+                <span className="text-xs text-primary font-medium">{t("goalAchieved")}</span>
               )}
             </div>
             <Card className="border-border shadow-none">
@@ -299,9 +301,9 @@ const Learn = () => {
                 <div className="flex items-end justify-between mb-4">
                   <div>
                     <p className="text-3xl font-semibold">{stats.wordsStudied}</p>
-                    <p className="text-sm text-muted-foreground">문제 완료</p>
+                    <p className="text-sm text-muted-foreground">{t("questionsCompleted")}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">목표 {stats.dailyGoal}개</p>
+                  <p className="text-sm text-muted-foreground">{t("dailyGoal")} {stats.dailyGoal}</p>
                 </div>
                 <Progress value={progress} className="h-1.5" />
               </CardContent>
@@ -310,16 +312,16 @@ const Learn = () => {
 
           {/* Primary Action - Most prominent, stable design */}
           <section>
-            <p className="text-xs text-muted-foreground mb-3">내 번역 기록 기반</p>
+            <p className="text-xs text-muted-foreground mb-3">{t("myTranslationBased")}</p>
             <Card 
               className="cursor-pointer border-border hover:bg-muted/30 active:bg-muted/50 transition-colors shadow-none"
               onClick={() => navigate("/micro-lesson")}
             >
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="font-medium mb-1">맞춤 학습 시작</p>
+                  <p className="font-medium mb-1">{t("customLearningStart")}</p>
                   <p className="text-sm text-muted-foreground">
-                    최근 번역한 표현으로 3~5문제
+                    {t("recentTranslationBased")}
                   </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -332,7 +334,7 @@ const Learn = () => {
 
           {/* Secondary Options - Lower visual hierarchy */}
           <section>
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">더 연습하기</h2>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">{t("moreExercise")}</h2>
             <div className="space-y-2">
               <Card
                 className="cursor-pointer border-border/60 hover:bg-muted/30 active:bg-muted/50 transition-colors shadow-none"
@@ -340,8 +342,8 @@ const Learn = () => {
               >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">저장한 단어로 복습</p>
-                    <p className="text-xs text-muted-foreground">내가 저장한 표현으로 실력 확인</p>
+                    <p className="text-sm font-medium">{t("reviewSavedWords")}</p>
+                    <p className="text-xs text-muted-foreground">{t("checkSavedExpressions")}</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardContent>
@@ -353,8 +355,8 @@ const Learn = () => {
               >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">플래시카드</p>
-                    <p className="text-xs text-muted-foreground">저장한 단어 빠르게 훑어보기</p>
+                    <p className="text-sm font-medium">{t("flashcards")}</p>
+                    <p className="text-xs text-muted-foreground">{t("quickReviewFlashcards")}</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardContent>
@@ -367,8 +369,8 @@ const Learn = () => {
                 >
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium">틀린 문제 다시 풀기</p>
-                      <p className="text-xs text-muted-foreground">{stats.wrongAnswerCount}개 복습 대기 중</p>
+                      <p className="text-sm font-medium">{t("retryWrongAnswers")}</p>
+                      <p className="text-xs text-muted-foreground">{stats.wrongAnswerCount}{t("waitingReview")}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                   </CardContent>
@@ -385,21 +387,21 @@ const Learn = () => {
                 className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 onClick={() => navigate("/vocabulary")}
               >
-                내 단어장
+                {t("myWordbook")}
               </Button>
               <Button 
                 variant="ghost" 
                 className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 onClick={() => navigate("/stats")}
               >
-                학습 기록
+                {t("learningRecord")}
               </Button>
             </div>
           </section>
 
           {/* Subtle notice */}
           <p className="text-xs text-muted-foreground text-center pt-2">
-            일부 표현은 학습 문제로 제공되지 않을 수 있어요
+            {t("someNotAvailable")}
           </p>
         </div>
       </div>

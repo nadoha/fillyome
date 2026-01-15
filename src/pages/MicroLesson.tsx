@@ -8,6 +8,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { QuestionSourceLabel, SourceType } from "@/components/learn/QuestionSourceLabel";
 import { EmotionalFeedback } from "@/components/learn/EmotionalFeedback";
 import { RewardModal } from "@/components/learn/RewardModal";
+import { LoginPrompt } from "@/components/learn/LoginPrompt";
 import { useLearningUnlock } from "@/hooks/useLearningUnlock";
 import { useStreak } from "@/hooks/useStreak";
 import { speakText } from "@/utils/speechUtils";
@@ -57,8 +58,7 @@ const MicroLesson = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error("로그인이 필요합니다");
-        navigate("/auth");
+        setIsLoading(false);
         return;
       }
 
@@ -186,9 +186,22 @@ const MicroLesson = () => {
 
   if (questions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-muted-foreground">문제가 없습니다</p>
-        <Button onClick={() => navigate("/learn")}>돌아가기</Button>
+      <div className="flex flex-col h-screen bg-background">
+        <div className="flex-1 overflow-y-auto pb-24">
+          <div className="container max-w-lg mx-auto px-5 py-6">
+            <header className="flex items-center gap-3 mb-8">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/learn")} className="shrink-0 -ml-2">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-xl font-semibold">마이크로 학습</h1>
+            </header>
+            <LoginPrompt 
+              title="학습 기능 사용하기"
+              description="학습 기능을 사용하려면 계정 연결이 필요해요"
+            />
+          </div>
+        </div>
+        <BottomNavigation />
       </div>
     );
   }

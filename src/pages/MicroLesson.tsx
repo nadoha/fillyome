@@ -9,12 +9,13 @@ import { QuestionSourceLabel, SourceType } from "@/components/learn/QuestionSour
 import { EmotionalFeedback } from "@/components/learn/EmotionalFeedback";
 import { RewardModal } from "@/components/learn/RewardModal";
 import { LoginPrompt } from "@/components/learn/LoginPrompt";
+import { JapaneseText } from "@/components/learn/JapaneseText";
 import { useLearningUnlock } from "@/hooks/useLearningUnlock";
 import { useStreak } from "@/hooks/useStreak";
 import { speakText } from "@/utils/speechUtils";
 import { 
   ArrowLeft, CheckCircle, XCircle, RefreshCw, Volume2, 
-  Sparkles, Target
+  Sparkles, Target, HelpCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +31,8 @@ interface LearningQuestion {
     words?: string[];
     blank_position?: number;
     original_sentence?: string;
+    romaji?: string;
+    furigana?: string;
   };
   source_lang: string;
   target_lang: string;
@@ -44,7 +47,7 @@ const MicroLesson = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [score, setScore] = useState({ correct: 0, total: 0, skipped: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
   const [showRewardModal, setShowRewardModal] = useState(false);
@@ -102,21 +105,24 @@ const MicroLesson = () => {
     speakText(text, lang, { rate: 0.9 });
   };
 
-  const handleAnswer = async (answer: string) => {
+  const handleAnswer = async (answer: string, isDontKnow: boolean = false) => {
     setSelectedAnswer(answer);
     setShowResult(true);
 
     const currentQuestion = questions[currentIndex];
-    const isCorrect = answer === currentQuestion.question_data.correct_answer;
-    setLastAnswerCorrect(isCorrect);
+    const isCorrect = !isDontKnow && answer === currentQuestion.question_data.correct_answer;
+    setLastAnswerCorrect(isDontKnow ? null : isCorrect);
 
     setScore(prev => ({
       correct: prev.correct + (isCorrect ? 1 : 0),
       total: prev.total + 1,
+      skipped: prev.skipped + (isDontKnow ? 1 : 0),
     }));
 
-    // Update user's learning stats
-    await updateQuizStats(isCorrect);
+    // Update user's learning stats (skip doesn't count as wrong for stats)
+    if (!isDontKnow) {
+      await updateQuizStats(isCorrect);
+    }
 
     // Play pronunciation
     handleSpeak(currentQuestion.question_text, currentQuestion.source_lang);
@@ -129,12 +135,18 @@ const MicroLesson = () => {
           user_id: user.id,
           vocabulary_id: null,
           was_correct: isCorrect,
-          quiz_type: "micro_lesson",
+          quiz_type: isDontKnow ? "micro_lesson_skip" : "micro_lesson",
         });
       }
     } catch (error) {
       console.error("Failed to record result:", error);
     }
+  };
+
+  const handleDontKnow = async () => {
+    const currentQuestion = questions[currentIndex];
+    setSelectedAnswer(currentQuestion.question_data.correct_answer);
+    await handleAnswer(currentQuestion.question_data.correct_answer, true);
   };
 
   const updateLearningSession = async () => {
@@ -188,6 +200,9 @@ const MicroLesson = () => {
       setShowRewardModal(true);
     }
   };
+
+  // Check if text is Japanese
+  const isJapanese = (lang: string) => lang === "ja";
 
   if (isLoading) {
     return (
@@ -251,7 +266,7 @@ const MicroLesson = () => {
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>문제 {currentIndex + 1} / {questions.length}</span>
-              <span>정답: {score.correct} / {score.total}</span>
+              <span>정답: {score.correct} / {score.total - score.skipped}</span>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
@@ -276,11 +291,23 @@ const MicroLesson = () => {
                 </span>
               </div>
 
-              {/* Question Text */}
-              <div className="flex items-center justify-center gap-3 mb-6">
-                <p className="text-2xl font-bold text-center leading-relaxed">
-                  {currentQuestion.question_text}
-                </p>
+              {/* Question Text with Japanese text hierarchy */}
+              <div className="flex flex-col items-center gap-3 mb-6">
+                {isJapanese(currentQuestion.source_lang) ? (
+                  <JapaneseText
+                    text={currentQuestion.question_text}
+                    romaji={currentQuestion.question_data.romaji}
+                    furigana={currentQuestion.question_data.furigana}
+                    size="lg"
+                    showFurigana={true}
+                    showRomaji={true}
+                  />
+                ) : (
+                  <p className="text-2xl font-bold text-center leading-relaxed">
+                    {currentQuestion.question_text}
+                  </p>
+                )}
+                
                 <Button
                   variant="ghost"
                   size="icon"
@@ -327,6 +354,18 @@ const MicroLesson = () => {
                     </Button>
                   );
                 })}
+
+                {/* "모르겠어요" option - only show before answering */}
+                {!showResult && (
+                  <Button
+                    variant="ghost"
+                    className="w-full h-auto p-3 text-muted-foreground hover:text-foreground justify-center gap-2"
+                    onClick={handleDontKnow}
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                    모르겠어요
+                  </Button>
+                )}
               </div>
 
               {/* Show original sentence for fill_blank */}
@@ -339,8 +378,17 @@ const MicroLesson = () => {
             </CardContent>
           </Card>
 
-          {/* Emotional Feedback */}
-          {showResult && <EmotionalFeedback isCorrect={lastAnswerCorrect} />}
+          {/* Emotional Feedback (not shown for skipped) */}
+          {showResult && lastAnswerCorrect !== null && <EmotionalFeedback isCorrect={lastAnswerCorrect} />}
+
+          {/* Skipped message */}
+          {showResult && lastAnswerCorrect === null && (
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                괜찮아요! 다음에 다시 연습해봐요 💪
+              </p>
+            </div>
+          )}
 
           {/* Next Button */}
           {showResult && (
@@ -358,7 +406,7 @@ const MicroLesson = () => {
           navigate("/learn");
         }}
         score={score.correct}
-        totalQuestions={score.total}
+        totalQuestions={score.total - score.skipped}
         streakMaintained={true}
         newStreak={streak + 1}
       />

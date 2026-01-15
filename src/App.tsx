@@ -18,6 +18,7 @@ import TranslationQuiz from "./pages/TranslationQuiz";
 import WrongAnswers from "./pages/WrongAnswers";
 import Stats from "./pages/Stats";
 import CurrencyExchange from "./pages/CurrencyExchange";
+import JapaneseLearning from "./pages/JapaneseLearning";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/wrong-answers" element={<WrongAnswers />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/currency" element={<CurrencyExchange />} />
+            <Route path="/japanese" element={<JapaneseLearning />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -108,6 +108,7 @@ export const TranslationInterface = () => {
   // Papago-style UI states
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [hasTranslated, setHasTranslated] = useState(false);
+  const [savedWordsFromTranslation, setSavedWordsFromTranslation] = useState<Set<string>>(new Set());
   const {
     lookupWord,
     currentEntry,
@@ -117,7 +118,8 @@ export const TranslationInterface = () => {
   } = useDictionary();
   const {
     addWord,
-    isWordInVocabulary
+    isWordInVocabulary,
+    vocabulary
   } = useVocabulary();
 
   // Speech recognition hook with noise cancellation and language detection
@@ -1176,6 +1178,31 @@ export const TranslationInterface = () => {
     };
     await addWord(sourceText, sourceLang, definition);
   }, [sourceText, targetText, sourceLang, targetRomanization, literalTranslation, addWord]);
+
+  // Handle saving word from translation result with one tap
+  const handleWordSaveFromTranslation = useCallback(async (word: string) => {
+    if (!word.trim() || savedWordsFromTranslation.has(word)) return;
+    
+    // Create a simple definition for the tapped word
+    const definition = {
+      pos: "word",
+      definitions: [`번역 문장에서 저장됨`],
+      romanization: undefined,
+      example: targetText
+    };
+    
+    const success = await addWord(word, targetLang, definition);
+    if (success) {
+      setSavedWordsFromTranslation(prev => new Set(prev).add(word));
+    }
+  }, [addWord, targetLang, targetText, savedWordsFromTranslation]);
+
+  // Reset saved words when translation changes
+  useEffect(() => {
+    if (targetText) {
+      setSavedWordsFromTranslation(new Set());
+    }
+  }, [sourceText]);
   return <SidebarProvider defaultOpen={false}>
       <div className="h-screen w-full bg-background overflow-hidden flex">
         <AppSidebar recentTranslations={recentTranslations} selectedIds={selectedIds} showLiteral={showLiteral} onToggleSelect={toggleSelect} onToggleLiteral={toggleLiteral} onToggleFavorite={toggleFavorite} onDelete={handleDelete} onBulkDelete={handleBulkDelete} onCopy={handleCopy} onSpeak={handleSpeak} onTextSelect={handleTextSelection} onFeedback={handleFeedback} noRomanizationLangs={noRomanizationLangs} />
@@ -1289,6 +1316,8 @@ export const TranslationInterface = () => {
                       placeholder={t("translationResult") || "번역 결과"}
                       speechSpeed={speechSpeed}
                       onSpeedChange={setSpeechSpeed}
+                      onWordSave={user ? handleWordSaveFromTranslation : undefined}
+                      savedWords={savedWordsFromTranslation}
                     />
                   </div>
                 </TabsContent>

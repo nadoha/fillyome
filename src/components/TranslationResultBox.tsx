@@ -1,7 +1,8 @@
 import { memo, useState } from "react";
-import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TappableWords } from "./TappableWords";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,8 @@ interface TranslationResultBoxProps {
   placeholder?: string;
   speechSpeed?: number;
   onSpeedChange?: (speed: number) => void;
+  onWordSave?: (word: string) => void;
+  savedWords?: Set<string>;
 }
 
 const SPEED_OPTIONS = [
@@ -42,8 +45,11 @@ export const TranslationResultBox = memo(({
   placeholder,
   speechSpeed = 1.0,
   onSpeedChange,
+  onWordSave,
+  savedWords = new Set(),
 }: TranslationResultBoxProps) => {
   const [showLiteral, setShowLiteral] = useState(false);
+  const [showWordHint, setShowWordHint] = useState(true);
 
   const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
 
@@ -57,9 +63,28 @@ export const TranslationResultBox = memo(({
         </div>
       ) : naturalTranslation ? (
         <div className="space-y-3">
-          {/* Main translation */}
+          {/* Word save hint - dismissible */}
+          {onWordSave && showWordHint && (
+            <div 
+              className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted transition-colors"
+              onClick={() => setShowWordHint(false)}
+            >
+              <Sparkles className="h-3 w-3 text-primary" />
+              <span>단어를 탭하면 학습 목록에 저장됩니다</span>
+            </div>
+          )}
+
+          {/* Main translation with tappable words */}
           <div className="text-base leading-relaxed whitespace-pre-wrap break-words pr-8">
-            {naturalTranslation}
+            {onWordSave ? (
+              <TappableWords 
+                text={naturalTranslation} 
+                savedWords={savedWords}
+                onWordTap={onWordSave}
+              />
+            ) : (
+              naturalTranslation
+            )}
           </div>
 
           {/* Romanization */}

@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { 
-  BookOpen, Brain, Trophy, ArrowLeft, Languages, XCircle, 
-  Target, Sparkles, Calendar, ChevronRight, Volume2, RefreshCw
+  BookOpen, Brain, Trophy, ArrowLeft, Languages, 
+  Target, Sparkles, Calendar, ChevronRight, RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import { StreakBadge } from "@/components/learn/StreakBadge";
-import { QuickLessonCard } from "@/components/learn/QuickLessonCard";
+import { LevelSelector } from "@/components/learn/LevelSelector";
+import { DynamicLearningSection } from "@/components/learn/DynamicLearningSection";
 import { useStreak } from "@/hooks/useStreak";
 
 interface DailyStats {
@@ -28,6 +29,7 @@ const Learn = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { streak, todayCompleted, refreshStreak } = useStreak();
+  const [currentLevel, setCurrentLevel] = useState("N5");
   const [stats, setStats] = useState<DailyStats>({
     wordsToReview: 0,
     wordsStudied: 0,
@@ -105,6 +107,15 @@ const Learn = () => {
         .eq("user_id", user.id)
         .eq("was_correct", false);
 
+      // 레벨 자동 설정 (활동량 기반)
+      const vocab = totalVocab || 0;
+      const trans = translationCount || 0;
+      if (vocab >= 200 || trans >= 500) setCurrentLevel("N1");
+      else if (vocab >= 100 || trans >= 300) setCurrentLevel("N2");
+      else if (vocab >= 50 || trans >= 150) setCurrentLevel("N3");
+      else if (vocab >= 20 || trans >= 50) setCurrentLevel("N4");
+      else setCurrentLevel("N5");
+
       setStats({
         wordsToReview: reviewWords?.length || 0,
         wordsStudied: todaySession?.words_studied || 0,
@@ -149,7 +160,15 @@ const Learn = () => {
           <StreakBadge streak={streak} />
         </header>
 
-        {/* Today's Goal */}
+        {/* Level Selector */}
+        <LevelSelector
+          currentLevel={currentLevel}
+          onLevelChange={setCurrentLevel}
+          vocabCount={stats.totalVocabulary}
+          translationCount={stats.translationCount}
+        />
+
+        {/* Today's Goal - Compact */}
         <Card className="overflow-hidden">
           <div className="bg-gradient-to-r from-primary to-primary/80 p-4 text-primary-foreground">
             <div className="flex items-center justify-between mb-3">
@@ -190,70 +209,12 @@ const Learn = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Lessons Section */}
+        {/* Dynamic Personalized Learning Section */}
+        <DynamicLearningSection />
+
+        {/* More Options - User-centric language */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <Volume2 className="h-5 w-5 text-primary" />
-              빠른 레슨
-            </h2>
-            <span className="text-xs text-muted-foreground">3-5분 소요</span>
-          </div>
-
-          <div className="space-y-3">
-            <QuickLessonCard
-              title="번역 퀴즈"
-              description="자주 번역한 단어로 퀴즈 풀기"
-              questionCount={5}
-              estimatedMinutes={3}
-              icon={<Languages className="h-6 w-6 text-primary" />}
-              variant="primary"
-              onClick={() => navigate("/translation-quiz")}
-              badge={stats.translationCount >= 4 ? "추천" : undefined}
-              disabled={stats.translationCount < 4}
-            />
-
-            <QuickLessonCard
-              title="플래시카드"
-              description="TTS로 발음 들으며 단어 암기"
-              questionCount={7}
-              estimatedMinutes={5}
-              icon={<Brain className="h-6 w-6 text-purple-500" />}
-              variant="secondary"
-              onClick={() => navigate("/flashcards")}
-              disabled={stats.totalVocabulary < 1}
-            />
-
-            <QuickLessonCard
-              title="복습하기"
-              description={`${stats.wordsToReview}개의 단어가 복습 대기 중`}
-              questionCount={Math.min(stats.wordsToReview, 7)}
-              estimatedMinutes={4}
-              icon={<BookOpen className="h-6 w-6 text-green-500" />}
-              variant="accent"
-              onClick={() => navigate("/review")}
-              disabled={stats.wordsToReview === 0}
-              badge={stats.wordsToReview > 0 ? `${stats.wordsToReview}개` : undefined}
-            />
-
-            {stats.wrongAnswerCount > 0 && (
-              <QuickLessonCard
-                title="오답 복습"
-                description="틀린 문제만 다시 학습하기"
-                questionCount={Math.min(stats.wrongAnswerCount, 5)}
-                estimatedMinutes={3}
-                icon={<XCircle className="h-6 w-6 text-orange-500" />}
-                variant="warning"
-                onClick={() => navigate("/wrong-answers")}
-                badge={`${stats.wrongAnswerCount}개`}
-              />
-            )}
-          </div>
-        </section>
-
-        {/* More Options */}
-        <section>
-          <h2 className="text-lg font-bold mb-4">더 많은 학습</h2>
+          <h2 className="text-lg font-bold mb-4">더 다양한 연습</h2>
           <div className="space-y-2">
             <Card
               className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -265,8 +226,8 @@ const Learn = () => {
                     <Trophy className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">단어장 퀴즈</p>
-                    <p className="text-xs text-muted-foreground">저장한 단어 테스트</p>
+                    <p className="font-medium">내가 저장한 표현</p>
+                    <p className="text-xs text-muted-foreground">저장한 단어로 실력 확인</p>
                   </div>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -283,7 +244,7 @@ const Learn = () => {
                     <span className="text-xl">🇯🇵</span>
                   </div>
                   <div>
-                    <p className="font-medium">일본어 학습</p>
+                    <p className="font-medium">일본어 문자 연습</p>
                     <p className="text-xs text-muted-foreground">히라가나, 가타카나, 칸지</p>
                   </div>
                 </div>
@@ -301,8 +262,8 @@ const Learn = () => {
                     <Calendar className="h-5 w-5 text-secondary" />
                   </div>
                   <div>
-                    <p className="font-medium">학습 통계</p>
-                    <p className="text-xs text-muted-foreground">진도와 기록 확인</p>
+                    <p className="font-medium">나의 학습 기록</p>
+                    <p className="text-xs text-muted-foreground">진도와 성장 확인</p>
                   </div>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -319,7 +280,7 @@ const Learn = () => {
             onClick={() => navigate("/vocabulary")}
           >
             <BookOpen className="h-5 w-5" />
-            <span className="text-sm">단어장</span>
+            <span className="text-sm">내 단어장</span>
           </Button>
           <Button 
             variant="outline" 
@@ -327,7 +288,7 @@ const Learn = () => {
             onClick={() => navigate("/")}
           >
             <Languages className="h-5 w-5" />
-            <span className="text-sm">번역기</span>
+            <span className="text-sm">번역하러 가기</span>
           </Button>
         </section>
         </div>

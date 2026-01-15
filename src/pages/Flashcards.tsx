@@ -262,16 +262,32 @@ const Flashcards = () => {
                 }}
               >
                 <div className="space-y-4 text-center">
-                  {currentWord.definition && typeof currentWord.definition === 'object' && (
+                  {currentWord.definition && (
                     <>
-                      {currentWord.definition.meanings?.slice(0, 2).map((meaning: any, idx: number) => (
-                        <div key={idx} className="space-y-1">
-                          <p className="text-sm font-semibold text-primary">
-                            [{meaning.partOfSpeech}]
-                          </p>
-                          <p className="text-xl">{meaning.definition}</p>
-                        </div>
-                      ))}
+                      {/* Handle object definition with meanings array */}
+                      {typeof currentWord.definition === 'object' && currentWord.definition.meanings?.length > 0 ? (
+                        currentWord.definition.meanings.slice(0, 2).map((meaning: any, idx: number) => (
+                          <div key={idx} className="space-y-1">
+                            <p className="text-sm font-semibold text-primary">
+                              [{meaning.partOfSpeech}]
+                            </p>
+                            <p className="text-xl">{meaning.definition}</p>
+                          </div>
+                        ))
+                      ) : typeof currentWord.definition === 'object' && currentWord.definition.definitions?.length > 0 ? (
+                        /* Handle object definition with definitions array */
+                        currentWord.definition.definitions.slice(0, 2).map((def: string, idx: number) => (
+                          <div key={idx}>
+                            <p className="text-xl">{def}</p>
+                          </div>
+                        ))
+                      ) : typeof currentWord.definition === 'string' ? (
+                        /* Handle string definition */
+                        <p className="text-xl">{currentWord.definition}</p>
+                      ) : (
+                        /* Fallback for any other structure */
+                        <p className="text-xl text-muted-foreground">정의를 불러올 수 없습니다</p>
+                      )}
                     </>
                   )}
                   {currentWord.notes && (

@@ -19,6 +19,7 @@ import WrongAnswers from "./pages/WrongAnswers";
 import Stats from "./pages/Stats";
 import CurrencyExchange from "./pages/CurrencyExchange";
 import JapaneseLearning from "./pages/JapaneseLearning";
+import MicroLesson from "./pages/MicroLesson";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/stats" element={<Stats />} />
             <Route path="/currency" element={<CurrencyExchange />} />
             <Route path="/japanese" element={<JapaneseLearning />} />
+            <Route path="/micro-lesson" element={<MicroLesson />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

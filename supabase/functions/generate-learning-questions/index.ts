@@ -15,6 +15,8 @@ interface TranslationRecord {
   target_lang: string;
   created_at: string;
   is_favorite: boolean;
+  source_romanization?: string;
+  target_romanization?: string;
 }
 
 interface VocabularyRecord {
@@ -70,6 +72,8 @@ interface GeneratedQuestion {
     words?: string[];
     blank_position?: number;
     original_sentence?: string;
+    romaji?: string;
+    furigana?: string;
   };
   source_lang: string;
   target_lang: string;
@@ -382,6 +386,7 @@ serve(async (req) => {
         question_data: {
           options: [trans.target_text, ...wrongOptions].sort(() => Math.random() - 0.5),
           correct_answer: trans.target_text,
+          romaji: trans.source_romanization || undefined,
         },
         source_lang: trans.source_lang,
         target_lang: trans.target_lang,

@@ -7,7 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { LoginPrompt } from "@/components/learn/LoginPrompt";
-import { ArrowLeft, Volume2, RotateCcw, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { JapaneseText, KoreanMeaning } from "@/components/learn/JapaneseText";
+import { ArrowLeft, Volume2, RotateCcw, CheckCircle, XCircle, RefreshCw, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { EmotionalFeedback } from "@/components/learn/EmotionalFeedback";
 import { RewardModal } from "@/components/learn/RewardModal";
@@ -130,7 +131,7 @@ const Flashcards = () => {
     }
   };
 
-  const handleAnswer = async (wasCorrect: boolean) => {
+  const handleAnswer = async (wasCorrect: boolean, isDontKnow: boolean = false) => {
     const currentWord = words[currentIndex];
     setLastAnswerCorrect(wasCorrect);
     
@@ -141,7 +142,7 @@ const Flashcards = () => {
           user_id: user.id,
           vocabulary_id: currentWord.id,
           was_correct: wasCorrect,
-          quiz_type: "flashcard",
+          quiz_type: isDontKnow ? "flashcard_skip" : "flashcard",
         });
       }
     } catch (error) {
@@ -158,7 +159,7 @@ const Flashcards = () => {
         setCurrentIndex(currentIndex + 1);
         setIsFlipped(false);
         setLastAnswerCorrect(null);
-      }, 1000);
+      }, isDontKnow ? 500 : 1000);
     } else {
       await updateLearningSession(newCorrect, newIncorrect);
       setTimeout(() => setShowRewardModal(true), 500);
@@ -173,6 +174,39 @@ const Flashcards = () => {
     sessionStartTime.current = new Date();
     const shuffled = [...words].sort(() => Math.random() - 0.5);
     setWords(shuffled);
+  };
+
+  // Extract Korean meanings from definition
+  const getKoreanMeanings = (definition: any): string[] => {
+    if (!definition) return ["의미 없음"];
+    
+    if (typeof definition === "string") {
+      return [definition];
+    }
+    
+    if (definition.meanings?.length > 0) {
+      return definition.meanings.map((m: any) => m.definition || m);
+    }
+    
+    if (definition.definitions?.length > 0) {
+      return definition.definitions;
+    }
+    
+    return ["의미 없음"];
+  };
+
+  // Extract part of speech
+  const getPartOfSpeech = (definition: any): string | undefined => {
+    if (!definition) return undefined;
+    if (definition.pos) return definition.pos;
+    if (definition.meanings?.[0]?.partOfSpeech) return definition.meanings[0].partOfSpeech;
+    return undefined;
+  };
+
+  // Extract romaji
+  const getRomaji = (definition: any): string | undefined => {
+    if (!definition) return undefined;
+    return definition.romanization || definition.romaji;
   };
 
   if (isLoading) {
@@ -218,6 +252,10 @@ const Flashcards = () => {
 
   const currentWord = words[currentIndex];
   const progress = ((currentIndex + 1) / words.length) * 100;
+  const isJapanese = currentWord.language === "ja";
+  const koreanMeanings = getKoreanMeanings(currentWord.definition);
+  const partOfSpeech = getPartOfSpeech(currentWord.definition);
+  const romaji = getRomaji(currentWord.definition);
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -251,23 +289,34 @@ const Flashcards = () => {
           {/* Flashcard */}
           <div className="relative" style={{ perspective: "1000px" }}>
             <Card
-              className="min-h-[350px] cursor-pointer transition-all duration-500 transform-gpu shadow-lg"
+              className="min-h-[380px] cursor-pointer transition-all duration-500 transform-gpu shadow-lg"
               style={{
                 transformStyle: "preserve-3d",
                 transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
               }}
               onClick={handleFlip}
             >
-              {/* Front Side */}
+              {/* Front Side - Japanese word with furigana and romaji */}
               <div
                 className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden bg-gradient-to-br from-primary/5 to-secondary/5 rounded-lg"
                 style={{ backfaceVisibility: "hidden" }}
               >
-                <p className="text-4xl font-bold mb-4 text-center">{currentWord.word}</p>
+                {isJapanese ? (
+                  <JapaneseText
+                    text={currentWord.word}
+                    romaji={romaji}
+                    size="xl"
+                    showFurigana={true}
+                    showRomaji={true}
+                  />
+                ) : (
+                  <p className="text-4xl font-bold text-center">{currentWord.word}</p>
+                )}
+                
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="mb-4"
+                  className="mt-4"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSpeak(currentWord.word, currentWord.language);
@@ -275,12 +324,13 @@ const Flashcards = () => {
                 >
                   <Volume2 className="h-6 w-6" />
                 </Button>
-                <p className="text-sm text-muted-foreground">
+                
+                <p className="text-sm text-muted-foreground mt-4">
                   👆 카드를 눌러서 뜻 보기
                 </p>
               </div>
 
-              {/* Back Side */}
+              {/* Back Side - Korean meaning (must always show) */}
               <div
                 className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden bg-gradient-to-br from-secondary/5 to-accent/5 rounded-lg"
                 style={{
@@ -288,41 +338,12 @@ const Flashcards = () => {
                   transform: "rotateY(180deg)",
                 }}
               >
-                <div className="space-y-4 text-center">
-                  {currentWord.definition && (
-                    <>
-                      {/* Handle object definition with meanings array */}
-                      {typeof currentWord.definition === 'object' && currentWord.definition.meanings?.length > 0 ? (
-                        currentWord.definition.meanings.slice(0, 2).map((meaning: any, idx: number) => (
-                          <div key={idx} className="space-y-1">
-                            <p className="text-sm font-semibold text-primary">
-                              [{meaning.partOfSpeech}]
-                            </p>
-                            <p className="text-xl">{meaning.definition}</p>
-                          </div>
-                        ))
-                      ) : typeof currentWord.definition === 'object' && currentWord.definition.definitions?.length > 0 ? (
-                        /* Handle object definition with definitions array */
-                        currentWord.definition.definitions.slice(0, 2).map((def: string, idx: number) => (
-                          <div key={idx}>
-                            <p className="text-xl">{def}</p>
-                          </div>
-                        ))
-                      ) : typeof currentWord.definition === 'string' ? (
-                        /* Handle string definition */
-                        <p className="text-xl">{currentWord.definition}</p>
-                      ) : (
-                        /* Fallback for any other structure */
-                        <p className="text-xl text-muted-foreground">정의를 불러올 수 없습니다</p>
-                      )}
-                    </>
-                  )}
-                  {currentWord.notes && (
-                    <p className="text-sm text-muted-foreground italic mt-4">
-                      📝 {currentWord.notes}
-                    </p>
-                  )}
-                </div>
+                <KoreanMeaning
+                  meanings={koreanMeanings}
+                  partOfSpeech={partOfSpeech}
+                  notes={currentWord.notes || undefined}
+                  size="lg"
+                />
               </div>
             </Card>
           </div>
@@ -330,25 +351,38 @@ const Flashcards = () => {
           {/* Emotional Feedback */}
           {lastAnswerCorrect !== null && <EmotionalFeedback isCorrect={lastAnswerCorrect} />}
 
-          {/* Action Buttons */}
+          {/* Action Buttons - 3 options including "모르겠어요" */}
           {isFlipped && lastAnswerCorrect === null && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => handleAnswer(false)}
+                  className="gap-2 border-orange-300 text-orange-600 hover:bg-orange-50"
+                >
+                  <XCircle className="h-5 w-5" />
+                  틀렸어요
+                </Button>
+                <Button
+                  size="lg"
+                  onClick={() => handleAnswer(true)}
+                  className="gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-5 w-5" />
+                  알았어요
+                </Button>
+              </div>
+              
+              {/* "모르겠어요" option - less prominent, no penalty feeling */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="lg"
-                onClick={() => handleAnswer(false)}
-                className="gap-2 border-orange-300 text-orange-600 hover:bg-orange-50"
+                onClick={() => handleAnswer(false, true)}
+                className="w-full gap-2 text-muted-foreground hover:text-foreground"
               >
-                <XCircle className="h-5 w-5" />
-                몰랐어요
-              </Button>
-              <Button
-                size="lg"
-                onClick={() => handleAnswer(true)}
-                className="gap-2 bg-green-600 hover:bg-green-700"
-              >
-                <CheckCircle className="h-5 w-5" />
-                알았어요
+                <HelpCircle className="h-4 w-4" />
+                모르겠어요 (다음에 다시)
               </Button>
             </div>
           )}

@@ -14,7 +14,9 @@ import { toast } from "sonner";
 import { StreakBadge } from "@/components/learn/StreakBadge";
 import { LevelSelector } from "@/components/learn/LevelSelector";
 import { DynamicLearningSection } from "@/components/learn/DynamicLearningSection";
+import { LearningLockedScreen } from "@/components/learn/LearningLockedScreen";
 import { useStreak } from "@/hooks/useStreak";
+import { useLearningUnlock } from "@/hooks/useLearningUnlock";
 
 interface DailyStats {
   wordsToReview: number;
@@ -29,6 +31,17 @@ const Learn = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { streak, todayCompleted, refreshStreak } = useStreak();
+  const {
+    isUnlocked,
+    isLoading: isUnlockLoading,
+    translationCount: unlockTransCount,
+    vocabularyCount: unlockVocabCount,
+    requiredTranslations,
+    requiredVocabulary,
+    progress: unlockProgress,
+    jlptLevel,
+  } = useLearningUnlock();
+  
   const [currentLevel, setCurrentLevel] = useState("N5");
   const [stats, setStats] = useState<DailyStats>({
     wordsToReview: 0,
@@ -133,11 +146,37 @@ const Learn = () => {
 
   const progress = Math.min((stats.wordsStudied / stats.dailyGoal) * 100, 100);
 
-  if (isLoading) {
+  if (isLoading || isUnlockLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <RefreshCw className="h-8 w-8 animate-spin text-primary" />
         <p className="text-muted-foreground">로딩 중...</p>
+      </div>
+    );
+  }
+
+  // Show locked screen if learning is not unlocked
+  if (!isUnlocked) {
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        <div className="flex-1 overflow-y-auto pb-24">
+          <div className="container max-w-lg mx-auto p-4">
+            <header className="flex items-center gap-3 mb-6">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-2xl font-bold">학습</h1>
+            </header>
+            <LearningLockedScreen
+              translationCount={unlockTransCount}
+              vocabularyCount={unlockVocabCount}
+              requiredTranslations={requiredTranslations}
+              requiredVocabulary={requiredVocabulary}
+              progress={unlockProgress}
+            />
+          </div>
+        </div>
+        <BottomNavigation />
       </div>
     );
   }
@@ -212,6 +251,24 @@ const Learn = () => {
         {/* Dynamic Personalized Learning Section */}
         <DynamicLearningSection />
 
+        {/* Micro Lesson CTA */}
+        <Card 
+          className="cursor-pointer bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20 hover:shadow-lg transition-all"
+          onClick={() => navigate("/micro-lesson")}
+        >
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-primary/20">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="font-bold">맞춤 학습 시작</p>
+                <p className="text-xs text-muted-foreground">내 번역 기록으로 만든 3-5문제</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-primary" />
+          </CardContent>
+        </Card>
         {/* More Options - User-centric language */}
         <section>
           <h2 className="text-lg font-bold mb-4">더 다양한 연습</h2>

@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      learning_questions: {
+        Row: {
+          created_at: string
+          difficulty_level: string
+          id: string
+          original_translation_id: string | null
+          original_vocabulary_id: string | null
+          question_data: Json
+          question_text: string
+          question_type: string
+          source_label: string
+          source_lang: string
+          source_type: string
+          target_lang: string
+          user_id: string
+          was_answered: boolean | null
+          was_correct: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          difficulty_level?: string
+          id?: string
+          original_translation_id?: string | null
+          original_vocabulary_id?: string | null
+          question_data: Json
+          question_text: string
+          question_type: string
+          source_label: string
+          source_lang: string
+          source_type: string
+          target_lang: string
+          user_id: string
+          was_answered?: boolean | null
+          was_correct?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          difficulty_level?: string
+          id?: string
+          original_translation_id?: string | null
+          original_vocabulary_id?: string | null
+          question_data?: Json
+          question_text?: string
+          question_type?: string
+          source_label?: string
+          source_lang?: string
+          source_type?: string
+          target_lang?: string
+          user_id?: string
+          was_answered?: boolean | null
+          was_correct?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_questions_original_translation_id_fkey"
+            columns: ["original_translation_id"]
+            isOneToOne: false
+            referencedRelation: "translations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_questions_original_vocabulary_id_fkey"
+            columns: ["original_vocabulary_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learning_sessions: {
         Row: {
           correct_answers: number | null
@@ -50,6 +119,45 @@ export type Database = {
           user_id?: string
           words_reviewed?: number | null
           words_studied?: number | null
+        }
+        Relationships: []
+      }
+      learning_settings: {
+        Row: {
+          correct_rate: number | null
+          created_at: string
+          id: string
+          jlpt_level: string
+          min_translations_for_unlock: number
+          min_vocabulary_for_unlock: number
+          total_correct_answers: number | null
+          total_questions_answered: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          correct_rate?: number | null
+          created_at?: string
+          id?: string
+          jlpt_level?: string
+          min_translations_for_unlock?: number
+          min_vocabulary_for_unlock?: number
+          total_correct_answers?: number | null
+          total_questions_answered?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          correct_rate?: number | null
+          created_at?: string
+          id?: string
+          jlpt_level?: string
+          min_translations_for_unlock?: number
+          min_vocabulary_for_unlock?: number
+          total_correct_answers?: number | null
+          total_questions_answered?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { ArrowLeft, Volume2 } from "lucide-react";
+import { ArrowLeft, Volume2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { speakText } from "@/utils/speechUtils";
 
 interface VocabularyItem {
   id: string;
@@ -70,6 +71,10 @@ const Review = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSpeak = (text: string, lang: string) => {
+    speakText(text, lang, { rate: 0.9 });
   };
 
   const calculateNextReview = (quality: number, item: VocabularyItem) => {
@@ -188,130 +193,131 @@ const Review = () => {
     }
   };
 
-  const handleSpeak = (text: string, lang: string) => {
-    if (!("speechSynthesis" in window)) {
-      toast.error("이 브라우저는 음성 재생을 지원하지 않습니다");
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : lang === "en" ? "en-US" : "zh-CN";
-    speechSynthesis.speak(utterance);
-  };
-
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">로딩 중...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">로딩 중...</p>
+      </div>
+    );
   }
 
   if (words.length === 0) {
-    return <div className="flex items-center justify-center min-h-screen">복습할 단어가 없습니다</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-muted-foreground">복습할 단어가 없습니다</p>
+        <Button onClick={() => navigate("/learn")}>돌아가기</Button>
+      </div>
+    );
   }
 
   const currentWord = words[currentIndex];
   const progress = ((currentIndex + 1) / words.length) * 100;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="container max-w-2xl mx-auto p-4 space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/learn")}
-            aria-label="뒤로 가기"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">복습하기</h1>
-        </div>
-
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>{currentIndex + 1} / {words.length}</span>
-            <span>복습 {currentWord.review_count}회차</span>
+    <div className="flex flex-col h-screen bg-background">
+      <div className="flex-1 overflow-y-auto pb-24">
+        <div className="container max-w-2xl mx-auto p-4 space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/learn")}
+              aria-label="뒤로 가기"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-2xl font-bold">복습하기</h1>
           </div>
-          <Progress value={progress} />
-        </div>
 
-        {/* Question Card */}
-        <Card>
-          <CardContent className="p-8">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <p className="text-4xl font-bold">{currentWord.word}</p>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleSpeak(currentWord.word, currentWord.language)}
-                >
-                  <Volume2 className="h-5 w-5" />
-                </Button>
-              </div>
-
-              {!showAnswer ? (
-                <Button
-                  onClick={() => setShowAnswer(true)}
-                  className="w-full"
-                  size="lg"
-                >
-                  답 보기
-                </Button>
-              ) : (
-                <div className="space-y-4">
-                  {currentWord.definition && typeof currentWord.definition === 'object' && (
-                    <>
-                      {currentWord.definition.meanings?.map((meaning: any, idx: number) => (
-                        <div key={idx} className="space-y-2 p-4 bg-muted rounded-lg">
-                          <p className="text-sm font-semibold text-primary">
-                            [{meaning.partOfSpeech}]
-                          </p>
-                          <p className="text-lg">{meaning.definition}</p>
-                          {meaning.examples && meaning.examples.length > 0 && (
-                            <p className="text-sm text-muted-foreground italic">
-                              예: {meaning.examples[0]}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              )}
+          {/* Progress */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>{currentIndex + 1} / {words.length}</span>
+              <span>복습 {currentWord.review_count}회차</span>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Quality Buttons */}
-        {showAnswer && (
-          <div className="grid grid-cols-3 gap-3">
-            <Button
-              variant="outline"
-              onClick={() => handleAnswer(1)}
-              className="h-20 flex flex-col gap-1"
-            >
-              <span className="text-lg">😰</span>
-              <span className="text-xs">몰랐어요</span>
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleAnswer(3)}
-              className="h-20 flex flex-col gap-1"
-            >
-              <span className="text-lg">🤔</span>
-              <span className="text-xs">어려웠어요</span>
-            </Button>
-            <Button
-              variant="default"
-              onClick={() => handleAnswer(5)}
-              className="h-20 flex flex-col gap-1"
-            >
-              <span className="text-lg">😊</span>
-              <span className="text-xs">쉬웠어요</span>
-            </Button>
+            <Progress value={progress} />
           </div>
-        )}
+
+          {/* Question Card */}
+          <Card>
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-4xl font-bold">{currentWord.word}</p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleSpeak(currentWord.word, currentWord.language)}
+                  >
+                    <Volume2 className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                {!showAnswer ? (
+                  <Button
+                    onClick={() => setShowAnswer(true)}
+                    className="w-full"
+                    size="lg"
+                  >
+                    답 보기
+                  </Button>
+                ) : (
+                  <div className="space-y-4">
+                    {currentWord.definition && typeof currentWord.definition === 'object' && (
+                      <>
+                        {currentWord.definition.meanings?.map((meaning: any, idx: number) => (
+                          <div key={idx} className="space-y-2 p-4 bg-muted rounded-lg">
+                            <p className="text-sm font-semibold text-primary">
+                              [{meaning.partOfSpeech}]
+                            </p>
+                            <p className="text-lg">{meaning.definition}</p>
+                            {meaning.examples && meaning.examples.length > 0 && (
+                              <p className="text-sm text-muted-foreground italic">
+                                예: {meaning.examples[0]}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quality Buttons */}
+          {showAnswer && (
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => handleAnswer(1)}
+                className="h-20 flex flex-col gap-1"
+              >
+                <span className="text-lg">😰</span>
+                <span className="text-xs">몰랐어요</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleAnswer(3)}
+                className="h-20 flex flex-col gap-1"
+              >
+                <span className="text-lg">🤔</span>
+                <span className="text-xs">어려웠어요</span>
+              </Button>
+              <Button
+                variant="default"
+                onClick={() => handleAnswer(5)}
+                className="h-20 flex flex-col gap-1"
+              >
+                <span className="text-lg">😊</span>
+                <span className="text-xs">쉬웠어요</span>
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <BottomNavigation />

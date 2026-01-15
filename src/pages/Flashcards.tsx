@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { EmotionalFeedback } from "@/components/learn/EmotionalFeedback";
 import { RewardModal } from "@/components/learn/RewardModal";
 import { useStreak } from "@/hooks/useStreak";
+import { speakText } from "@/utils/speechUtils";
 
 interface VocabularyItem {
   id: string;
@@ -76,31 +77,13 @@ const Flashcards = () => {
     }
   };
 
-  const speakWord = async (text: string, lang: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text, language: lang, speed: 0.9 }
-      });
-
-      if (error) throw error;
-      if (data?.audioContent) {
-        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-        await audio.play();
-        return;
-      }
-    } catch (err) {
-      console.log('TTS fallback to browser');
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : lang === "en" ? "en-US" : "zh-CN";
-    utterance.rate = 0.9;
-    speechSynthesis.speak(utterance);
+  const handleSpeak = (text: string, lang: string) => {
+    speakText(text, lang, { rate: 0.9 });
   };
 
   const handleFlip = () => {
     if (!isFlipped) {
-      speakWord(words[currentIndex].word, words[currentIndex].language);
+      handleSpeak(words[currentIndex].word, words[currentIndex].language);
     }
     setIsFlipped(!isFlipped);
   };
@@ -210,121 +193,123 @@ const Flashcards = () => {
   const progress = ((currentIndex + 1) / words.length) * 100;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="container max-w-2xl mx-auto p-4 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/learn")}>
-              <ArrowLeft className="h-5 w-5" />
+    <div className="flex flex-col h-screen bg-background">
+      <div className="flex-1 overflow-y-auto pb-24">
+        <div className="container max-w-2xl mx-auto p-4 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/learn")}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-2xl font-bold">플래시카드</h1>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleReset}>
+              <RotateCcw className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold">플래시카드</h1>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleReset}>
-            <RotateCcw className="h-5 w-5" />
-          </Button>
-        </div>
 
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>{currentIndex + 1} / {words.length}</span>
-            <span className="flex items-center gap-2">
-              <span className="text-green-600">✓ {sessionStats.correct}</span>
-              <span className="text-red-600">✗ {sessionStats.incorrect}</span>
-            </span>
+          {/* Progress */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>{currentIndex + 1} / {words.length}</span>
+              <span className="flex items-center gap-2">
+                <span className="text-green-600">✓ {sessionStats.correct}</span>
+                <span className="text-red-600">✗ {sessionStats.incorrect}</span>
+              </span>
+            </div>
+            <Progress value={progress} className="h-2" />
           </div>
-          <Progress value={progress} className="h-2" />
-        </div>
 
-        {/* Flashcard */}
-        <div className="relative" style={{ perspective: "1000px" }}>
-          <Card
-            className="min-h-[350px] cursor-pointer transition-all duration-500 transform-gpu shadow-lg"
-            style={{
-              transformStyle: "preserve-3d",
-              transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-            }}
-            onClick={handleFlip}
-          >
-            {/* Front Side */}
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden bg-gradient-to-br from-primary/5 to-secondary/5 rounded-lg"
-              style={{ backfaceVisibility: "hidden" }}
+          {/* Flashcard */}
+          <div className="relative" style={{ perspective: "1000px" }}>
+            <Card
+              className="min-h-[350px] cursor-pointer transition-all duration-500 transform-gpu shadow-lg"
+              style={{
+                transformStyle: "preserve-3d",
+                transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+              }}
+              onClick={handleFlip}
             >
-              <p className="text-4xl font-bold mb-4 text-center">{currentWord.word}</p>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mb-4"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  speakWord(currentWord.word, currentWord.language);
+              {/* Front Side */}
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden bg-gradient-to-br from-primary/5 to-secondary/5 rounded-lg"
+                style={{ backfaceVisibility: "hidden" }}
+              >
+                <p className="text-4xl font-bold mb-4 text-center">{currentWord.word}</p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="mb-4"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSpeak(currentWord.word, currentWord.language);
+                  }}
+                >
+                  <Volume2 className="h-6 w-6" />
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  👆 카드를 눌러서 뜻 보기
+                </p>
+              </div>
+
+              {/* Back Side */}
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden bg-gradient-to-br from-secondary/5 to-accent/5 rounded-lg"
+                style={{
+                  backfaceVisibility: "hidden",
+                  transform: "rotateY(180deg)",
                 }}
               >
-                <Volume2 className="h-6 w-6" />
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                👆 카드를 눌러서 뜻 보기
-              </p>
-            </div>
-
-            {/* Back Side */}
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden bg-gradient-to-br from-secondary/5 to-accent/5 rounded-lg"
-              style={{
-                backfaceVisibility: "hidden",
-                transform: "rotateY(180deg)",
-              }}
-            >
-              <div className="space-y-4 text-center">
-                {currentWord.definition && typeof currentWord.definition === 'object' && (
-                  <>
-                    {currentWord.definition.meanings?.slice(0, 2).map((meaning: any, idx: number) => (
-                      <div key={idx} className="space-y-1">
-                        <p className="text-sm font-semibold text-primary">
-                          [{meaning.partOfSpeech}]
-                        </p>
-                        <p className="text-xl">{meaning.definition}</p>
-                      </div>
-                    ))}
-                  </>
-                )}
-                {currentWord.notes && (
-                  <p className="text-sm text-muted-foreground italic mt-4">
-                    📝 {currentWord.notes}
-                  </p>
-                )}
+                <div className="space-y-4 text-center">
+                  {currentWord.definition && typeof currentWord.definition === 'object' && (
+                    <>
+                      {currentWord.definition.meanings?.slice(0, 2).map((meaning: any, idx: number) => (
+                        <div key={idx} className="space-y-1">
+                          <p className="text-sm font-semibold text-primary">
+                            [{meaning.partOfSpeech}]
+                          </p>
+                          <p className="text-xl">{meaning.definition}</p>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {currentWord.notes && (
+                    <p className="text-sm text-muted-foreground italic mt-4">
+                      📝 {currentWord.notes}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Emotional Feedback */}
-        {lastAnswerCorrect !== null && <EmotionalFeedback isCorrect={lastAnswerCorrect} />}
-
-        {/* Action Buttons */}
-        {isFlipped && lastAnswerCorrect === null && (
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => handleAnswer(false)}
-              className="gap-2 border-orange-300 text-orange-600 hover:bg-orange-50"
-            >
-              <XCircle className="h-5 w-5" />
-              몰랐어요
-            </Button>
-            <Button
-              size="lg"
-              onClick={() => handleAnswer(true)}
-              className="gap-2 bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle className="h-5 w-5" />
-              알았어요
-            </Button>
+            </Card>
           </div>
-        )}
+
+          {/* Emotional Feedback */}
+          {lastAnswerCorrect !== null && <EmotionalFeedback isCorrect={lastAnswerCorrect} />}
+
+          {/* Action Buttons */}
+          {isFlipped && lastAnswerCorrect === null && (
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => handleAnswer(false)}
+                className="gap-2 border-orange-300 text-orange-600 hover:bg-orange-50"
+              >
+                <XCircle className="h-5 w-5" />
+                몰랐어요
+              </Button>
+              <Button
+                size="lg"
+                onClick={() => handleAnswer(true)}
+                className="gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="h-5 w-5" />
+                알았어요
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <RewardModal

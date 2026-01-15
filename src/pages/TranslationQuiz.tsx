@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { ArrowLeft, CheckCircle, XCircle, Shuffle, RefreshCw, Sparkles, AlertTriangle, CheckCircle2, Volume2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Shuffle, RefreshCw, HelpCircle, AlertTriangle, CheckCircle2, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { EmotionalFeedback } from "@/components/learn/EmotionalFeedback";
 import { RewardModal } from "@/components/learn/RewardModal";
 import { useStreak } from "@/hooks/useStreak";
+import { speakText } from "@/utils/speechUtils";
 
 interface FrequentWord {
   word: string;
@@ -66,26 +67,8 @@ const TranslationQuiz = () => {
     }
   };
 
-  const speakWord = async (text: string, lang: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text, language: lang, speed: 0.9 }
-      });
-
-      if (error) throw error;
-      if (data?.audioContent) {
-        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-        await audio.play();
-        return;
-      }
-    } catch (err) {
-      console.log('TTS fallback to browser');
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : lang === "en" ? "en-US" : "zh-CN";
-    utterance.rate = 0.9;
-    speechSynthesis.speak(utterance);
+  const handleSpeak = (text: string, lang: string) => {
+    speakText(text, lang, { rate: 0.9 });
   };
 
   const extractWords = (text: string): string[] => {
@@ -231,7 +214,7 @@ const TranslationQuiz = () => {
     }));
 
     // Play pronunciation
-    speakWord(currentQuestion.word, currentQuestion.source_lang);
+    handleSpeak(currentQuestion.word, currentQuestion.source_lang);
 
     if (!isCorrect) {
       setWrongAnswers(prev => [...prev, currentQuestion]);
@@ -339,144 +322,146 @@ const TranslationQuiz = () => {
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="container max-w-2xl mx-auto p-4 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/learn")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-bold">번역 퀴즈</h1>
-          </div>
-          <Button variant="ghost" size="icon" onClick={handleRetry}>
-            <Shuffle className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>문제 {currentIndex + 1} / {questions.length}</span>
-            <span>정답: {score.correct} / {score.total}</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-
-        {/* Question */}
-        <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
-              {currentQuestion.source_lang} → {currentQuestion.target_lang}
-            </p>
-          </div>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <p className="text-3xl font-bold text-center">
-                {currentQuestion.word}
-              </p>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => speakWord(currentQuestion.word, currentQuestion.source_lang)}
-              >
-                <Volume2 className="h-5 w-5" />
+    <div className="flex flex-col h-screen bg-background">
+      <div className="flex-1 overflow-y-auto pb-24">
+        <div className="container max-w-2xl mx-auto p-4 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/learn")}>
+                <ArrowLeft className="h-5 w-5" />
               </Button>
+              <h1 className="text-2xl font-bold">번역 퀴즈</h1>
             </div>
-            <p className="text-center text-muted-foreground mb-6">
-              이 단어의 번역은?
-            </p>
+            <Button variant="ghost" size="icon" onClick={handleRetry}>
+              <Shuffle className="h-5 w-5" />
+            </Button>
+          </div>
 
-            <div className="space-y-3">
-              {currentQuestion.options.map((option, idx) => {
-                const isSelected = selectedAnswer === option;
-                const isCorrect = option === currentQuestion.correctAnswer;
-                const showCorrect = showResult && isCorrect;
-                const showWrong = showResult && isSelected && !isCorrect;
-
-                return (
-                  <Button
-                    key={idx}
-                    variant={showCorrect ? "default" : showWrong ? "destructive" : "outline"}
-                    className="w-full h-auto p-4 text-left justify-start transition-all"
-                    onClick={() => !showResult && handleAnswer(option)}
-                    disabled={showResult}
-                  >
-                    <div className="flex items-center gap-3 w-full">
-                      {showResult && (
-                        <>
-                          {showCorrect && <CheckCircle className="h-5 w-5 flex-shrink-0 text-primary-foreground" />}
-                          {showWrong && <XCircle className="h-5 w-5 flex-shrink-0" />}
-                        </>
-                      )}
-                      <span className="flex-1 break-words">{option}</span>
-                    </div>
-                  </Button>
-                );
-              })}
+          {/* Progress */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>문제 {currentIndex + 1} / {questions.length}</span>
+              <span>정답: {score.correct} / {score.total}</span>
             </div>
-          </CardContent>
-        </Card>
+            <Progress value={progress} className="h-2" />
+          </div>
 
-        {/* Emotional Feedback */}
-        {showResult && <EmotionalFeedback isCorrect={lastAnswerCorrect} />}
+          {/* Question */}
+          <Card className="overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                {currentQuestion.source_lang} → {currentQuestion.target_lang}
+              </p>
+            </div>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <p className="text-3xl font-bold text-center">
+                  {currentQuestion.word}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleSpeak(currentQuestion.word, currentQuestion.source_lang)}
+                >
+                  <Volume2 className="h-5 w-5" />
+                </Button>
+              </div>
+              <p className="text-center text-muted-foreground mb-6">
+                이 단어의 번역은?
+              </p>
 
-        {/* AI Verification Button */}
-        <Button
-          variant="outline"
-          onClick={verifyQuestion}
-          disabled={isVerifying}
-          className="w-full gap-2"
-        >
-          {isVerifying ? (
-            <>
-              <RefreshCw className="h-4 w-4 animate-spin" />
-              AI 검증 중...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" />
-              AI로 문제 검증하기
-            </>
-          )}
-        </Button>
+              <div className="space-y-3">
+                {currentQuestion.options.map((option, idx) => {
+                  const isSelected = selectedAnswer === option;
+                  const isCorrect = option === currentQuestion.correctAnswer;
+                  const showCorrect = showResult && isCorrect;
+                  const showWrong = showResult && isSelected && !isCorrect;
 
-        {/* Verification Result */}
-        {verification && (
-          <Alert variant={verification.isValid ? "default" : "destructive"}>
-            {verification.isValid ? (
-              <CheckCircle2 className="h-4 w-4" />
+                  return (
+                    <Button
+                      key={idx}
+                      variant={showCorrect ? "default" : showWrong ? "destructive" : "outline"}
+                      className="w-full h-auto p-4 text-left justify-start transition-all"
+                      onClick={() => !showResult && handleAnswer(option)}
+                      disabled={showResult}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        {showResult && (
+                          <>
+                            {showCorrect && <CheckCircle className="h-5 w-5 flex-shrink-0 text-primary-foreground" />}
+                            {showWrong && <XCircle className="h-5 w-5 flex-shrink-0" />}
+                          </>
+                        )}
+                        <span className="flex-1 break-words">{option}</span>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Emotional Feedback */}
+          {showResult && <EmotionalFeedback isCorrect={lastAnswerCorrect} />}
+
+          {/* Report Issue Button - User-friendly language */}
+          <Button
+            variant="outline"
+            onClick={verifyQuestion}
+            disabled={isVerifying}
+            className="w-full gap-2"
+          >
+            {isVerifying ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                확인 중...
+              </>
             ) : (
-              <AlertTriangle className="h-4 w-4" />
+              <>
+                <HelpCircle className="h-4 w-4" />
+                문제가 이상해요
+              </>
             )}
-            <AlertTitle>
-              {verification.isValid ? "문제 검증 완료" : "문제 발견"}
-            </AlertTitle>
-            <AlertDescription>
-              {verification.isValid ? (
-                <p>이 문제는 정확합니다. (신뢰도: {verification.confidence}%)</p>
-              ) : (
-                <div className="space-y-2">
-                  <ul className="list-disc list-inside">
-                    {verification.issues.map((issue, idx) => (
-                      <li key={idx}>{issue}</li>
-                    ))}
-                  </ul>
-                  {verification.suggestion && (
-                    <p className="font-medium">제안: {verification.suggestion}</p>
-                  )}
-                </div>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Next Button */}
-        {showResult && (
-          <Button onClick={handleNext} className="w-full" size="lg">
-            {currentIndex < questions.length - 1 ? "다음 문제" : "완료"}
           </Button>
-        )}
+
+          {/* Verification Result */}
+          {verification && (
+            <Alert variant={verification.isValid ? "default" : "destructive"}>
+              {verification.isValid ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <AlertTriangle className="h-4 w-4" />
+              )}
+              <AlertTitle>
+                {verification.isValid ? "문제 확인 완료" : "문제 발견"}
+              </AlertTitle>
+              <AlertDescription>
+                {verification.isValid ? (
+                  <p>이 문제는 정확합니다. (신뢰도: {verification.confidence}%)</p>
+                ) : (
+                  <div className="space-y-2">
+                    <ul className="list-disc list-inside">
+                      {verification.issues.map((issue, idx) => (
+                        <li key={idx}>{issue}</li>
+                      ))}
+                    </ul>
+                    {verification.suggestion && (
+                      <p className="font-medium">제안: {verification.suggestion}</p>
+                    )}
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Next Button */}
+          {showResult && (
+            <Button onClick={handleNext} className="w-full" size="lg">
+              {currentIndex < questions.length - 1 ? "다음 문제" : "완료"}
+            </Button>
+          )}
+        </div>
       </div>
 
       <RewardModal

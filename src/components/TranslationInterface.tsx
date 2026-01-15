@@ -1183,19 +1183,24 @@ export const TranslationInterface = () => {
   const handleWordSaveFromTranslation = useCallback(async (word: string) => {
     if (!word.trim() || savedWordsFromTranslation.has(word)) return;
     
-    // Create a simple definition for the tapped word
+    // Create definition with actual source text as the translation/meaning
+    // The tapped word is from targetText (translated), so sourceText is its meaning
     const definition = {
-      pos: "word",
-      definitions: [`번역 문장에서 저장됨`],
-      romanization: undefined,
+      pos: "번역",
+      definitions: [sourceText],
+      meanings: [{
+        partOfSpeech: "번역",
+        definition: sourceText
+      }],
+      romanization: sourceRomanization || undefined,
       example: targetText
     };
     
-    const success = await addWord(word, targetLang, definition);
+    const success = await addWord(word, targetLang, definition as any);
     if (success) {
       setSavedWordsFromTranslation(prev => new Set(prev).add(word));
     }
-  }, [addWord, targetLang, targetText, savedWordsFromTranslation]);
+  }, [addWord, targetLang, targetText, sourceText, sourceRomanization, savedWordsFromTranslation]);
 
   // Reset saved words when translation changes
   useEffect(() => {

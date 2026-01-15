@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import { filterContent, filterItems, filterItemsAsync, fullContentCheck } from "./contentFilter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -103,7 +104,7 @@ serve(async (req) => {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     
-    const { data: recentTranslations } = await supabase
+    const { data: rawRecentTranslations } = await supabase
       .from("translations")
       .select("*")
       .eq("user_id", user.id)
@@ -112,7 +113,7 @@ serve(async (req) => {
       .limit(50);
 
     // Fetch all translations for frequency analysis
-    const { data: allTranslations } = await supabase
+    const { data: rawAllTranslations } = await supabase
       .from("translations")
       .select("*")
       .eq("user_id", user.id)
@@ -120,12 +121,43 @@ serve(async (req) => {
       .limit(200);
 
     // Fetch saved vocabulary
-    const { data: savedVocabulary } = await supabase
+    const { data: rawSavedVocabulary } = await supabase
       .from("vocabulary")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
+
+    // ===== CONTENT FILTERING (Step 1: Extraction Stage) =====
+    // Filter out inappropriate content before using for learning questions
+    console.log("[ContentFilter] Filtering translations and vocabulary for learning content...");
+    
+    // Filter translations
+    const recentTranslations = filterItems<TranslationRecord>(
+      rawRecentTranslations || [],
+      (t) => [t.source_text, t.target_text],
+    );
+    
+    const allTranslations = filterItems<TranslationRecord>(
+      rawAllTranslations || [],
+      (t) => [t.source_text, t.target_text],
+    );
+    
+    // Filter vocabulary
+    const savedVocabulary = filterItems<VocabularyRecord>(
+      rawSavedVocabulary || [],
+      (v) => {
+        const texts = [v.word];
+        if (typeof v.definition === "string") {
+          texts.push(v.definition);
+        } else if (v.definition?.definitions) {
+          texts.push(...v.definition.definitions);
+        }
+        return texts;
+      },
+    );
+    
+    console.log(`[ContentFilter] Filtered: translations ${(rawAllTranslations?.length || 0)} -> ${allTranslations.length}, vocabulary ${(rawSavedVocabulary?.length || 0)} -> ${savedVocabulary.length}`);
 
     // Analyze frequency
     const frequencyMap = new Map<string, { count: number; translation: TranslationRecord }>();
@@ -147,12 +179,31 @@ serve(async (req) => {
 
     const questions: GeneratedQuestion[] = [];
     const usedSources = new Set<string>();
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    // Helper to add a question
-    const addQuestion = (q: GeneratedQuestion) => {
-      if (questions.length < questionCount) {
-        questions.push(q);
+    // Helper to add a question with content check (Step 2: Generation Stage - Double safety)
+    const addQuestion = async (q: GeneratedQuestion): Promise<boolean> => {
+      if (questions.length >= questionCount) return false;
+      
+      // Double-check content before adding to questions
+      const textsToCheck = [q.question_text];
+      if (q.question_data.correct_answer) {
+        textsToCheck.push(q.question_data.correct_answer);
       }
+      if (q.question_data.options) {
+        textsToCheck.push(...q.question_data.options);
+      }
+      
+      for (const text of textsToCheck) {
+        const result = await fullContentCheck(text, LOVABLE_API_KEY);
+        if (result.isBlocked) {
+          console.log(`[ContentFilter] Question blocked at generation stage`);
+          return false;
+        }
+      }
+      
+      questions.push(q);
+      return true;
     };
 
     // 1. Generate from saved vocabulary (highest priority)
@@ -187,7 +238,7 @@ serve(async (req) => {
         });
 
       if (wrongOptions.length >= 2) {
-        addQuestion({
+        await addQuestion({
           question_type: "meaning_choice",
           source_type: "saved",
           source_label: SOURCE_LABELS.saved,
@@ -221,7 +272,7 @@ serve(async (req) => {
         .map((t: TranslationRecord) => t.target_text);
 
       if (wrongOptions.length >= 2) {
-        addQuestion({
+        await addQuestion({
           question_type: "meaning_choice",
           source_type: "frequent",
           source_label: SOURCE_LABELS.frequent,
@@ -263,7 +314,7 @@ serve(async (req) => {
             .slice(0, 3);
 
           if (wrongWords.length >= 2) {
-            addQuestion({
+            await addQuestion({
               question_type: "fill_blank",
               source_type: "recent",
               source_label: SOURCE_LABELS.recent,
@@ -292,7 +343,7 @@ serve(async (req) => {
         .map((t: TranslationRecord) => t.target_text);
 
       if (wrongOptions.length >= 2) {
-        addQuestion({
+        await addQuestion({
           question_type: "meaning_choice",
           source_type: "recent",
           source_label: SOURCE_LABELS.recent,
@@ -312,7 +363,6 @@ serve(async (req) => {
 
     // 4. If still need more, use AI to generate from user's patterns
     if (questions.length < questionCount && (allTranslations?.length || 0) > 0) {
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
       if (LOVABLE_API_KEY) {
         const sampleTranslations = (allTranslations || []).slice(0, 5);
         const prompt = `Based on these translation examples from a user learning Japanese:
@@ -320,6 +370,7 @@ ${sampleTranslations.map((t: TranslationRecord) => `- "${t.source_text}" → "${
 
 Create ${questionCount - questions.length} similar learning questions at ${jlptLevel} difficulty level.
 Each question should be a word or short phrase that the user might want to learn.
+IMPORTANT: Do not include any inappropriate, offensive, sexual, or violent content.
 
 Return as JSON array with format:
 [{"word": "Japanese word/phrase", "meaning": "Korean meaning", "example": "example sentence in Japanese"}]`;
@@ -347,13 +398,20 @@ Return as JSON array with format:
               for (const q of aiQuestions) {
                 if (questions.length >= questionCount) break;
                 
+                // Filter AI-generated content as well
+                const aiContentCheck = await fullContentCheck(q.word + " " + q.meaning, LOVABLE_API_KEY);
+                if (aiContentCheck.isBlocked) {
+                  console.log("[ContentFilter] AI-generated question blocked");
+                  continue;
+                }
+                
                 const wrongMeanings = aiQuestions
                   .filter((a: any) => a.word !== q.word)
                   .map((a: any) => a.meaning)
                   .slice(0, 3);
 
                 if (wrongMeanings.length >= 2) {
-                  addQuestion({
+                  await addQuestion({
                     question_type: "meaning_choice",
                     source_type: "ai_generated",
                     source_label: SOURCE_LABELS.ai_generated,

@@ -24,7 +24,13 @@ serve(async (req) => {
       });
     }
 
-    const { questionCount = 5 } = await req.json();
+    const { 
+      questionCount = 5, 
+      targetLanguage = "ja",  // The language user is learning
+      sourceLanguage = "ko"   // User's native language
+    } = await req.json();
+
+    console.log(`[Queue] Target language: ${targetLanguage}, Source language: ${sourceLanguage}`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -57,11 +63,13 @@ serve(async (req) => {
     console.log(`[Queue] Fetching ${personalizedCount} personalized + ${templateCount} template questions`);
 
     // Fetch personalized questions from queue (pre-generated, not answered)
+    // Filter by target language to ensure questions are in the learning language
     const { data: personalizedQuestions, error: queueError } = await supabase
       .from("learning_questions")
       .select("*")
       .eq("user_id", user.id)
       .eq("was_answered", false)
+      .eq("source_lang", targetLanguage)  // Question must be in target (learning) language
       .is("served_at", null)
       .order("queued_at", { ascending: true })
       .limit(personalizedCount);
@@ -84,10 +92,13 @@ serve(async (req) => {
       .map(q => q.template_question_id)
       .filter(Boolean);
 
+    // Fetch template questions matching target language
     let templateQuery = supabase
       .from("template_questions")
       .select("*")
       .eq("jlpt_level", jlptLevel)
+      .eq("source_lang", targetLanguage)  // Template questions must be in target language
+      .eq("target_lang", sourceLanguage)  // Options/answers in user's native language
       .order("usage_count", { ascending: true })
       .limit(templateCount * 2); // Fetch extra for randomization
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,13 +13,13 @@ import { LoginPrompt } from "@/components/learn/LoginPrompt";
 import { JapaneseText } from "@/components/learn/JapaneseText";
 import { useLearningUnlock } from "@/hooks/useLearningUnlock";
 import { useStreak } from "@/hooks/useStreak";
+import { useTargetLanguage } from "@/hooks/useTargetLanguage";
 import { speakText } from "@/utils/speechUtils";
 import { 
   ArrowLeft, CheckCircle, XCircle, RefreshCw, Volume2, 
   Sparkles, Target, HelpCircle
 } from "lucide-react";
 import { toast } from "sonner";
-
 interface LearningQuestion {
   question_type: "fill_blank" | "meaning_choice" | "word_order";
   source_type: SourceType;
@@ -40,8 +41,10 @@ interface LearningQuestion {
 
 const MicroLesson = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { streak, refreshStreak } = useStreak();
   const { updateQuizStats, jlptLevel } = useLearningUnlock();
+  const { targetLanguage, sourceLanguage, targetLanguageName } = useTargetLanguage();
   
   const [questions, setQuestions] = useState<LearningQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -66,8 +69,13 @@ const MicroLesson = () => {
       }
 
       // Use cached queue endpoint (no real-time AI generation)
+      // Pass targetLanguage to ensure questions are in the learning language
       const { data, error } = await supabase.functions.invoke("get-learning-questions", {
-        body: { questionCount: 5 },
+        body: { 
+          questionCount: 5,
+          targetLanguage,  // The language user is learning
+          sourceLanguage,  // The user's native language
+        },
       });
 
       if (error) throw error;
@@ -76,17 +84,17 @@ const MicroLesson = () => {
       if (data?.queueStatus?.needsReplenishment) {
         // Fire and forget - don't await
         supabase.functions.invoke("replenish-question-queue", {
-          body: { targetQueueSize: 10 },
+          body: { targetQueueSize: 10, targetLanguage, sourceLanguage },
         }).catch(console.error);
       }
 
       if (!data?.questions || data.questions.length === 0) {
         // No cached questions - trigger generation and show message
         supabase.functions.invoke("replenish-question-queue", {
-          body: { targetQueueSize: 10 },
+          body: { targetQueueSize: 10, targetLanguage, sourceLanguage },
         }).catch(console.error);
         
-        toast.info("문제를 준비 중이에요. 잠시 후 다시 시도해주세요!");
+        toast.info(t("learn.preparingQuestions", "문제를 준비 중이에요. 잠시 후 다시 시도해주세요!"));
         navigate("/learn");
         return;
       }
@@ -101,8 +109,9 @@ const MicroLesson = () => {
     }
   };
 
-  const handleSpeak = (text: string, lang: string) => {
-    speakText(text, lang, { rate: 0.9 });
+  // TTS should only use the target language (learning language)
+  const handleSpeak = (text: string) => {
+    speakText(text, targetLanguage, { rate: 0.9 });
   };
 
   const handleAnswer = async (answer: string, isDontKnow: boolean = false) => {
@@ -124,8 +133,8 @@ const MicroLesson = () => {
       await updateQuizStats(isCorrect);
     }
 
-    // Play pronunciation
-    handleSpeak(currentQuestion.question_text, currentQuestion.source_lang);
+    // Play pronunciation of the question (in target/learning language)
+    handleSpeak(currentQuestion.question_text);
 
     // Record result
     try {
@@ -201,8 +210,8 @@ const MicroLesson = () => {
     }
   };
 
-  // Check if text is Japanese
-  const isJapanese = (lang: string) => lang === "ja";
+  // Check if question is in the target language (what user is learning)
+  const isTargetLanguageJapanese = targetLanguage === "ja";
 
   if (isLoading) {
     return (
@@ -291,9 +300,9 @@ const MicroLesson = () => {
                 </span>
               </div>
 
-              {/* Question Text with Japanese text hierarchy */}
+              {/* Question Text - always in target (learning) language */}
               <div className="flex flex-col items-center gap-3 mb-6">
-                {isJapanese(currentQuestion.source_lang) ? (
+                {isTargetLanguageJapanese ? (
                   <JapaneseText
                     text={currentQuestion.question_text}
                     romaji={currentQuestion.question_data.romaji}
@@ -303,6 +312,7 @@ const MicroLesson = () => {
                     showRomaji={true}
                   />
                 ) : (
+                  // Korean text for Japanese users learning Korean
                   <p className="text-2xl font-bold text-center leading-relaxed">
                     {currentQuestion.question_text}
                   </p>
@@ -312,8 +322,7 @@ const MicroLesson = () => {
                   variant="ghost"
                   size="icon"
                   onClick={() => handleSpeak(
-                    currentQuestion.question_data.original_sentence || currentQuestion.question_text,
-                    currentQuestion.source_lang
+                    currentQuestion.question_data.original_sentence || currentQuestion.question_text
                   )}
                 >
                   <Volume2 className="h-5 w-5" />

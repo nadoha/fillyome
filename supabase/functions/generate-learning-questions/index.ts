@@ -113,7 +113,13 @@ serve(async (req) => {
       });
     }
 
-    const { questionCount = 5 } = await req.json();
+    const { 
+      questionCount = 5, 
+      targetLanguage = "ja",  // The language user is learning
+      sourceLanguage = "ko"   // User's native language
+    } = await req.json();
+
+    console.log(`[QuestionGen] Target language: ${targetLanguage}, Source language: ${sourceLanguage}`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -363,15 +369,32 @@ serve(async (req) => {
       return true;
     };
 
+    // Generate meaning choice question with correct language direction
+    // Question text = target language (what user is learning)
+    // Options = source language (user's native language)
     const generateMeaningChoiceQuestion = (
       trans: TranslationRecord,
       sourceType: SourceType,
       allTrans: TranslationRecord[]
     ): GeneratedQuestion | null => {
+      // Determine which text is the question (learning language) and which is the answer (native language)
+      const isTargetLangQuestion = trans.source_lang === targetLanguage;
+      const questionText = isTargetLangQuestion ? trans.source_text : trans.target_text;
+      const correctAnswer = isTargetLangQuestion ? trans.target_text : trans.source_text;
+      const questionLang = isTargetLangQuestion ? trans.source_lang : trans.target_lang;
+      const answerLang = isTargetLangQuestion ? trans.target_lang : trans.source_lang;
+      const romaji = isTargetLangQuestion ? trans.source_romanization : trans.target_romanization;
+      
+      // Get wrong options from translations in the same answer language
       const wrongOptions = allTrans
-        .filter((t: TranslationRecord) => t.id !== trans.id && t.target_lang === trans.target_lang)
-        .slice(0, 3)
-        .map((t: TranslationRecord) => t.target_text);
+        .filter((t: TranslationRecord) => t.id !== trans.id)
+        .map((t: TranslationRecord) => {
+          if (t.source_lang === answerLang) return t.source_text;
+          if (t.target_lang === answerLang) return t.target_text;
+          return null;
+        })
+        .filter((text): text is string => text !== null && text !== correctAnswer)
+        .slice(0, 3);
 
       if (wrongOptions.length < 2) return null;
 
@@ -382,14 +405,14 @@ serve(async (req) => {
         difficulty_level: jlptLevel,
         original_translation_id: trans.id,
         original_vocabulary_id: null,
-        question_text: trans.source_text,
+        question_text: questionText,      // In target (learning) language
         question_data: {
-          options: [trans.target_text, ...wrongOptions].sort(() => Math.random() - 0.5),
-          correct_answer: trans.target_text,
-          romaji: trans.source_romanization || undefined,
+          options: [correctAnswer, ...wrongOptions].sort(() => Math.random() - 0.5),
+          correct_answer: correctAnswer,  // In source (native) language
+          romaji: romaji || undefined,
         },
-        source_lang: trans.source_lang,
-        target_lang: trans.target_lang,
+        source_lang: questionLang,        // Same as targetLanguage
+        target_lang: answerLang,          // Same as sourceLanguage
       };
     };
 
@@ -404,8 +427,9 @@ serve(async (req) => {
     }
 
     // Priority 2: Saved vocabulary (내가 저장한 단어)
+    // Only include vocabulary in target (learning) language
     const vocabQuestions = savedVocabulary
-      .filter((v: VocabularyRecord) => !usedSources.has(`vocab_${v.id}`))
+      .filter((v: VocabularyRecord) => !usedSources.has(`vocab_${v.id}`) && v.language === targetLanguage)
       .slice(0, Math.ceil(questionCount * 0.25));
 
     for (const vocab of vocabQuestions) {
@@ -423,7 +447,7 @@ serve(async (req) => {
       if (!definitionText || definitionText === "번역 문장에서 저장됨") continue;
 
       const wrongOptions = savedVocabulary
-        .filter((v: VocabularyRecord) => v.id !== vocab.id)
+        .filter((v: VocabularyRecord) => v.id !== vocab.id && v.language === targetLanguage)
         .slice(0, 3)
         .map((v: VocabularyRecord) => {
           if (typeof v.definition === "string") return v.definition;
@@ -442,13 +466,13 @@ serve(async (req) => {
           difficulty_level: jlptLevel,
           original_translation_id: null,
           original_vocabulary_id: vocab.id,
-          question_text: vocab.word,
+          question_text: vocab.word,       // In target (learning) language
           question_data: {
             options: [definitionText, ...wrongOptions].sort(() => Math.random() - 0.5),
-            correct_answer: definitionText,
+            correct_answer: definitionText,  // In source (native) language
           },
-          source_lang: vocab.language,
-          target_lang: vocab.language === "ja" ? "ko" : "ja",
+          source_lang: targetLanguage,     // Question in learning language
+          target_lang: sourceLanguage,     // Options in native language
         });
       }
     }
@@ -574,6 +598,10 @@ serve(async (req) => {
         jlptLevel,
       };
 
+      // Dynamic AI prompt based on target language
+      const targetLangName = targetLanguage === "ja" ? "Japanese" : "Korean";
+      const sourceLangName = sourceLanguage === "ko" ? "Korean" : "Japanese";
+
       const aiPrompt = `You are an AI learning assistant analyzing a user's translation patterns to recommend personalized learning questions.
 
 User Analysis:
@@ -594,13 +622,15 @@ Based on this analysis, generate ${questionCount - questions.length} learning qu
 2. Are related to expressions the user frequently uses
 3. Include alternative expressions or similar patterns
 4. Focus on practical, everyday expressions
+5. The question word MUST be in ${targetLangName} (learning language)
+6. The meaning/answer MUST be in ${sourceLangName} (native language)
 
 IMPORTANT: Do not include any inappropriate, offensive, sexual, or violent content.
 
 Return as JSON array:
 [{
-  "word": "Japanese expression",
-  "meaning": "Korean meaning",
+  "word": "${targetLangName} expression",
+  "meaning": "${sourceLangName} meaning",
   "reason": "One of: unpracticed|trending|ai_recommended"
 }]`;
 
@@ -651,13 +681,13 @@ Return as JSON array:
                   difficulty_level: jlptLevel,
                   original_translation_id: null,
                   original_vocabulary_id: null,
-                  question_text: q.word,
+                  question_text: q.word,       // In target (learning) language
                   question_data: {
                     options: [q.meaning, ...wrongMeanings].sort(() => Math.random() - 0.5),
-                    correct_answer: q.meaning,
+                    correct_answer: q.meaning,   // In source (native) language
                   },
-                  source_lang: "ja",
-                  target_lang: "ko",
+                  source_lang: targetLanguage,   // Question in learning language
+                  target_lang: sourceLanguage,   // Options in native language
                 });
               }
             }

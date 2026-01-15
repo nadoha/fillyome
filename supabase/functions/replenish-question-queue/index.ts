@@ -103,9 +103,12 @@ async function replenishQueue(
   userId: string,
   jlptLevel: string,
   targetCount: number,
-  LOVABLE_API_KEY: string | undefined
+  LOVABLE_API_KEY: string | undefined,
+  targetLanguage: string = "ja",  // The language user is learning
+  sourceLanguage: string = "ko"   // User's native language
 ) {
   console.log(`[Replenish] Starting background queue replenishment for user ${userId}`);
+  console.log(`[Replenish] Target language: ${targetLanguage}, Source language: ${sourceLanguage}`);
   
   const difficulty = JLPT_DIFFICULTY[jlptLevel as keyof typeof JLPT_DIFFICULTY] || JLPT_DIFFICULTY.N5;
   
@@ -230,12 +233,31 @@ async function replenishQueue(
     return true;
   };
 
+  // Generate meaning choice question with correct language direction
+  // Question text = target language (what user is learning)
+  // Options = source language (user's native language)
   const generateMeaningChoice = (trans: TranslationRecord, sourceType: SourceType): GeneratedQuestion | null => {
+    // Determine which text is the question (learning language) and which is the answer (native language)
+    const isTargetLangQuestion = trans.source_lang === targetLanguage;
+    const questionText = isTargetLangQuestion ? trans.source_text : trans.target_text;
+    const correctAnswer = isTargetLangQuestion ? trans.target_text : trans.source_text;
+    const questionLang = isTargetLangQuestion ? trans.source_lang : trans.target_lang;
+    const answerLang = isTargetLangQuestion ? trans.target_lang : trans.source_lang;
+    
+    // Get wrong options from translations in the same answer language
     const wrongOptions = allTranslations
-      .filter((t: TranslationRecord) => t.id !== trans.id && t.target_lang === trans.target_lang)
-      .slice(0, 3)
-      .map((t: TranslationRecord) => t.target_text);
+      .filter((t: TranslationRecord) => t.id !== trans.id)
+      .map((t: TranslationRecord) => {
+        // Pick the text that matches the answer language
+        if (t.source_lang === answerLang) return t.source_text;
+        if (t.target_lang === answerLang) return t.target_text;
+        return null;
+      })
+      .filter((text): text is string => text !== null && text !== correctAnswer)
+      .slice(0, 3);
+    
     if (wrongOptions.length < 2) return null;
+    
     return {
       question_type: "meaning_choice",
       source_type: sourceType,
@@ -243,13 +265,13 @@ async function replenishQueue(
       difficulty_level: jlptLevel,
       original_translation_id: trans.id,
       original_vocabulary_id: null,
-      question_text: trans.source_text,
+      question_text: questionText,      // In target (learning) language
       question_data: {
-        options: [trans.target_text, ...wrongOptions].sort(() => Math.random() - 0.5),
-        correct_answer: trans.target_text,
+        options: [correctAnswer, ...wrongOptions].sort(() => Math.random() - 0.5),
+        correct_answer: correctAnswer,  // In source (native) language
       },
-      source_lang: trans.source_lang,
-      target_lang: trans.target_lang,
+      source_lang: questionLang,        // Same as targetLanguage
+      target_lang: answerLang,          // Same as sourceLanguage
     };
   };
 
@@ -263,6 +285,9 @@ async function replenishQueue(
 
   // Priority 2: Saved vocabulary
   for (const vocab of savedVocabulary.slice(0, 4)) {
+    // Only include vocabulary in target (learning) language
+    if (vocab.language !== targetLanguage) continue;
+    
     let definitionText = "";
     if (typeof vocab.definition === "string") definitionText = vocab.definition;
     else if (vocab.definition?.definitions?.[0]) definitionText = vocab.definition.definitions[0];
@@ -270,7 +295,7 @@ async function replenishQueue(
     if (!definitionText || definitionText === "번역 문장에서 저장됨") continue;
 
     const wrongOptions = savedVocabulary
-      .filter((v: VocabularyRecord) => v.id !== vocab.id)
+      .filter((v: VocabularyRecord) => v.id !== vocab.id && v.language === targetLanguage)
       .slice(0, 3)
       .map((v: VocabularyRecord) => {
         if (typeof v.definition === "string") return v.definition;
@@ -286,13 +311,13 @@ async function replenishQueue(
         difficulty_level: jlptLevel,
         original_translation_id: null,
         original_vocabulary_id: vocab.id,
-        question_text: vocab.word,
+        question_text: vocab.word,       // In target (learning) language
         question_data: {
           options: [definitionText, ...wrongOptions].sort(() => Math.random() - 0.5),
-          correct_answer: definitionText,
+          correct_answer: definitionText,  // In source (native) language
         },
-        source_lang: vocab.language,
-        target_lang: vocab.language === "ja" ? "ko" : "ja",
+        source_lang: targetLanguage,     // Question in learning language
+        target_lang: sourceLanguage,     // Options in native language
       });
     }
   }
@@ -326,14 +351,20 @@ async function replenishQueue(
       .slice(0, 5)
       .map(([key, v]) => ({ text: v.translation.source_text, count: v.count }));
 
-    const aiPrompt = `Based on these Japanese-Korean translation patterns:
+    // Dynamic AI prompt based on target language
+    const targetLangName = targetLanguage === "ja" ? "Japanese" : "Korean";
+    const sourceLangName = sourceLanguage === "ko" ? "Korean" : "Japanese";
+    
+    const aiPrompt = `Based on these ${targetLangName}-${sourceLangName} translation patterns:
 ${userPatterns.map(p => `- "${p.text}" (${p.count}회)`).join('\n')}
 
 Generate ${questionsNeeded - newQuestions.length} learning questions at ${jlptLevel} level.
+The question word must be in ${targetLangName} (learning language).
+The meaning/answer must be in ${sourceLangName} (native language).
 Do not include inappropriate content.
 
 Return JSON array:
-[{"word": "Japanese expression", "meaning": "Korean meaning", "reason": "ai_recommended"}]`;
+[{"word": "${targetLangName} expression", "meaning": "${sourceLangName} meaning", "reason": "ai_recommended"}]`;
 
     try {
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -374,13 +405,13 @@ Return JSON array:
                 difficulty_level: jlptLevel,
                 original_translation_id: null,
                 original_vocabulary_id: null,
-                question_text: q.word,
+                question_text: q.word,       // In target (learning) language
                 question_data: {
                   options: [q.meaning, ...wrongMeanings].sort(() => Math.random() - 0.5),
-                  correct_answer: q.meaning,
+                  correct_answer: q.meaning,   // In source (native) language
                 },
-                source_lang: "ja",
-                target_lang: "ko",
+                source_lang: targetLanguage,   // Question in learning language
+                target_lang: sourceLanguage,   // Options in native language
               });
             }
           }
@@ -432,8 +463,14 @@ serve(async (req) => {
       });
     }
 
-    const { targetQueueSize = TARGET_QUEUE_SIZE } = await req.json();
+    const { 
+      targetQueueSize = TARGET_QUEUE_SIZE,
+      targetLanguage = "ja",  // The language user is learning
+      sourceLanguage = "ko"   // User's native language
+    } = await req.json();
 
+    console.log(`[Replenish] Target language: ${targetLanguage}, Source language: ${sourceLanguage}`);
+    
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -458,12 +495,13 @@ serve(async (req) => {
 
     const jlptLevel = settings?.jlpt_level || "N5";
 
-    // Check current queue size
+    // Check current queue size (only count questions in target language)
     const { count: currentQueueSize } = await supabase
       .from("learning_questions")
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("was_answered", false)
+      .eq("source_lang", targetLanguage)  // Only count questions in learning language
       .is("served_at", null);
 
     const queueSize = currentQueueSize || 0;
@@ -484,7 +522,7 @@ serve(async (req) => {
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
       // @ts-ignore
       EdgeRuntime.waitUntil(
-        replenishQueue(supabase, user.id, jlptLevel, targetQueueSize, LOVABLE_API_KEY)
+        replenishQueue(supabase, user.id, jlptLevel, targetQueueSize, LOVABLE_API_KEY, targetLanguage, sourceLanguage)
       );
 
       return new Response(
@@ -498,7 +536,7 @@ serve(async (req) => {
     }
 
     // Fallback: synchronous replenishment
-    await replenishQueue(supabase, user.id, jlptLevel, targetQueueSize, LOVABLE_API_KEY);
+    await replenishQueue(supabase, user.id, jlptLevel, targetQueueSize, LOVABLE_API_KEY, targetLanguage, sourceLanguage);
 
     const { count: newQueueSize } = await supabase
       .from("learning_questions")

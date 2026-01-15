@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { ArrowLeft, CheckCircle, XCircle, Shuffle, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Shuffle, RefreshCw, Sparkles, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface FrequentWord {
   word: string;
@@ -25,6 +26,13 @@ interface QuizQuestion {
   target_lang: string;
 }
 
+interface VerificationResult {
+  isValid: boolean;
+  issues: string[];
+  suggestion: string | null;
+  confidence: number;
+}
+
 const TranslationQuiz = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -35,6 +43,8 @@ const TranslationQuiz = () => {
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [wrongAnswers, setWrongAnswers] = useState<QuizQuestion[]>([]);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verification, setVerification] = useState<VerificationResult | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -189,6 +199,7 @@ const TranslationQuiz = () => {
       setCurrentIndex(currentIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
+      setVerification(null);
     } else {
       const percentage = Math.round((score.correct / score.total) * 100);
       toast.success(`퀴즈 완료! 정답률: ${percentage}%`);
@@ -209,7 +220,46 @@ const TranslationQuiz = () => {
     setScore({ correct: 0, total: 0 });
     setWrongAnswers([]);
     setIsLoading(true);
+    setVerification(null);
     loadTranslationQuiz();
+  };
+
+  const verifyQuestion = async () => {
+    const currentQuestion = questions[currentIndex];
+    setIsVerifying(true);
+    setVerification(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-quiz', {
+        body: {
+          question: currentQuestion.word,
+          options: currentQuestion.options,
+          correctAnswer: currentQuestion.correctAnswer,
+          sourceLang: currentQuestion.source_lang,
+          targetLang: currentQuestion.target_lang,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      setVerification(data);
+
+      if (data.isValid) {
+        toast.success("이 문제는 정확합니다! ✓");
+      } else {
+        toast.warning("문제에 이슈가 발견되었습니다");
+      }
+    } catch (error) {
+      console.error("Verification failed:", error);
+      toast.error("검증 중 오류가 발생했습니다");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   if (isLoading) {
@@ -308,6 +358,56 @@ const TranslationQuiz = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* AI Verification Button */}
+        <Button
+          variant="outline"
+          onClick={verifyQuestion}
+          disabled={isVerifying}
+          className="w-full gap-2"
+        >
+          {isVerifying ? (
+            <>
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              AI 검증 중...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              AI로 문제 검증하기
+            </>
+          )}
+        </Button>
+
+        {/* Verification Result */}
+        {verification && (
+          <Alert variant={verification.isValid ? "default" : "destructive"}>
+            {verification.isValid ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <AlertTriangle className="h-4 w-4" />
+            )}
+            <AlertTitle>
+              {verification.isValid ? "문제 검증 완료" : "문제 발견"}
+            </AlertTitle>
+            <AlertDescription>
+              {verification.isValid ? (
+                <p>이 문제는 정확합니다. (신뢰도: {verification.confidence}%)</p>
+              ) : (
+                <div className="space-y-2">
+                  <ul className="list-disc list-inside">
+                    {verification.issues.map((issue, idx) => (
+                      <li key={idx}>{issue}</li>
+                    ))}
+                  </ul>
+                  {verification.suggestion && (
+                    <p className="font-medium">제안: {verification.suggestion}</p>
+                  )}
+                </div>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Next Button */}
         {showResult && (

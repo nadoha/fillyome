@@ -12,3 +12,5 @@ verify_jwt = false
 [functions.scrape-url]
 verify_jwt = false
 
+[functions.verify-quiz]
+verify_jwt = false

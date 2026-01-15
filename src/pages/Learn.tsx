@@ -132,8 +132,9 @@ const Learn = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="container max-w-lg mx-auto p-4 space-y-6">
+    <div className="flex flex-col h-screen bg-background">
+      <div className="flex-1 overflow-y-auto pb-24">
+        <div className="container max-w-lg mx-auto p-4 space-y-6">
         {/* Header */}
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -329,6 +330,7 @@ const Learn = () => {
             <span className="text-sm">번역기</span>
           </Button>
         </section>
+        </div>
       </div>
 
       <BottomNavigation />

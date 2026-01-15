@@ -49,11 +49,57 @@ export const TranslationInterface = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const isOnline = useOnlineStatus();
-  const [sourceText, setSourceText] = useState("");
-  const [targetText, setTargetText] = useState("");
-  const [literalTranslation, setLiteralTranslation] = useState("");
-  const [sourceRomanization, setSourceRomanization] = useState("");
-  const [targetRomanization, setTargetRomanization] = useState("");
+  // Session state persistence - restore last translation on mount
+  const [sourceText, setSourceText] = useState(() => {
+    const saved = sessionStorage.getItem('translationSessionState');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        return state.sourceText || "";
+      } catch { return ""; }
+    }
+    return "";
+  });
+  const [targetText, setTargetText] = useState(() => {
+    const saved = sessionStorage.getItem('translationSessionState');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        return state.targetText || "";
+      } catch { return ""; }
+    }
+    return "";
+  });
+  const [literalTranslation, setLiteralTranslation] = useState(() => {
+    const saved = sessionStorage.getItem('translationSessionState');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        return state.literalTranslation || "";
+      } catch { return ""; }
+    }
+    return "";
+  });
+  const [sourceRomanization, setSourceRomanization] = useState(() => {
+    const saved = sessionStorage.getItem('translationSessionState');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        return state.sourceRomanization || "";
+      } catch { return ""; }
+    }
+    return "";
+  });
+  const [targetRomanization, setTargetRomanization] = useState(() => {
+    const saved = sessionStorage.getItem('translationSessionState');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        return state.targetRomanization || "";
+      } catch { return ""; }
+    }
+    return "";
+  });
   const [exampleSentence, setExampleSentence] = useState("");
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
@@ -107,7 +153,16 @@ export const TranslationInterface = () => {
   
   // Papago-style UI states
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const [hasTranslated, setHasTranslated] = useState(false);
+  const [hasTranslated, setHasTranslated] = useState(() => {
+    const saved = sessionStorage.getItem('translationSessionState');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        return !!state.targetText;
+      } catch { return false; }
+    }
+    return false;
+  });
   const [savedWordsFromTranslation, setSavedWordsFromTranslation] = useState<Set<string>>(new Set());
   const {
     lookupWord,
@@ -403,6 +458,18 @@ export const TranslationInterface = () => {
         setTargetRomanization(quickResult.targetRom || "");
         setExampleSentence("");
         setHasTranslated(true);
+        
+        // Save to session state for persistence
+        sessionStorage.setItem('translationSessionState', JSON.stringify({
+          sourceText,
+          targetText: quickResult.translation,
+          literalTranslation: quickResult.literal || "",
+          sourceRomanization: quickResult.sourceRom || "",
+          targetRomanization: quickResult.targetRom || "",
+          sourceLang,
+          targetLang,
+          timestamp: Date.now()
+        }));
 
         // Schedule save (will save after user stops typing)
         const newTranslation: Translation = {
@@ -450,6 +517,18 @@ export const TranslationInterface = () => {
           setTargetRomanization(tgtRom);
           setExampleSentence(example || "");
           setHasTranslated(true);
+          
+          // Save to session state for persistence
+          sessionStorage.setItem('translationSessionState', JSON.stringify({
+            sourceText,
+            targetText: translation,
+            literalTranslation: literal,
+            sourceRomanization: srcRom,
+            targetRomanization: tgtRom,
+            sourceLang,
+            targetLang,
+            timestamp: Date.now()
+          }));
           return;
         }
       } catch (e) {
@@ -609,6 +688,18 @@ export const TranslationInterface = () => {
       setTargetRomanization(tgtRomanization);
       setExampleSentence(example);
       setHasTranslated(true);
+      
+      // Save to session state for persistence across refresh/background
+      sessionStorage.setItem('translationSessionState', JSON.stringify({
+        sourceText,
+        targetText: translation,
+        literalTranslation: literal,
+        sourceRomanization: srcRomanization,
+        targetRomanization: tgtRomanization,
+        sourceLang,
+        targetLang,
+        timestamp: Date.now()
+      }));
 
       // Schedule save (will save after user stops typing)
       const newTranslation: Translation = {
@@ -764,11 +855,19 @@ export const TranslationInterface = () => {
 
   // Auto-translate with debounce (optimized for speed)
   useEffect(() => {
-    if (!sourceText.trim() || sourceText.trim().length < 2) {
+    // When text is cleared, reset to new translation state
+    if (!sourceText.trim()) {
       setTargetText("");
       setLiteralTranslation("");
       setSourceRomanization("");
       setTargetRomanization("");
+      setHasTranslated(false);
+      // Clear session state when text is emptied
+      sessionStorage.removeItem('translationSessionState');
+      return;
+    }
+    
+    if (sourceText.trim().length < 2) {
       return;
     }
 

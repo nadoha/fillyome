@@ -2,57 +2,65 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { BookOpen, Brain, Trophy, TrendingUp, ArrowLeft, Zap, Languages, XCircle } from "lucide-react";
+import { 
+  BookOpen, Brain, Trophy, ArrowLeft, Languages, XCircle, 
+  Target, Sparkles, Calendar, ChevronRight, Volume2, RefreshCw
+} from "lucide-react";
 import { toast } from "sonner";
+import { StreakBadge } from "@/components/learn/StreakBadge";
+import { QuickLessonCard } from "@/components/learn/QuickLessonCard";
+import { useStreak } from "@/hooks/useStreak";
 
 interface DailyStats {
   wordsToReview: number;
   wordsStudied: number;
   dailyGoal: number;
-  streak: number;
   wrongAnswerCount: number;
+  totalVocabulary: number;
+  translationCount: number;
 }
 
 const Learn = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { streak, todayCompleted, refreshStreak } = useStreak();
   const [stats, setStats] = useState<DailyStats>({
     wordsToReview: 0,
     wordsStudied: 0,
-    dailyGoal: 20,
-    streak: 0,
+    dailyGoal: 5,
     wrongAnswerCount: 0,
+    totalVocabulary: 0,
+    translationCount: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
     checkAuth();
     loadDailyStats();
+    setGreeting(getGreeting());
 
-    // Subscribe to learning session changes for real-time updates
     const channel = supabase
       .channel('learning-sessions-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'learning_sessions'
-        },
-        () => {
-          loadDailyStats();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'learning_sessions' }, () => {
+        loadDailyStats();
+        refreshStreak();
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "좋은 아침이에요! ☀️";
+    if (hour < 18) return "좋은 오후예요! 🌤️";
+    return "좋은 저녁이에요! 🌙";
+  };
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -67,28 +75,30 @@ const Learn = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get words due for review today
-      const { data: reviewWords, error: reviewError } = await supabase
+      const { data: reviewWords } = await supabase
         .from("vocabulary")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("user_id", user.id)
-        .lte("next_review", new Date().toISOString())
-        .order("next_review", { ascending: true });
+        .lte("next_review", new Date().toISOString());
 
-      if (reviewError) throw reviewError;
+      const { count: totalVocab } = await supabase
+        .from("vocabulary")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
 
-      // Get today's session stats
+      const { count: translationCount } = await supabase
+        .from("translations")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
       const today = new Date().toISOString().split("T")[0];
-      const { data: todaySession, error: sessionError } = await supabase
+      const { data: todaySession } = await supabase
         .from("learning_sessions")
         .select("*")
         .eq("user_id", user.id)
         .eq("session_date", today)
-        .single();
+        .maybeSingle();
 
-      if (sessionError && sessionError.code !== "PGRST116") throw sessionError;
-
-      // Get wrong answer count
       const { count: wrongCount } = await supabase
         .from("quiz_results")
         .select("*", { count: "exact", head: true })
@@ -98,219 +108,227 @@ const Learn = () => {
       setStats({
         wordsToReview: reviewWords?.length || 0,
         wordsStudied: todaySession?.words_studied || 0,
-        dailyGoal: 20,
-        streak: 7, // TODO: Calculate actual streak
+        dailyGoal: 5,
         wrongAnswerCount: wrongCount || 0,
+        totalVocabulary: totalVocab || 0,
+        translationCount: translationCount || 0,
       });
     } catch (error) {
       console.error("Failed to load stats:", error);
-      toast.error("통계를 불러오는데 실패했습니다");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const progress = (stats.wordsStudied / stats.dailyGoal) * 100;
+  const progress = Math.min((stats.wordsStudied / stats.dailyGoal) * 100, 100);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">로딩 중...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="container max-w-4xl mx-auto p-4 space-y-6">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="container max-w-lg mx-auto p-4 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/")}
-            aria-label="뒤로 가기"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold text-foreground">오늘의 학습</h1>
-        </div>
-
-        {/* Daily Progress */}
-        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              학습 진도
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between text-sm">
-              <span>오늘 {stats.wordsStudied}개 학습</span>
-              <span>목표: {stats.dailyGoal}개</span>
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <p className="text-sm text-muted-foreground">{greeting}</p>
+              <h1 className="text-2xl font-bold">학습</h1>
             </div>
-            <Progress value={progress} className="h-3" />
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Zap className="h-4 w-4 text-accent" />
-                <span>{stats.streak}일 연속</span>
+          </div>
+          <StreakBadge streak={streak} />
+        </header>
+
+        {/* Today's Goal */}
+        <Card className="overflow-hidden">
+          <div className="bg-gradient-to-r from-primary to-primary/80 p-4 text-primary-foreground">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                <span className="font-semibold">오늘의 목표</span>
+              </div>
+              {todayCompleted && (
+                <span className="flex items-center gap-1 text-sm bg-white/20 px-2 py-1 rounded-full">
+                  <Sparkles className="h-4 w-4" />
+                  달성!
+                </span>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>{stats.wordsStudied}개 학습 완료</span>
+                <span>{stats.dailyGoal}개 목표</span>
+              </div>
+              <Progress value={progress} className="h-3 bg-white/20" />
+            </div>
+          </div>
+          <CardContent className="p-4">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold text-primary">{streak}</p>
+                <p className="text-xs text-muted-foreground">연속 학습</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-secondary">{stats.totalVocabulary}</p>
+                <p className="text-xs text-muted-foreground">저장된 단어</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-accent">{stats.wordsToReview}</p>
+                <p className="text-xs text-muted-foreground">복습 대기</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate("/flashcards")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Brain className="h-5 w-5 text-primary" />
-                플래시카드
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                암기 카드로 단어 학습하기
-              </p>
-              <Button className="w-full" variant="default">
-                시작하기
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Quick Lessons Section */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <Volume2 className="h-5 w-5 text-primary" />
+              빠른 레슨
+            </h2>
+            <span className="text-xs text-muted-foreground">3-5분 소요</span>
+          </div>
 
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate("/review")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <BookOpen className="h-5 w-5 text-secondary" />
-                복습하기
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                {stats.wordsToReview}개의 단어가 복습 대기 중
-              </p>
-              <Button 
-                className="w-full" 
-                variant="secondary"
-                disabled={stats.wordsToReview === 0}
-              >
-                복습 시작
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-3">
+            <QuickLessonCard
+              title="번역 퀴즈"
+              description="자주 번역한 단어로 퀴즈 풀기"
+              questionCount={5}
+              estimatedMinutes={3}
+              icon={<Languages className="h-6 w-6 text-primary" />}
+              variant="primary"
+              onClick={() => navigate("/translation-quiz")}
+              badge={stats.translationCount >= 4 ? "추천" : undefined}
+              disabled={stats.translationCount < 4}
+            />
 
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate("/translation-quiz")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Languages className="h-5 w-5 text-accent" />
-                번역 퀴즈
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                자주 번역한 단어로 퀴즈 풀기
-              </p>
-              <Button className="w-full" variant="default">
-                퀴즈 시작
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate("/quiz")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Trophy className="h-5 w-5 text-primary" />
-                단어장 퀴즈
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                저장한 단어 테스트하기
-              </p>
-              <Button className="w-full" variant="outline">
-                퀴즈 시작
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-destructive/30"
-            onClick={() => navigate("/wrong-answers")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <XCircle className="h-5 w-5 text-destructive" />
-                오답노트
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                {stats.wrongAnswerCount > 0 ? `${stats.wrongAnswerCount}개의 틀린 문제` : "틀린 문제 복습하기"}
-              </p>
-              <Button className="w-full" variant="outline">
-                오답 보기
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate("/stats")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <TrendingUp className="h-5 w-5 text-secondary" />
-                학습 통계
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                학습 기록 및 진도 확인
-              </p>
-              <Button className="w-full" variant="outline">
-                통계 보기
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Translation */}
-        <Card>
-          <CardHeader>
-            <CardTitle>빠른 번역</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-3">
-              모르는 표현을 바로 번역하고 단어장에 추가하세요
-            </p>
-            <Button 
-              className="w-full" 
-              onClick={() => navigate("/")}
-            >
-              번역기로 이동
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Vocabulary Shortcut */}
-        <Card>
-          <CardHeader>
-            <CardTitle>내 단어장</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              className="w-full" 
+            <QuickLessonCard
+              title="플래시카드"
+              description="TTS로 발음 들으며 단어 암기"
+              questionCount={7}
+              estimatedMinutes={5}
+              icon={<Brain className="h-6 w-6 text-purple-500" />}
               variant="secondary"
-              onClick={() => navigate("/vocabulary")}
+              onClick={() => navigate("/flashcards")}
+              disabled={stats.totalVocabulary < 1}
+            />
+
+            <QuickLessonCard
+              title="복습하기"
+              description={`${stats.wordsToReview}개의 단어가 복습 대기 중`}
+              questionCount={Math.min(stats.wordsToReview, 7)}
+              estimatedMinutes={4}
+              icon={<BookOpen className="h-6 w-6 text-green-500" />}
+              variant="accent"
+              onClick={() => navigate("/review")}
+              disabled={stats.wordsToReview === 0}
+              badge={stats.wordsToReview > 0 ? `${stats.wordsToReview}개` : undefined}
+            />
+
+            {stats.wrongAnswerCount > 0 && (
+              <QuickLessonCard
+                title="오답 복습"
+                description="틀린 문제만 다시 학습하기"
+                questionCount={Math.min(stats.wrongAnswerCount, 5)}
+                estimatedMinutes={3}
+                icon={<XCircle className="h-6 w-6 text-orange-500" />}
+                variant="warning"
+                onClick={() => navigate("/wrong-answers")}
+                badge={`${stats.wrongAnswerCount}개`}
+              />
+            )}
+          </div>
+        </section>
+
+        {/* More Options */}
+        <section>
+          <h2 className="text-lg font-bold mb-4">더 많은 학습</h2>
+          <div className="space-y-2">
+            <Card
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => navigate("/quiz")}
             >
-              단어장 열기
-            </Button>
-          </CardContent>
-        </Card>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Trophy className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">단어장 퀴즈</p>
+                    <p className="text-xs text-muted-foreground">저장한 단어 테스트</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => navigate("/japanese")}
+            >
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-red-500/10">
+                    <span className="text-xl">🇯🇵</span>
+                  </div>
+                  <div>
+                    <p className="font-medium">일본어 학습</p>
+                    <p className="text-xs text-muted-foreground">히라가나, 가타카나, 칸지</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => navigate("/stats")}
+            >
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-secondary/10">
+                    <Calendar className="h-5 w-5 text-secondary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">학습 통계</p>
+                    <p className="text-xs text-muted-foreground">진도와 기록 확인</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Quick Actions */}
+        <section className="grid grid-cols-2 gap-3">
+          <Button 
+            variant="outline" 
+            className="h-auto py-4 flex-col gap-2"
+            onClick={() => navigate("/vocabulary")}
+          >
+            <BookOpen className="h-5 w-5" />
+            <span className="text-sm">단어장</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-auto py-4 flex-col gap-2"
+            onClick={() => navigate("/")}
+          >
+            <Languages className="h-5 w-5" />
+            <span className="text-sm">번역기</span>
+          </Button>
+        </section>
       </div>
 
       <BottomNavigation />

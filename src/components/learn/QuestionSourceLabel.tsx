@@ -1,7 +1,16 @@
-import { Clock, Repeat, Bookmark, Sparkles } from "lucide-react";
+import { Clock, Repeat, Bookmark, Sparkles, AlertCircle, TrendingUp, Brain, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export type SourceType = "recent" | "frequent" | "saved" | "ai_generated";
+export type SourceType = 
+  | "recent" 
+  | "frequent" 
+  | "saved" 
+  | "ai_generated"
+  | "unpracticed"      // 자주 쓰지만 아직 연습 안 한 표현
+  | "past_mistake"     // 예전에 헷갈렸던 표현
+  | "trending"         // 요즘 많이 쓰는 표현 기반
+  | "ai_recommended"   // AI가 사용 패턴을 보고 추천
+  | "review_needed";   // 오래 안 다룬 표현
 
 interface QuestionSourceLabelProps {
   sourceType: SourceType;
@@ -29,10 +38,35 @@ const sourceConfig: Record<SourceType, { label: string; icon: React.ElementType;
     icon: Sparkles,
     variant: "secondary",
   },
+  unpracticed: {
+    label: "자주 쓰지만 아직 연습 안 한 표현",
+    icon: AlertCircle,
+    variant: "default",
+  },
+  past_mistake: {
+    label: "예전에 헷갈렸던 표현",
+    icon: RefreshCw,
+    variant: "outline",
+  },
+  trending: {
+    label: "요즘 많이 쓰는 표현 기반",
+    icon: TrendingUp,
+    variant: "secondary",
+  },
+  ai_recommended: {
+    label: "AI가 사용 패턴을 보고 추천",
+    icon: Brain,
+    variant: "default",
+  },
+  review_needed: {
+    label: "오래 안 다룬 표현",
+    icon: Clock,
+    variant: "outline",
+  },
 };
 
 export const QuestionSourceLabel = ({ sourceType, className }: QuestionSourceLabelProps) => {
-  const config = sourceConfig[sourceType];
+  const config = sourceConfig[sourceType] || sourceConfig.ai_generated;
   const Icon = config.icon;
 
   return (
@@ -44,5 +78,5 @@ export const QuestionSourceLabel = ({ sourceType, className }: QuestionSourceLab
 };
 
 export const getSourceLabel = (sourceType: SourceType): string => {
-  return sourceConfig[sourceType].label;
+  return sourceConfig[sourceType]?.label || sourceConfig.ai_generated.label;
 };

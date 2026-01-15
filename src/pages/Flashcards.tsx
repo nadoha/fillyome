@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { LoginPrompt } from "@/components/learn/LoginPrompt";
 import { ArrowLeft, Volume2, RotateCcw, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { EmotionalFeedback } from "@/components/learn/EmotionalFeedback";
@@ -34,16 +35,19 @@ const Flashcards = () => {
   const [showRewardModal, setShowRewardModal] = useState(false);
   const sessionStartTime = useRef<Date>(new Date());
 
+  const [user, setUser] = useState<any>(null);
+
   useEffect(() => {
-    checkAuth();
-    loadVocabulary();
+    checkAuthAndLoad();
   }, []);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast.error(t("auth.loginRequired"));
-      navigate("/auth");
+  const checkAuthAndLoad = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+    if (user) {
+      loadVocabulary();
+    } else {
+      setIsLoading(false);
     }
   };
 
@@ -176,6 +180,29 @@ const Flashcards = () => {
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <RefreshCw className="h-8 w-8 animate-spin text-primary" />
         <p className="text-muted-foreground">로딩 중...</p>
+      </div>
+    );
+  }
+
+  // Show login prompt if not logged in
+  if (!user && words.length === 0) {
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        <div className="flex-1 overflow-y-auto pb-24">
+          <div className="container max-w-lg mx-auto px-5 py-6">
+            <header className="flex items-center gap-3 mb-8">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/learn")} className="shrink-0 -ml-2">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-xl font-semibold">플래시카드</h1>
+            </header>
+            <LoginPrompt 
+              title="플래시카드 사용하기"
+              description="플래시카드를 사용하려면 계정 연결이 필요해요"
+            />
+          </div>
+        </div>
+        <BottomNavigation />
       </div>
     );
   }

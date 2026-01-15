@@ -49,10 +49,10 @@ const Learn = () => {
     translationCount: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    checkAuth();
-    loadDailyStats();
+    checkAuthAndLoad();
 
     const channel = supabase
       .channel('learning-sessions-changes')
@@ -65,18 +65,46 @@ const Learn = () => {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast.error(t("auth.loginRequired"));
-      navigate("/auth");
+  const checkAuthAndLoad = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+    
+    if (user) {
+      loadDailyStats();
+    } else {
+      // Load from local storage for non-logged-in users
+      loadLocalStats();
+    }
+  };
+
+  const loadLocalStats = () => {
+    try {
+      const localVocab = JSON.parse(localStorage.getItem('local_vocabulary') || '[]');
+      const localTranslations = JSON.parse(localStorage.getItem('translations') || '[]');
+      
+      setStats({
+        wordsToReview: 0,
+        wordsStudied: 0,
+        dailyGoal: 5,
+        wrongAnswerCount: 0,
+        totalVocabulary: localVocab.length,
+        translationCount: localTranslations.length,
+      });
+      setCurrentLevel("N5");
+    } catch (error) {
+      console.error("Failed to load local stats:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const loadDailyStats = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        loadLocalStats();
+        return;
+      }
 
       const { data: reviewWords } = await supabase
         .from("vocabulary")
@@ -162,6 +190,57 @@ const Learn = () => {
               requiredVocabulary={requiredVocabulary}
               progress={unlockProgress}
             />
+          </div>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
+
+  // Show login prompt for learning features if not logged in
+  if (!user) {
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        <div className="flex-1 overflow-y-auto pb-24">
+          <div className="container max-w-lg mx-auto px-5 py-6">
+            <header className="flex items-center gap-3 mb-8">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 -ml-2">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-xl font-semibold">학습</h1>
+            </header>
+            
+            <div className="space-y-8">
+              <div className="text-center py-4">
+                <h2 className="text-lg font-semibold mb-2">학습 기능 사용하기</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  학습 기능을 사용하려면<br />
+                  계정 연결이 필요해요
+                </p>
+              </div>
+
+              <Card className="border-border shadow-none">
+                <CardContent className="p-5 text-center space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    계정을 연결하면 번역 기록을 바탕으로<br />
+                    맞춤 학습 문제를 제공해 드려요
+                  </p>
+                  <Button 
+                    className="w-full"
+                    onClick={() => navigate("/auth")}
+                  >
+                    Google 계정 연결하기
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="text-sm text-muted-foreground"
+                    onClick={() => navigate("/")}
+                  >
+                    나중에 하기
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
         <BottomNavigation />

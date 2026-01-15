@@ -1,12 +1,13 @@
-import { ArrowLeft, Volume2, Mic, Database, Globe, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Volume2, Mic, Database, Globe, Trash2, User, LogOut, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
 import { toast } from "sonner";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { cleanAllCaches, getCacheStats, clearTranslationCache } from "@/utils/cacheManager";
@@ -14,6 +15,9 @@ import { cleanAllCaches, getCacheStats, clearTranslationCache } from "@/utils/ca
 export default function Settings() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  
   const [noiseCancellation, setNoiseCancellation] = useState(() => {
     const saved = localStorage.getItem('noiseCancellation');
     return saved ? JSON.parse(saved) : true;
@@ -26,6 +30,19 @@ export default function Settings() {
     const saved = localStorage.getItem('soundEffects');
     return saved ? JSON.parse(saved) : true;
   });
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setIsLoadingUser(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleNoiseCancellation = (checked: boolean) => {
     setNoiseCancellation(checked);
@@ -61,161 +78,192 @@ export default function Settings() {
     toast.success(t("historyCleared") || "번역 기록이 삭제되었습니다");
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("로그아웃 되었습니다");
+  };
+
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 pb-20 md:pb-0">
-        <header className="border-b bg-card/95 backdrop-blur-lg sticky top-0 z-10 shadow-sm">
-          <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-            <div className="flex items-center gap-3 sm:gap-4">
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <header className="border-b bg-background sticky top-0 z-10">
+          <div className="max-w-lg mx-auto px-5 py-4">
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/")}
-                className="rounded-full h-10 w-10 sm:h-11 sm:w-11 shrink-0"
-                aria-label={t("back") || "뒤로가기"}
+                className="-ml-2"
               >
-                <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
-                {t("settings") || "설정"}
-              </h1>
+              <h1 className="text-xl font-semibold">설정</h1>
             </div>
           </div>
         </header>
 
-        <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-5 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 144px)' }}>
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3 sm:pb-4">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
-                {t("voiceSettings") || "음성 설정"}
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                {t("voiceSettingsDesc") || "음성 인식 및 TTS 설정을 관리합니다"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-0.5 flex-1">
-                  <Label htmlFor="noise-cancel" className="text-sm">{t("noiseCancellation") || "노이즈 캔슬링"}</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {t("noiseCancelDesc") || "배경 소음을 제거하여 정확도를 높입니다"}
-                  </p>
-                </div>
-                <Switch
-                  id="noise-cancel"
-                  checked={noiseCancellation}
-                  onCheckedChange={handleNoiseCancellation}
-                />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-0.5 flex-1">
-                  <Label htmlFor="sound-effects" className="text-sm">{t("soundEffects") || "효과음"}</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {t("soundEffectsDesc") || "버튼 클릭 및 알림 소리를 켭니다"}
-                  </p>
-                </div>
-                <Switch
-                  id="sound-effects"
-                  checked={soundEffects}
-                  onCheckedChange={handleSoundEffects}
-                />
-              </div>
-            </CardContent>
-          </Card>
+        <main className="max-w-lg mx-auto px-5 py-6 space-y-6">
+          {/* Account Section */}
+          <section>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">계정</h2>
+            <Card className="border-border shadow-none">
+              <CardContent className="p-0">
+                {isLoadingUser ? (
+                  <div className="p-4 text-sm text-muted-foreground">불러오는 중...</div>
+                ) : user ? (
+                  <>
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{user.email}</p>
+                          <p className="text-xs text-muted-foreground">Google 계정 연결됨</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Separator />
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start h-12 px-4 text-sm text-muted-foreground hover:text-destructive"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-4 w-4 mr-3" />
+                      로그아웃
+                    </Button>
+                  </>
+                ) : (
+                  <div 
+                    className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors"
+                    onClick={() => navigate("/auth")}
+                  >
+                    <div>
+                      <p className="text-sm font-medium">Google 계정 연결 (선택)</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        다른 기기에서 학습 기록을 이어갈 수 있어요
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
 
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3 sm:pb-4">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Database className="h-4 w-4 sm:h-5 sm:w-5" />
-                {t("dataSettings") || "데이터 설정"}
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                {t("dataSettingsDesc") || "번역 기록 및 캐시를 관리합니다"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-0.5 flex-1">
-                  <Label htmlFor="auto-save" className="text-sm">{t("autoSave") || "자동 저장"}</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {t("autoSaveDesc") || "번역 결과를 자동으로 저장합니다"}
-                  </p>
+          {/* Voice Settings */}
+          <section>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">음성</h2>
+            <Card className="border-border shadow-none">
+              <CardContent className="p-0">
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">노이즈 캔슬링</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      배경 소음을 제거하여 정확도를 높입니다
+                    </p>
+                  </div>
+                  <Switch
+                    checked={noiseCancellation}
+                    onCheckedChange={handleNoiseCancellation}
+                  />
                 </div>
-                <Switch
-                  id="auto-save"
-                  checked={autoSave}
-                  onCheckedChange={handleAutoSave}
-                />
-              </div>
-              <Separator />
-              <div className="space-y-2">
+                <Separator />
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">효과음</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      버튼 클릭 및 알림 소리
+                    </p>
+                  </div>
+                  <Switch
+                    checked={soundEffects}
+                    onCheckedChange={handleSoundEffects}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Data Settings */}
+          <section>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">데이터</h2>
+            <Card className="border-border shadow-none">
+              <CardContent className="p-0">
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">자동 저장</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      번역 결과를 자동으로 저장합니다
+                    </p>
+                  </div>
+                  <Switch
+                    checked={autoSave}
+                    onCheckedChange={handleAutoSave}
+                  />
+                </div>
+                <Separator />
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start h-9 text-sm"
+                  variant="ghost"
+                  className="w-full justify-start h-12 px-4 text-sm"
                   onClick={optimizeCache}
                 >
-                  <Database className="h-4 w-4 mr-2" />
-                  {t("optimizeCache") || "캐시 최적화"}
+                  캐시 최적화
                 </Button>
+                <Separator />
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start h-9 text-sm"
+                  variant="ghost"
+                  className="w-full justify-start h-12 px-4 text-sm"
                   onClick={clearCache}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {t("clearCache") || "번역 캐시 삭제"}
+                  번역 캐시 삭제
                 </Button>
+                <Separator />
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start text-destructive hover:text-destructive h-9 text-sm"
+                  variant="ghost"
+                  className="w-full justify-start h-12 px-4 text-sm text-destructive hover:text-destructive"
                   onClick={clearHistory}
                 >
-                  {t("clearHistory") || "번역 기록 삭제"}
+                  번역 기록 삭제
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </section>
 
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3 sm:pb-4">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
-                {t("languageSettings") || "언어 설정"}
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                {t("languageSettingsDesc") || "앱 표시 언어를 변경합니다"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label className="text-sm">{t("appLanguage") || "앱 언어"}</Label>
+          {/* Language Settings */}
+          <section>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">언어</h2>
+            <Card className="border-border shadow-none">
+              <CardContent className="p-4">
+                <p className="text-sm font-medium mb-3">앱 표시 언어</p>
                 <div className="grid grid-cols-2 gap-2">
                   {["ko", "ja", "en", "zh"].map((lang) => (
                     <Button
                       key={lang}
                       variant={i18n.language === lang ? "default" : "outline"}
                       size="sm"
-                      className="w-full h-9 text-sm"
+                      className="h-10"
                       onClick={() => {
                         i18n.changeLanguage(lang);
-                        toast.success(t("languageChanged") || "언어가 변경되었습니다");
+                        toast.success("언어가 변경되었습니다");
                       }}
                     >
-                      {lang === "ko" && t("korean")}
-                      {lang === "ja" && t("japanese")}
-                      {lang === "en" && t("english")}
-                      {lang === "zh" && t("chinese")}
+                      {lang === "ko" && "한국어"}
+                      {lang === "ja" && "日本語"}
+                      {lang === "en" && "English"}
+                      {lang === "zh" && "中文"}
                     </Button>
                   ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Privacy notice */}
+          <p className="text-xs text-muted-foreground text-center pt-2 leading-relaxed">
+            이 앱은 번역 및 학습 서비스 제공을 위해<br />
+            최소한의 데이터만 수집합니다
+          </p>
         </main>
       </div>
       <BottomNavigation />

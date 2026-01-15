@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { ArrowLeft, Volume2, RotateCcw, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Volume2, RotateCcw, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { EmotionalFeedback } from "@/components/learn/EmotionalFeedback";
+import { RewardModal } from "@/components/learn/RewardModal";
+import { useStreak } from "@/hooks/useStreak";
 
 interface VocabularyItem {
   id: string;
@@ -20,11 +23,14 @@ interface VocabularyItem {
 const Flashcards = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { streak, refreshStreak } = useStreak();
   const [words, setWords] = useState<VocabularyItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionStats, setSessionStats] = useState({ correct: 0, incorrect: 0 });
+  const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
+  const [showRewardModal, setShowRewardModal] = useState(false);
   const sessionStartTime = useRef<Date>(new Date());
 
   useEffect(() => {
@@ -49,7 +55,8 @@ const Flashcards = () => {
         .from("vocabulary")
         .select("*")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(7);
 
       if (error) throw error;
 
@@ -59,7 +66,6 @@ const Flashcards = () => {
         return;
       }
 
-      // Shuffle words for random order
       const shuffled = [...data].sort(() => Math.random() - 0.5);
       setWords(shuffled);
     } catch (error) {
@@ -70,18 +76,32 @@ const Flashcards = () => {
     }
   };
 
-  const handleSpeak = (text: string, lang: string) => {
-    if (!("speechSynthesis" in window)) {
-      toast.error("이 브라우저는 음성 재생을 지원하지 않습니다");
-      return;
+  const speakWord = async (text: string, lang: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { text, language: lang, speed: 0.9 }
+      });
+
+      if (error) throw error;
+      if (data?.audioContent) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+        await audio.play();
+        return;
+      }
+    } catch (err) {
+      console.log('TTS fallback to browser');
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : lang === "en" ? "en-US" : "zh-CN";
+    utterance.rate = 0.9;
     speechSynthesis.speak(utterance);
   };
 
   const handleFlip = () => {
+    if (!isFlipped) {
+      speakWord(words[currentIndex].word, words[currentIndex].language);
+    }
     setIsFlipped(!isFlipped);
   };
 
@@ -90,13 +110,9 @@ const Flashcards = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const sessionEndTime = new Date();
-      const durationMinutes = Math.round(
-        (sessionEndTime.getTime() - sessionStartTime.current.getTime()) / 60000
-      );
+      const durationMinutes = Math.round((new Date().getTime() - sessionStartTime.current.getTime()) / 60000);
       const today = new Date().toISOString().split("T")[0];
 
-      // Check if session exists for today
       const { data: existingSession } = await supabase
         .from("learning_sessions")
         .select("*")
@@ -105,18 +121,13 @@ const Flashcards = () => {
         .maybeSingle();
 
       if (existingSession) {
-        // Update existing session
-        await supabase
-          .from("learning_sessions")
-          .update({
-            study_duration_minutes: (existingSession.study_duration_minutes || 0) + durationMinutes,
-            total_answers: (existingSession.total_answers || 0) + finalCorrect + finalIncorrect,
-            correct_answers: (existingSession.correct_answers || 0) + finalCorrect,
-            words_studied: (existingSession.words_studied || 0) + words.length,
-          })
-          .eq("id", existingSession.id);
+        await supabase.from("learning_sessions").update({
+          study_duration_minutes: (existingSession.study_duration_minutes || 0) + durationMinutes,
+          total_answers: (existingSession.total_answers || 0) + finalCorrect + finalIncorrect,
+          correct_answers: (existingSession.correct_answers || 0) + finalCorrect,
+          words_studied: (existingSession.words_studied || 0) + words.length,
+        }).eq("id", existingSession.id);
       } else {
-        // Create new session
         await supabase.from("learning_sessions").insert({
           user_id: user.id,
           session_date: today,
@@ -126,15 +137,16 @@ const Flashcards = () => {
           words_studied: words.length,
         });
       }
+      refreshStreak();
     } catch (error) {
-      console.error("Failed to update learning session:", error);
+      console.error("Failed to update session:", error);
     }
   };
 
   const handleAnswer = async (wasCorrect: boolean) => {
     const currentWord = words[currentIndex];
+    setLastAnswerCorrect(wasCorrect);
     
-    // Record quiz result
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -152,19 +164,17 @@ const Flashcards = () => {
     const newCorrect = sessionStats.correct + (wasCorrect ? 1 : 0);
     const newIncorrect = sessionStats.incorrect + (wasCorrect ? 0 : 1);
 
-    setSessionStats({
-      correct: newCorrect,
-      incorrect: newIncorrect,
-    });
+    setSessionStats({ correct: newCorrect, incorrect: newIncorrect });
 
-    // Move to next card
     if (currentIndex < words.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setIsFlipped(false);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex + 1);
+        setIsFlipped(false);
+        setLastAnswerCorrect(null);
+      }, 1000);
     } else {
       await updateLearningSession(newCorrect, newIncorrect);
-      toast.success(`학습 완료! 정답: ${newCorrect}개`);
-      navigate("/learn");
+      setTimeout(() => setShowRewardModal(true), 500);
     }
   };
 
@@ -172,17 +182,28 @@ const Flashcards = () => {
     setCurrentIndex(0);
     setIsFlipped(false);
     setSessionStats({ correct: 0, incorrect: 0 });
+    setLastAnswerCorrect(null);
     sessionStartTime.current = new Date();
     const shuffled = [...words].sort(() => Math.random() - 0.5);
     setWords(shuffled);
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">로딩 중...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">로딩 중...</p>
+      </div>
+    );
   }
 
   if (words.length === 0) {
-    return <div className="flex items-center justify-center min-h-screen">단어가 없습니다</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-muted-foreground">단어가 없습니다</p>
+        <Button onClick={() => navigate("/learn")}>돌아가기</Button>
+      </div>
+    );
   }
 
   const currentWord = words[currentIndex];
@@ -194,12 +215,7 @@ const Flashcards = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/learn")}
-              aria-label="뒤로 가기"
-            >
+            <Button variant="ghost" size="icon" onClick={() => navigate("/learn")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-2xl font-bold">플래시카드</h1>
@@ -213,15 +229,18 @@ const Flashcards = () => {
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>{currentIndex + 1} / {words.length}</span>
-            <span>정답: {sessionStats.correct} | 오답: {sessionStats.incorrect}</span>
+            <span className="flex items-center gap-2">
+              <span className="text-green-600">✓ {sessionStats.correct}</span>
+              <span className="text-red-600">✗ {sessionStats.incorrect}</span>
+            </span>
           </div>
-          <Progress value={progress} />
+          <Progress value={progress} className="h-2" />
         </div>
 
         {/* Flashcard */}
         <div className="relative" style={{ perspective: "1000px" }}>
           <Card
-            className="min-h-[400px] cursor-pointer transition-all duration-500 transform-gpu"
+            className="min-h-[350px] cursor-pointer transition-all duration-500 transform-gpu shadow-lg"
             style={{
               transformStyle: "preserve-3d",
               transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -230,28 +249,29 @@ const Flashcards = () => {
           >
             {/* Front Side */}
             <div
-              className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden"
+              className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden bg-gradient-to-br from-primary/5 to-secondary/5 rounded-lg"
               style={{ backfaceVisibility: "hidden" }}
             >
               <p className="text-4xl font-bold mb-4 text-center">{currentWord.word}</p>
               <Button
                 variant="ghost"
                 size="icon"
+                className="mb-4"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleSpeak(currentWord.word, currentWord.language);
+                  speakWord(currentWord.word, currentWord.language);
                 }}
               >
-                <Volume2 className="h-5 w-5" />
+                <Volume2 className="h-6 w-6" />
               </Button>
-              <p className="text-sm text-muted-foreground mt-8">
-                카드를 눌러서 뜻 보기
+              <p className="text-sm text-muted-foreground">
+                👆 카드를 눌러서 뜻 보기
               </p>
             </div>
 
             {/* Back Side */}
             <div
-              className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden"
+              className="absolute inset-0 flex flex-col items-center justify-center p-8 backface-hidden bg-gradient-to-br from-secondary/5 to-accent/5 rounded-lg"
               style={{
                 backfaceVisibility: "hidden",
                 transform: "rotateY(180deg)",
@@ -260,19 +280,19 @@ const Flashcards = () => {
               <div className="space-y-4 text-center">
                 {currentWord.definition && typeof currentWord.definition === 'object' && (
                   <>
-                    {currentWord.definition.meanings?.map((meaning: any, idx: number) => (
-                      <div key={idx} className="space-y-2">
+                    {currentWord.definition.meanings?.slice(0, 2).map((meaning: any, idx: number) => (
+                      <div key={idx} className="space-y-1">
                         <p className="text-sm font-semibold text-primary">
                           [{meaning.partOfSpeech}]
                         </p>
-                        <p className="text-lg">{meaning.definition}</p>
+                        <p className="text-xl">{meaning.definition}</p>
                       </div>
                     ))}
                   </>
                 )}
                 {currentWord.notes && (
                   <p className="text-sm text-muted-foreground italic mt-4">
-                    {currentWord.notes}
+                    📝 {currentWord.notes}
                   </p>
                 )}
               </div>
@@ -280,14 +300,17 @@ const Flashcards = () => {
           </Card>
         </div>
 
+        {/* Emotional Feedback */}
+        {lastAnswerCorrect !== null && <EmotionalFeedback isCorrect={lastAnswerCorrect} />}
+
         {/* Action Buttons */}
-        {isFlipped && (
+        {isFlipped && lastAnswerCorrect === null && (
           <div className="grid grid-cols-2 gap-4">
             <Button
               variant="outline"
               size="lg"
               onClick={() => handleAnswer(false)}
-              className="gap-2"
+              className="gap-2 border-orange-300 text-orange-600 hover:bg-orange-50"
             >
               <XCircle className="h-5 w-5" />
               몰랐어요
@@ -295,7 +318,7 @@ const Flashcards = () => {
             <Button
               size="lg"
               onClick={() => handleAnswer(true)}
-              className="gap-2"
+              className="gap-2 bg-green-600 hover:bg-green-700"
             >
               <CheckCircle className="h-5 w-5" />
               알았어요
@@ -303,6 +326,18 @@ const Flashcards = () => {
           </div>
         )}
       </div>
+
+      <RewardModal
+        isOpen={showRewardModal}
+        onClose={() => {
+          setShowRewardModal(false);
+          navigate("/learn");
+        }}
+        score={sessionStats.correct}
+        totalQuestions={sessionStats.correct + sessionStats.incorrect}
+        streakMaintained={true}
+        newStreak={streak + 1}
+      />
 
       <BottomNavigation />
     </div>

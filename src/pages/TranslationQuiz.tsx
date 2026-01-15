@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { ArrowLeft, CheckCircle, XCircle, Shuffle, RefreshCw, Sparkles, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Shuffle, RefreshCw, Sparkles, AlertTriangle, CheckCircle2, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { EmotionalFeedback } from "@/components/learn/EmotionalFeedback";
+import { RewardModal } from "@/components/learn/RewardModal";
+import { useStreak } from "@/hooks/useStreak";
 
 interface FrequentWord {
   word: string;
@@ -36,6 +39,7 @@ interface VerificationResult {
 const TranslationQuiz = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { streak, refreshStreak } = useStreak();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -45,6 +49,9 @@ const TranslationQuiz = () => {
   const [wrongAnswers, setWrongAnswers] = useState<QuizQuestion[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verification, setVerification] = useState<VerificationResult | null>(null);
+  const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const sessionStartTime = useRef<Date>(new Date());
 
   useEffect(() => {
     checkAuth();
@@ -59,8 +66,29 @@ const TranslationQuiz = () => {
     }
   };
 
+  const speakWord = async (text: string, lang: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { text, language: lang, speed: 0.9 }
+      });
+
+      if (error) throw error;
+      if (data?.audioContent) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+        await audio.play();
+        return;
+      }
+    } catch (err) {
+      console.log('TTS fallback to browser');
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : lang === "en" ? "en-US" : "zh-CN";
+    utterance.rate = 0.9;
+    speechSynthesis.speak(utterance);
+  };
+
   const extractWords = (text: string): string[] => {
-    // Split by common delimiters and filter short words
     return text
       .split(/[\s,.\-!?;:'"()[\]{}\/\\]+/)
       .map(w => w.trim().toLowerCase())
@@ -72,7 +100,6 @@ const TranslationQuiz = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get recent translations
       const { data: translations, error } = await supabase
         .from("translations")
         .select("source_text, target_text, source_lang, target_lang")
@@ -88,14 +115,12 @@ const TranslationQuiz = () => {
         return;
       }
 
-      // Count word frequency
       const wordMap = new Map<string, FrequentWord>();
 
       translations.forEach((t) => {
         const sourceWords = extractWords(t.source_text);
         const targetWords = extractWords(t.target_text);
 
-        // Use simple word pairs (first word of source to first meaningful target word)
         if (sourceWords.length > 0 && targetWords.length > 0) {
           const key = `${sourceWords[0]}_${t.source_lang}`;
           const existing = wordMap.get(key);
@@ -114,7 +139,6 @@ const TranslationQuiz = () => {
         }
       });
 
-      // Get top frequent words
       const frequentWords = Array.from(wordMap.values())
         .filter(w => w.count >= 1)
         .sort((a, b) => b.count - a.count)
@@ -126,21 +150,15 @@ const TranslationQuiz = () => {
         return;
       }
 
-      // Shuffle and select 10 questions
-      const shuffled = frequentWords.sort(() => Math.random() - 0.5).slice(0, 10);
+      const shuffled = frequentWords.sort(() => Math.random() - 0.5).slice(0, 5);
 
-      // Create quiz questions
       const quizQuestions: QuizQuestion[] = shuffled.map((word) => {
         const correctAnswer = word.translation;
-        
-        // Get 3 random wrong answers from other words
         const wrongAnswers = frequentWords
           .filter((w) => w.word !== word.word)
           .sort(() => Math.random() - 0.5)
           .slice(0, 3)
           .map((w) => w.translation);
-
-        // Shuffle options
         const options = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
 
         return {
@@ -161,24 +179,64 @@ const TranslationQuiz = () => {
     }
   };
 
+  const updateLearningSession = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const durationMinutes = Math.round((new Date().getTime() - sessionStartTime.current.getTime()) / 60000);
+      const today = new Date().toISOString().split("T")[0];
+
+      const { data: existingSession } = await supabase
+        .from("learning_sessions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("session_date", today)
+        .maybeSingle();
+
+      if (existingSession) {
+        await supabase.from("learning_sessions").update({
+          study_duration_minutes: (existingSession.study_duration_minutes || 0) + durationMinutes,
+          total_answers: (existingSession.total_answers || 0) + score.total + 1,
+          correct_answers: (existingSession.correct_answers || 0) + score.correct,
+          words_studied: (existingSession.words_studied || 0) + questions.length,
+        }).eq("id", existingSession.id);
+      } else {
+        await supabase.from("learning_sessions").insert({
+          user_id: user.id,
+          session_date: today,
+          study_duration_minutes: durationMinutes,
+          total_answers: score.total + 1,
+          correct_answers: score.correct,
+          words_studied: questions.length,
+        });
+      }
+      refreshStreak();
+    } catch (error) {
+      console.error("Failed to update session:", error);
+    }
+  };
+
   const handleAnswer = async (answer: string) => {
     setSelectedAnswer(answer);
     setShowResult(true);
 
     const currentQuestion = questions[currentIndex];
     const isCorrect = answer === currentQuestion.correctAnswer;
+    setLastAnswerCorrect(isCorrect);
     
     setScore((prev) => ({
       correct: prev.correct + (isCorrect ? 1 : 0),
       total: prev.total + 1,
     }));
 
-    // Track wrong answers
+    // Play pronunciation
+    speakWord(currentQuestion.word, currentQuestion.source_lang);
+
     if (!isCorrect) {
       setWrongAnswers(prev => [...prev, currentQuestion]);
     }
 
-    // Record result
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -194,22 +252,19 @@ const TranslationQuiz = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
       setVerification(null);
+      setLastAnswerCorrect(null);
     } else {
-      const percentage = Math.round((score.correct / score.total) * 100);
-      toast.success(`퀴즈 완료! 정답률: ${percentage}%`);
-      
-      // Store wrong answers in session storage for wrong answer review
       if (wrongAnswers.length > 0) {
         sessionStorage.setItem("lastWrongAnswers", JSON.stringify(wrongAnswers));
       }
-      
-      navigate("/learn");
+      await updateLearningSession();
+      setShowRewardModal(true);
     }
   };
 
@@ -221,6 +276,8 @@ const TranslationQuiz = () => {
     setWrongAnswers([]);
     setIsLoading(true);
     setVerification(null);
+    setLastAnswerCorrect(null);
+    sessionStartTime.current = new Date();
     loadTranslationQuiz();
   };
 
@@ -241,14 +298,12 @@ const TranslationQuiz = () => {
       });
 
       if (error) throw error;
-
       if (data.error) {
         toast.error(data.error);
         return;
       }
 
       setVerification(data);
-
       if (data.isValid) {
         toast.success("이 문제는 정확합니다! ✓");
       } else {
@@ -289,12 +344,7 @@ const TranslationQuiz = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/learn")}
-              aria-label="뒤로 가기"
-            >
+            <Button variant="ghost" size="icon" onClick={() => navigate("/learn")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-2xl font-bold">번역 퀴즈</h1>
@@ -310,7 +360,7 @@ const TranslationQuiz = () => {
             <span>문제 {currentIndex + 1} / {questions.length}</span>
             <span>정답: {score.correct} / {score.total}</span>
           </div>
-          <Progress value={progress} />
+          <Progress value={progress} className="h-2" />
         </div>
 
         {/* Question */}
@@ -321,9 +371,18 @@ const TranslationQuiz = () => {
             </p>
           </div>
           <CardContent className="p-6">
-            <p className="text-3xl font-bold text-center mb-2">
-              {currentQuestion.word}
-            </p>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <p className="text-3xl font-bold text-center">
+                {currentQuestion.word}
+              </p>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => speakWord(currentQuestion.word, currentQuestion.source_lang)}
+              >
+                <Volume2 className="h-5 w-5" />
+              </Button>
+            </div>
             <p className="text-center text-muted-foreground mb-6">
               이 단어의 번역은?
             </p>
@@ -358,6 +417,9 @@ const TranslationQuiz = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Emotional Feedback */}
+        {showResult && <EmotionalFeedback isCorrect={lastAnswerCorrect} />}
 
         {/* AI Verification Button */}
         <Button
@@ -416,6 +478,18 @@ const TranslationQuiz = () => {
           </Button>
         )}
       </div>
+
+      <RewardModal
+        isOpen={showRewardModal}
+        onClose={() => {
+          setShowRewardModal(false);
+          navigate("/learn");
+        }}
+        score={score.correct}
+        totalQuestions={score.total}
+        streakMaintained={true}
+        newStreak={streak + 1}
+      />
 
       <BottomNavigation />
     </div>

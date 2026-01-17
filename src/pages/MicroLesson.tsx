@@ -17,7 +17,7 @@ import { useTargetLanguage } from "@/hooks/useTargetLanguage";
 import { speakText } from "@/utils/speechUtils";
 import { 
   ArrowLeft, CheckCircle, XCircle, RefreshCw, Volume2, 
-  Sparkles, Target, HelpCircle
+  Sparkles, Target, HelpCircle, Flag
 } from "lucide-react";
 import { toast } from "sonner";
 interface LearningQuestion {
@@ -37,6 +37,7 @@ interface LearningQuestion {
   };
   source_lang: string;
   target_lang: string;
+  id?: string;  // Question ID for reporting
 }
 
 const MicroLesson = () => {
@@ -149,6 +150,48 @@ const MicroLesson = () => {
       }
     } catch (error) {
       console.error("Failed to record result:", error);
+    }
+  };
+
+  // Report problematic question - silently handled
+  const handleReportQuestion = async () => {
+    const currentQuestion = questions[currentIndex];
+    if (!currentQuestion.id) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Mark question as problematic (silently)
+      await supabase.from("learning_questions").update({
+        was_answered: true,
+        was_correct: false,
+      }).eq("id", currentQuestion.id);
+
+      // Skip to next question or generate replacement
+      toast.success("다른 문제로 바꿔드릴게요");
+      
+      // Remove current question and load a replacement
+      const newQuestions = [...questions];
+      newQuestions.splice(currentIndex, 1);
+      
+      if (newQuestions.length === 0) {
+        // No more questions, go back
+        navigate("/learn");
+        return;
+      }
+      
+      setQuestions(newQuestions);
+      setSelectedAnswer(null);
+      setShowResult(false);
+      setLastAnswerCorrect(null);
+      
+      // Adjust currentIndex if needed
+      if (currentIndex >= newQuestions.length) {
+        setCurrentIndex(newQuestions.length - 1);
+      }
+    } catch (error) {
+      console.error("Failed to report question:", error);
     }
   };
 
@@ -364,16 +407,27 @@ const MicroLesson = () => {
                   );
                 })}
 
-                {/* "모르겠어요" option - only show before answering */}
+                {/* "모르겠어요" and "문제가 이상해요" - only show before answering */}
                 {!showResult && (
-                  <Button
-                    variant="ghost"
-                    className="w-full h-auto p-3 text-muted-foreground hover:text-foreground justify-center gap-2"
-                    onClick={handleDontKnow}
-                  >
-                    <HelpCircle className="h-4 w-4" />
-                    모르겠어요
-                  </Button>
+                  <div className="flex flex-col gap-2 pt-2">
+                    <Button
+                      variant="ghost"
+                      className="w-full h-auto p-3 text-muted-foreground hover:text-foreground justify-center gap-2"
+                      onClick={handleDontKnow}
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                      모르겠어요
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground/60 hover:text-muted-foreground justify-center gap-1"
+                      onClick={handleReportQuestion}
+                    >
+                      <Flag className="h-3 w-3" />
+                      문제가 이상해요
+                    </Button>
+                  </div>
                 )}
               </div>
 

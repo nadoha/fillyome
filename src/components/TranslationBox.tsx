@@ -15,6 +15,7 @@ interface TranslationBoxProps {
   audioLevel?: number;
   onFocus?: () => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
+  isCompact?: boolean; // For mobile when results are showing
 }
 
 export const TranslationBox = memo(({
@@ -29,10 +30,16 @@ export const TranslationBox = memo(({
   audioLevel = 0,
   onFocus,
   onKeyDown,
+  isCompact = false,
 }: TranslationBoxProps) => {
+  // Dynamic height: compact mode for mobile when results showing, full otherwise
+  const heightClass = isCompact 
+    ? "min-h-[180px] max-h-[200px]" 
+    : "min-h-[50vh] md:min-h-[400px]";
+  
   if (isEditable) {
     return (
-      <div className="relative h-full min-h-[400px]">
+      <div className={`relative h-full ${heightClass} transition-all duration-300 ease-out`}>
         {/* Listening indicator */}
         {isListening && (
           <div className="absolute top-3 left-3 flex items-center gap-2 text-xs text-primary font-medium z-10">
@@ -47,7 +54,7 @@ export const TranslationBox = memo(({
           onChange={e => onChange?.(e.target.value)} 
           onFocus={onFocus}
           onKeyDown={onKeyDown}
-          className="w-full h-full min-h-[400px] resize-none text-base leading-relaxed bg-transparent border-0 p-4 pt-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className={`w-full h-full ${heightClass} resize-none text-base leading-relaxed bg-transparent border-0 p-4 pt-8 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300`}
           autoFocus
         />
         
@@ -90,7 +97,7 @@ export const TranslationBox = memo(({
 
   // Read-only mode (not used anymore, but keeping for compatibility)
   return (
-    <div className="relative h-full min-h-[400px] p-4">
+    <div className={`relative h-full ${heightClass} p-4 transition-all duration-300`}>
       <div className="text-base leading-relaxed whitespace-pre-wrap break-words">
         {value || <span className="text-muted-foreground">{placeholder}</span>}
       </div>

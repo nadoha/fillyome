@@ -120,7 +120,6 @@ export const TranslationInterface = () => {
   const [recentTranslations, setRecentTranslations] = useState<Translation[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showLiteral, setShowLiteral] = useState<Record<string, boolean>>({});
-  const [saveTranslationHistory, setSaveTranslationHistory] = useState(false); // 기본 OFF
   const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
   const [currentDictLang, setCurrentDictLang] = useState<string>("");
   const [noiseCancellation, setNoiseCancellation] = useState(() => {
@@ -317,7 +316,6 @@ export const TranslationInterface = () => {
   }, [user]);
 
   // Save translation to DB or localStorage (only called after stable state)
-  // Respects saveTranslationHistory setting - only saves to DB if enabled
   const saveTranslation = useCallback(async (translation: Translation) => {
     // Skip if already saved same text
     if (lastSavedTextRef.current === translation.source_text) {
@@ -325,45 +323,31 @@ export const TranslationInterface = () => {
     }
     
     if (user) {
-      // Only save to database if user enabled save_translation_history
-      if (saveTranslationHistory) {
-        try {
-          const { error } = await supabase.from("translations").insert({
-            user_id: user.id,
-            source_text: translation.source_text,
-            target_text: translation.target_text,
-            source_lang: translation.source_lang,
-            target_lang: translation.target_lang,
-            literal_translation: translation.literal_translation,
-            source_romanization: translation.source_romanization,
-            target_romanization: translation.target_romanization,
-            is_favorite: translation.is_favorite,
-            content_classification: translation.content_classification,
-            masked_source_text: translation.masked_source_text,
-            masked_target_text: translation.masked_target_text
-          });
-          if (error) throw error;
-          lastSavedTextRef.current = translation.source_text;
-          await loadTranslations();
-        } catch (error) {
-          console.error("Failed to save translation:", error);
-          toast.error(t("saveFailed") || "번역 저장 실패");
-        }
-      } else {
-        // If history saving is off, still save to localStorage for session
-        const stored = localStorage.getItem('translations');
-        const translations = stored ? JSON.parse(stored) : [];
-        const filtered = translations.filter((t: Translation) => 
-          !(t.source_text === translation.source_text && 
-            t.source_lang === translation.source_lang && 
-            t.target_lang === translation.target_lang));
-        filtered.unshift(translation);
-        localStorage.setItem('translations', JSON.stringify(filtered.slice(0, 50)));
+      // Save to database
+      try {
+        const { error } = await supabase.from("translations").insert({
+          user_id: user.id,
+          source_text: translation.source_text,
+          target_text: translation.target_text,
+          source_lang: translation.source_lang,
+          target_lang: translation.target_lang,
+          literal_translation: translation.literal_translation,
+          source_romanization: translation.source_romanization,
+          target_romanization: translation.target_romanization,
+          is_favorite: translation.is_favorite,
+          content_classification: translation.content_classification,
+          masked_source_text: translation.masked_source_text,
+          masked_target_text: translation.masked_target_text
+        });
+        if (error) throw error;
         lastSavedTextRef.current = translation.source_text;
-        loadTranslations();
+        await loadTranslations();
+      } catch (error) {
+        console.error("Failed to save translation:", error);
+        toast.error(t("saveFailed") || "번역 저장 실패");
       }
     } else {
-      // Not logged in - save to localStorage only
+      // Save to localStorage
       const stored = localStorage.getItem('translations');
       const translations = stored ? JSON.parse(stored) : [];
 
@@ -374,7 +358,7 @@ export const TranslationInterface = () => {
       lastSavedTextRef.current = translation.source_text;
       loadTranslations();
     }
-  }, [user, saveTranslationHistory, loadTranslations, t]);
+  }, [user, loadTranslations, t]);
 
   // Track if user is still typing
   const isTypingRef = useRef(false);
@@ -932,26 +916,6 @@ export const TranslationInterface = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceText, sourceLang, targetLang]);
 
-  // Load user settings for translation history saving
-  const loadUserSettings = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("learning_settings")
-        .select("save_translation_history")
-        .eq("user_id", userId)
-        .maybeSingle();
-      
-      if (data) {
-        setSaveTranslationHistory(data.save_translation_history || false);
-      } else {
-        setSaveTranslationHistory(false);
-      }
-    } catch (error) {
-      console.error("Failed to load user settings:", error);
-      setSaveTranslationHistory(false);
-    }
-  }, []);
-
   // Auth state listener and cache cleanup on mount
   useEffect(() => {
     // Clean expired caches on app start for better performance
@@ -962,9 +926,6 @@ export const TranslationInterface = () => {
       }
     }) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserSettings(session.user.id);
-      }
     });
     const {
       data: {
@@ -972,11 +933,6 @@ export const TranslationInterface = () => {
       }
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserSettings(session.user.id);
-      } else {
-        setSaveTranslationHistory(false);
-      }
     });
     
     // Cleanup: save pending translation and clear timeouts on unmount
@@ -999,7 +955,7 @@ export const TranslationInterface = () => {
         localStorage.setItem('translations', JSON.stringify(filtered));
       }
     };
-  }, [loadUserSettings]);
+  }, []);
 
   // Load translations when user changes
   useEffect(() => {

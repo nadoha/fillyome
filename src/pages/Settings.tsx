@@ -18,6 +18,10 @@ export default function Settings() {
   const [user, setUser] = useState<any>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   
+  // DB-based setting for save translation history (default OFF)
+  const [saveTranslationHistory, setSaveTranslationHistory] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+  
   const [noiseCancellation, setNoiseCancellation] = useState(() => {
     const saved = localStorage.getItem('noiseCancellation');
     return saved ? JSON.parse(saved) : true;
@@ -32,13 +36,39 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    const loadUserAndSettings = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       setIsLoadingUser(false);
-    });
+      
+      // Load DB-based settings if user is logged in
+      if (user) {
+        const { data: settings } = await supabase
+          .from("learning_settings")
+          .select("save_translation_history")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        setSaveTranslationHistory(settings?.save_translation_history ?? false);
+      }
+    };
+    
+    loadUserAndSettings();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const { data: settings } = await supabase
+          .from("learning_settings")
+          .select("save_translation_history")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        
+        setSaveTranslationHistory(settings?.save_translation_history ?? false);
+      } else {
+        setSaveTranslationHistory(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -48,6 +78,42 @@ export default function Settings() {
     setNoiseCancellation(checked);
     localStorage.setItem('noiseCancellation', JSON.stringify(checked));
     toast.success(checked ? t("noiseCancelOn") : t("noiseCancelOff"));
+  };
+
+  // Handle save translation history toggle (DB-based, requires login)
+  const handleSaveTranslationHistory = async (checked: boolean) => {
+    if (!user) return;
+    
+    setIsLoadingSettings(true);
+    try {
+      // Check if settings exist
+      const { data: existing } = await supabase
+        .from("learning_settings")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (existing) {
+        await supabase
+          .from("learning_settings")
+          .update({ save_translation_history: checked })
+          .eq("user_id", user.id);
+      } else {
+        await supabase
+          .from("learning_settings")
+          .insert({ 
+            user_id: user.id, 
+            save_translation_history: checked 
+          });
+      }
+      
+      setSaveTranslationHistory(checked);
+      toast.success(checked ? "번역 기록 저장이 활성화되었습니다" : "번역 기록 저장이 비활성화되었습니다");
+    } catch (error) {
+      console.error("Failed to update setting:", error);
+    } finally {
+      setIsLoadingSettings(false);
+    }
   };
 
   const handleAutoSave = (checked: boolean) => {
@@ -190,11 +256,30 @@ export default function Settings() {
             <h2 className="text-sm font-medium text-muted-foreground mb-3">데이터</h2>
             <Card className="border-border shadow-none">
               <CardContent className="p-0">
+                {/* DB-based translation history toggle - only for logged in users */}
+                {user && (
+                  <>
+                    <div className="p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">번역 기록 저장</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          번역한 내용을 서버에 저장합니다
+                        </p>
+                      </div>
+                      <Switch
+                        checked={saveTranslationHistory}
+                        onCheckedChange={handleSaveTranslationHistory}
+                        disabled={isLoadingSettings}
+                      />
+                    </div>
+                    <Separator />
+                  </>
+                )}
                 <div className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">자동 저장</p>
+                    <p className="text-sm font-medium">자동 저장 (로컬)</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      번역 결과를 자동으로 저장합니다
+                      번역 결과를 기기에 임시 저장합니다
                     </p>
                   </div>
                   <Switch

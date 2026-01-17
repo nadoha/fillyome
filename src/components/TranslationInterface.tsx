@@ -50,6 +50,7 @@ export const TranslationInterface = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [user, setUser] = useState<User | null>(null);
+  const [saveHistoryEnabled, setSaveHistoryEnabled] = useState<boolean>(false);
   const isOnline = useOnlineStatus();
   // Session state persistence - restore last translation on mount
   const [sourceText, setSourceText] = useState(() => {
@@ -318,6 +319,7 @@ export const TranslationInterface = () => {
   }, [user]);
 
   // Save translation to DB or localStorage (only called after stable state)
+  // Respects user's save_translation_history setting (default OFF for privacy)
   const saveTranslation = useCallback(async (translation: Translation) => {
     // Skip if already saved same text
     if (lastSavedTextRef.current === translation.source_text) {
@@ -325,6 +327,13 @@ export const TranslationInterface = () => {
     }
     
     if (user) {
+      // Only save to database if user has enabled save_translation_history
+      if (!saveHistoryEnabled) {
+        // User has not enabled history saving - skip DB save silently
+        lastSavedTextRef.current = translation.source_text;
+        return;
+      }
+      
       // Save to database
       try {
         const { error } = await supabase.from("translations").insert({
@@ -346,10 +355,10 @@ export const TranslationInterface = () => {
         await loadTranslations();
       } catch (error) {
         console.error("Failed to save translation:", error);
-        toast.error(t("saveFailed") || "번역 저장 실패");
+        // Silent fail - no toast for privacy-first approach
       }
     } else {
-      // Save to localStorage
+      // Guest users: save to localStorage only
       const stored = localStorage.getItem('translations');
       const translations = stored ? JSON.parse(stored) : [];
 
@@ -360,7 +369,7 @@ export const TranslationInterface = () => {
       lastSavedTextRef.current = translation.source_text;
       loadTranslations();
     }
-  }, [user, loadTranslations, t]);
+  }, [user, saveHistoryEnabled, loadTranslations]);
 
   // Track if user is still typing
   const isTypingRef = useRef(false);
@@ -966,23 +975,49 @@ export const TranslationInterface = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceText, sourceLang, targetLang]);
 
-  // Auth state listener and cache cleanup on mount
+  // Auth state listener, cache cleanup, and load user settings on mount
   useEffect(() => {
     // Clean expired caches on app start for better performance
     cleanAllCaches();
-    supabase.auth.getSession().then(({
-      data: {
-        session
-      }
-    }) => {
+    
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-    });
+      
+      // Load user's save_translation_history setting
+      if (session?.user) {
+        const { data: settings } = await supabase
+          .from("learning_settings")
+          .select("save_translation_history")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        
+        // Default is false (privacy-first)
+        setSaveHistoryEnabled(settings?.save_translation_history ?? false);
+      }
+    };
+    
+    initAuth();
+    
     const {
       data: {
         subscription
       }
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
+      
+      // Update save history setting when auth changes
+      if (session?.user) {
+        const { data: settings } = await supabase
+          .from("learning_settings")
+          .select("save_translation_history")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        
+        setSaveHistoryEnabled(settings?.save_translation_history ?? false);
+      } else {
+        setSaveHistoryEnabled(false);
+      }
     });
     
     // Cleanup: save pending translation and clear timeouts on unmount
@@ -991,9 +1026,8 @@ export const TranslationInterface = () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      // Save any pending translation before unmount
+      // Save any pending translation before unmount (only to localStorage for non-logged in users)
       if (pendingTranslationRef.current) {
-        // Use immediate save for unmount (can't await in cleanup)
         const translation = pendingTranslationRef.current;
         const stored = localStorage.getItem('translations');
         const translations = stored ? JSON.parse(stored) : [];

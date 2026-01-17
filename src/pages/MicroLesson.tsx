@@ -162,21 +162,22 @@ const MicroLesson = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Mark question as problematic (silently)
+      // Flag question for review (with flagged columns)
       await supabase.from("learning_questions").update({
         was_answered: true,
         was_correct: false,
+        is_flagged: true,
+        flagged_at: new Date().toISOString(),
       }).eq("id", currentQuestion.id);
 
-      // Skip to next question or generate replacement
+      // Skip to next question silently
       toast.success("다른 문제로 바꿔드릴게요");
       
-      // Remove current question and load a replacement
+      // Remove current question and continue
       const newQuestions = [...questions];
       newQuestions.splice(currentIndex, 1);
       
       if (newQuestions.length === 0) {
-        // No more questions, go back
         navigate("/learn");
         return;
       }
@@ -186,7 +187,6 @@ const MicroLesson = () => {
       setShowResult(false);
       setLastAnswerCorrect(null);
       
-      // Adjust currentIndex if needed
       if (currentIndex >= newQuestions.length) {
         setCurrentIndex(newQuestions.length - 1);
       }

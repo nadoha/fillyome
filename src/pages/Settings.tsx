@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Volume2, Mic, Database, Globe, Trash2, User, LogOut, ChevronRight } from "lucide-react";
+import { ArrowLeft, Volume2, Mic, Database, Globe, Trash2, User, LogOut, ChevronRight, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,19 +30,82 @@ export default function Settings() {
     const saved = localStorage.getItem('soundEffects');
     return saved ? JSON.parse(saved) : true;
   });
+  
+  // 학습 기록 저장 설정 (기본 OFF) - DB에서 로드
+  const [saveTranslationHistory, setSaveTranslationHistory] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       setIsLoadingUser(false);
+      
+      // 로그인한 사용자면 DB에서 설정 로드
+      if (user) {
+        loadUserSettings(user.id);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserSettings(session.user.id);
+      } else {
+        setSaveTranslationHistory(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+  
+  const loadUserSettings = async (userId: string) => {
+    setIsLoadingSettings(true);
+    try {
+      const { data, error } = await supabase
+        .from("learning_settings")
+        .select("save_translation_history")
+        .eq("user_id", userId)
+        .maybeSingle();
+      
+      if (data) {
+        setSaveTranslationHistory(data.save_translation_history || false);
+      }
+    } catch (error) {
+      console.error("Failed to load settings:", error);
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+  
+  const handleSaveTranslationHistory = async (checked: boolean) => {
+    setSaveTranslationHistory(checked);
+    
+    if (user) {
+      try {
+        // Upsert 설정
+        const { error } = await supabase
+          .from("learning_settings")
+          .upsert({
+            user_id: user.id,
+            save_translation_history: checked
+          }, { onConflict: 'user_id' });
+        
+        if (error) throw error;
+        
+        toast.success(checked 
+          ? "번역 기록이 저장됩니다" 
+          : "번역 기록이 저장되지 않습니다"
+        );
+      } catch (error) {
+        console.error("Failed to update setting:", error);
+        toast.error("설정 저장 실패");
+        setSaveTranslationHistory(!checked); // Revert
+      }
+    } else {
+      toast.info("로그인 후 사용할 수 있는 기능입니다");
+      setSaveTranslationHistory(false);
+    }
+  };
 
   const handleNoiseCancellation = (checked: boolean) => {
     setNoiseCancellation(checked);
@@ -181,6 +244,46 @@ export default function Settings() {
                     onCheckedChange={handleSoundEffects}
                   />
                 </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Privacy Settings - 개인정보 보호 섹션 우선 배치 */}
+          <section>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              개인정보 보호
+            </h2>
+            <Card className="border-border shadow-none">
+              <CardContent className="p-0">
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex-1 mr-4">
+                    <p className="text-sm font-medium">학습 기록 저장</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                      {user 
+                        ? "켜면 번역 기록을 저장하여 맞춤 학습에 활용합니다. 기록은 본인만 열람 가능합니다."
+                        : "로그인 후 사용할 수 있습니다"
+                      }
+                    </p>
+                  </div>
+                  <Switch
+                    checked={saveTranslationHistory}
+                    onCheckedChange={handleSaveTranslationHistory}
+                    disabled={!user || isLoadingSettings}
+                  />
+                </div>
+                {saveTranslationHistory && user && (
+                  <>
+                    <Separator />
+                    <div className="p-4 bg-muted/30">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        ✓ 번역 기록은 암호화되어 저장됩니다<br/>
+                        ✓ 운영자는 비식별화된 통계만 접근 가능합니다<br/>
+                        ✓ 언제든 이 설정을 끄거나 기록을 삭제할 수 있습니다
+                      </p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </section>

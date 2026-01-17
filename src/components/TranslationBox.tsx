@@ -15,6 +15,7 @@ interface TranslationBoxProps {
   audioLevel?: number;
   onFocus?: () => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
+  isMobileExpanded?: boolean;
 }
 
 export const TranslationBox = memo(({
@@ -29,10 +30,15 @@ export const TranslationBox = memo(({
   audioLevel = 0,
   onFocus,
   onKeyDown,
+  isMobileExpanded = false,
 }: TranslationBoxProps) => {
+  // Dynamic height: expanded on mobile when no result yet
+  const containerHeight = isMobileExpanded ? 'min-h-[320px] md:min-h-[160px]' : 'min-h-[160px]';
+  const textareaHeight = isMobileExpanded ? 'min-h-[320px] md:min-h-[160px]' : 'min-h-[160px]';
+
   if (isEditable) {
     return (
-      <div className="relative h-full min-h-[160px]">
+      <div className={`relative h-full ${containerHeight} transition-all duration-300 ease-out`}>
         {/* Listening indicator */}
         {isListening && (
           <div className="absolute top-3 left-3 flex items-center gap-2 text-xs text-primary font-medium z-10">
@@ -47,7 +53,7 @@ export const TranslationBox = memo(({
           onChange={e => onChange?.(e.target.value)} 
           onFocus={onFocus}
           onKeyDown={onKeyDown}
-          className="w-full h-full min-h-[160px] resize-none text-base leading-relaxed bg-transparent border-0 p-4 pt-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className={`w-full h-full ${textareaHeight} resize-none text-base leading-relaxed bg-transparent border-0 p-4 pt-8 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 ease-out`}
           autoFocus
         />
         

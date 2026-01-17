@@ -18,7 +18,9 @@ export type Database = {
         Row: {
           created_at: string
           difficulty_level: string
+          flagged_at: string | null
           id: string
+          is_flagged: boolean | null
           is_from_template: boolean | null
           original_translation_id: string | null
           original_vocabulary_id: string | null
@@ -39,7 +41,9 @@ export type Database = {
         Insert: {
           created_at?: string
           difficulty_level?: string
+          flagged_at?: string | null
           id?: string
+          is_flagged?: boolean | null
           is_from_template?: boolean | null
           original_translation_id?: string | null
           original_vocabulary_id?: string | null
@@ -60,7 +64,9 @@ export type Database = {
         Update: {
           created_at?: string
           difficulty_level?: string
+          flagged_at?: string | null
           id?: string
+          is_flagged?: boolean | null
           is_from_template?: boolean | null
           original_translation_id?: string | null
           original_vocabulary_id?: string | null

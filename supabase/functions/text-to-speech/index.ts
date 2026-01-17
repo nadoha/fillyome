@@ -1,9 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limits: TTS is expensive, lower limits
+const RATE_LIMIT_AUTHENTICATED = { maxRequests: 50, windowMs: 60 * 60 * 1000 };  // 50/hour
+const RATE_LIMIT_ANONYMOUS = { maxRequests: 10, windowMs: 60 * 60 * 1000 };       // 10/hour
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,6 +17,35 @@ serve(async (req) => {
   }
 
   try {
+    // Check authentication
+    const authHeader = req.headers.get("Authorization");
+    let userId: string | null = null;
+    
+    if (authHeader) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id || null;
+    }
+
+    // Apply rate limiting
+    const clientIP = getClientIP(req);
+    const identifier = userId ? `user:${userId}` : `ip:${clientIP}`;
+    const limits = userId ? RATE_LIMIT_AUTHENTICATED : RATE_LIMIT_ANONYMOUS;
+    
+    const rateLimitResult = checkRateLimit({
+      identifier,
+      maxRequests: limits.maxRequests,
+      windowMs: limits.windowMs,
+    });
+
+    if (!rateLimitResult.allowed) {
+      console.log(`[RateLimit] TTS blocked ${identifier}`);
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
     const { text, lang, speed = 1.0 } = await req.json();
 
     // Input validation

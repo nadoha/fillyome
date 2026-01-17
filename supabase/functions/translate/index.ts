@@ -166,25 +166,34 @@ Return ONLY the preset ID (friend/business/polite/academic) that best fits this 
       }
     }
     
+    // High-context language handling (Korean/Japanese)
+    const isHighContextPair = ['ko', 'ja'].includes(sourceLang) && ['ko', 'ja'].includes(targetLang);
+    const highContextGuidelines = isHighContextPair ? `
+HIGH-CONTEXT LANGUAGE RULES (Korean/Japanese):
+- When the subject is omitted, infer naturally based on the most common conversational context
+- Do NOT forcibly specify ambiguous subjects
+- Preserve the natural flow and nuance of high-context communication
+- Maintain the appropriate level of directness/indirectness` : '';
+
     // CRITICAL: Enforce strict target language adherence
-    const systemPrompt = `You are a professional translator. You MUST translate from ${langNames[sourceLang]} to ${langNames[targetLang]} ONLY.
+    const systemPrompt = `You are a professional translator. Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}.
 
 CRITICAL RULES:
-- The output translation MUST be in ${langNames[targetLang]} language ONLY
-- Source language: ${langNames[sourceLang]}
-- Target language: ${langNames[targetLang]}
-- DO NOT translate to any other language
+- Output MUST be in ${langNames[targetLang]} ONLY
+- Prioritize NATURAL, ACTUALLY-USED expressions over literal translation
+- Provide ONE main translation that sounds native
+- Add 1-2 alternative expressions ONLY when significantly different nuances exist
+${highContextGuidelines}
 
 TRANSLATION GUIDELINES:
-- Capture the meaning and tone naturally, prioritizing fluency over literal translation
-- Adapt expressions to suit the reader's level and context
-- Focus on idiomatic translation rather than word-for-word translation
-- Choose contextually appropriate expressions
-- Maintain style appropriate to specialized terminology and register
-- Reflect cultural differences and linguistic characteristics when necessary
-- Preserve emoticons and formatting${styleInstructions}
+- Focus on how native speakers actually say it, not textbook translations
+- Capture meaning and tone naturally, prioritizing fluency
+- Adapt idioms and expressions appropriately for the target culture
+- Preserve emoticons and formatting
+- Do NOT add learning explanations, levels, or test criteria
+- Keep it simple and direct${styleInstructions}
 
-If source is ${langNames[sourceLang]}, you MUST output ${langNames[targetLang]}.`;
+Output ${langNames[targetLang]} only.`;
 
     const needsRom = (lang: string) => ['ja', 'ko', 'zh', 'ru', 'ar', 'th', 'hi'].includes(lang);
 

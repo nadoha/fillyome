@@ -1,11 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limits for scrape-url - can be abused as proxy
+const RATE_LIMIT_AUTHENTICATED = { maxRequests: 30, windowMs: 60 * 60 * 1000 };  // 30/hour
+const RATE_LIMIT_ANONYMOUS = { maxRequests: 10, windowMs: 60 * 60 * 1000 };       // 10/hour
 // Validate URL to prevent SSRF attacks
 function isValidUrl(urlString: string): { valid: boolean; error?: string } {
   // Check URL length
@@ -67,6 +72,36 @@ serve(async (req) => {
   }
 
   try {
+    // Check authentication
+    const authHeader = req.headers.get("Authorization");
+    let userId: string | null = null;
+    
+    if (authHeader) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id || null;
+    }
+
+    // Apply rate limiting
+    const clientIP = getClientIP(req);
+    const identifier = userId ? `user:${userId}` : `ip:${clientIP}`;
+    const limits = userId ? RATE_LIMIT_AUTHENTICATED : RATE_LIMIT_ANONYMOUS;
+    
+    const rateLimitResult = checkRateLimit({
+      identifier: `scrape:${identifier}`,
+      maxRequests: limits.maxRequests,
+      windowMs: limits.windowMs,
+    });
+
+    if (!rateLimitResult.allowed) {
+      console.log(`[RateLimit] Scrape-URL blocked ${identifier}`);
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
+
     const { url } = await req.json();
     
     if (!url || typeof url !== 'string') {

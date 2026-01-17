@@ -1,10 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limits: Vision API is expensive, strict limits
+const RATE_LIMIT_AUTHENTICATED = { maxRequests: 20, windowMs: 24 * 60 * 60 * 1000 };  // 20/day
+const RATE_LIMIT_ANONYMOUS = { maxRequests: 5, windowMs: 24 * 60 * 60 * 1000 };        // 5/day
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,6 +18,35 @@ serve(async (req) => {
   }
 
   try {
+    // Check authentication
+    const authHeader = req.headers.get("Authorization");
+    let userId: string | null = null;
+    
+    if (authHeader) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id || null;
+    }
+
+    // Apply rate limiting - stricter for image translation
+    const clientIP = getClientIP(req);
+    const identifier = userId ? `user:${userId}` : `ip:${clientIP}`;
+    const limits = userId ? RATE_LIMIT_AUTHENTICATED : RATE_LIMIT_ANONYMOUS;
+    
+    const rateLimitResult = checkRateLimit({
+      identifier: `image:${identifier}`,
+      maxRequests: limits.maxRequests,
+      windowMs: limits.windowMs,
+    });
+
+    if (!rateLimitResult.allowed) {
+      console.log(`[RateLimit] Image translate blocked ${identifier}`);
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
     const { imageBase64, sourceLang, targetLang } = await req.json();
 
     if (!imageBase64 || !sourceLang || !targetLang) {

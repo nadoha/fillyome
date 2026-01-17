@@ -616,7 +616,30 @@ export const TranslationInterface = () => {
           return;
         }
         
-        translation = data.translation;
+        // Validate translation length - if suspiciously short, use literal instead or retry
+        const rawTranslation = data.translation || "";
+        const minExpectedRatio = 0.15; // Translation should be at least 15% of source length
+        const sourceLen = sourceText.length;
+        const translationLen = rawTranslation.length;
+        
+        // Check if translation seems incomplete (too short relative to source)
+        const isTranslationSuspiciouslyShort = 
+          sourceLen > 5 && // Only check for non-trivial inputs
+          translationLen > 0 &&
+          translationLen < sourceLen * minExpectedRatio;
+        
+        if (isTranslationSuspiciouslyShort && data.literalTranslation) {
+          // Use literal translation if natural translation seems truncated
+          console.warn(`Translation suspiciously short (${translationLen} vs source ${sourceLen}), using literal`);
+          translation = data.literalTranslation;
+        } else if (isTranslationSuspiciouslyShort && translationLen < 10) {
+          // If extremely short and no fallback, throw to trigger retry or error
+          console.warn(`Translation too short: "${rawTranslation}" for source: "${sourceText}"`);
+          throw new Error('번역 결과가 불완전합니다. 다시 시도해주세요.');
+        } else {
+          translation = rawTranslation;
+        }
+        
         literal = data.literalTranslation || "";
         srcRomanization = data.sourceRomanization || "";
         tgtRomanization = data.targetRomanization || "";

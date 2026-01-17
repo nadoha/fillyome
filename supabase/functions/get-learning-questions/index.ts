@@ -8,7 +8,10 @@ const corsHeaders = {
 
 const MIN_QUEUE_SIZE = 3;
 const TARGET_QUEUE_SIZE = 10;
-const PERSONALIZED_RATIO = 0.7; // 70% personalized, 30% template
+const PERSONALIZED_RATIO = 0.65; // 65% personalized (user translation history), 35% AI-generated/template
+
+// Learning tab only supports Korean ↔ Japanese
+const SUPPORTED_LANGUAGES = ["ko", "ja"];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -29,6 +32,17 @@ serve(async (req) => {
       targetLanguage = "ja",  // The language user is learning
       sourceLanguage = "ko"   // User's native language
     } = await req.json();
+
+    // Validate language pair - only Korean ↔ Japanese supported
+    if (!SUPPORTED_LANGUAGES.includes(targetLanguage) || !SUPPORTED_LANGUAGES.includes(sourceLanguage)) {
+      return new Response(JSON.stringify({ 
+        error: "Learning only supports Korean ↔ Japanese",
+        questions: [] 
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     console.log(`[Queue] Target language: ${targetLanguage}, Source language: ${sourceLanguage}`);
 

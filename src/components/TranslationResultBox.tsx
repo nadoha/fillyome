@@ -48,8 +48,19 @@ export const TranslationResultBox = memo(({
   onWordSave,
   savedWords = new Set(),
 }: TranslationResultBoxProps) => {
-  const [showLiteral, setShowLiteral] = useState(false);
+  // Load literal translation state from sessionStorage, default to expanded (true)
+  const [showLiteral, setShowLiteral] = useState(() => {
+    const saved = sessionStorage.getItem('literalTranslationExpanded');
+    return saved !== null ? saved === 'true' : true; // Default: expanded
+  });
   const [showWordHint, setShowWordHint] = useState(true);
+
+  // Save literal state to sessionStorage when changed
+  const handleToggleLiteral = () => {
+    const newState = !showLiteral;
+    setShowLiteral(newState);
+    sessionStorage.setItem('literalTranslationExpanded', String(newState));
+  };
 
   const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
 
@@ -94,11 +105,11 @@ export const TranslationResultBox = memo(({
             </p>
           )}
 
-          {/* Literal translation toggle */}
+          {/* Literal translation - expanded by default */}
           {literalTranslation && (
             <div className="pt-2 border-t border-border/50">
               <button
-                onClick={() => setShowLiteral(!showLiteral)}
+                onClick={handleToggleLiteral}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 {showLiteral ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}

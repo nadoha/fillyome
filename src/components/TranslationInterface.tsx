@@ -1418,7 +1418,7 @@ export const TranslationInterface = () => {
                   {/* Translation boxes */}
                   <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
                     {/* Source input */}
-                    <div className="border border-border/50 rounded-lg overflow-hidden">
+                    <div className="border border-border/50 rounded-lg overflow-hidden transition-all duration-300">
                       <TranslationBox 
                         value={sourceText} 
                         onChange={setSourceText} 
@@ -1437,6 +1437,7 @@ export const TranslationInterface = () => {
                             handleTranslate();
                           }
                         }}
+                        isCompact={isMobile && !!(targetText || isTranslating)}
                       />
                     </div>
                     

@@ -41,11 +41,10 @@ export const TranslationBox = memo(({
   // Desktop: always normal box style
   
   if (isEditable) {
-    // Mobile expanded (initial, no focus, no result): full height, no borders, centered placeholder
+    // Mobile expanded (initial, no focus, no result): full height, minimal, centered
     if (isMobileExpanded && !isMobileFocused) {
       return (
-        <div className="relative flex flex-col items-center justify-center min-h-[50vh] md:min-h-[160px] md:border md:border-border/50 md:rounded-lg transition-all duration-300 ease-out">
-          {/* Listening indicator */}
+        <div className="relative flex flex-col items-center justify-center min-h-[60vh] md:min-h-[160px] md:border md:border-border/50 md:rounded-lg">
           {isListening && (
             <div className="absolute top-4 left-4 flex items-center gap-2 text-xs text-primary font-medium z-10">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -60,16 +59,16 @@ export const TranslationBox = memo(({
             onFocus={onFocus}
             onBlur={onBlur}
             onKeyDown={onKeyDown}
-            className="w-full h-full min-h-[50vh] md:min-h-[160px] resize-none text-xl md:text-base leading-relaxed bg-transparent border-0 p-6 text-center placeholder:text-muted-foreground/60 placeholder:text-xl md:placeholder:text-base focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 ease-out"
+            className="w-full h-full min-h-[60vh] md:min-h-[160px] resize-none text-lg md:text-base leading-relaxed bg-transparent border-0 p-6 text-center placeholder:text-muted-foreground/50 placeholder:text-lg md:placeholder:text-base focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           
-          {/* Mic button - centered at bottom */}
-          <div className="absolute bottom-6 flex items-center justify-center">
+          {/* Mic button - minimal */}
+          <div className="absolute bottom-8 flex items-center justify-center">
             {onMicClick && (
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className={`h-12 w-12 rounded-full ${isListening ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                className={`h-10 w-10 rounded-full ${isListening ? 'text-primary bg-primary/10' : 'text-muted-foreground/60 hover:text-foreground'}`}
                 onClick={onMicClick}
               >
                 {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -80,13 +79,12 @@ export const TranslationBox = memo(({
       );
     }
 
-    // Mobile focused or has result: compact with bottom border only
+    // Mobile focused or has result: compact with thick bottom border
     // Desktop: normal box style
     return (
-      <div className={`relative h-full min-h-[160px] transition-all duration-300 ease-out ${
-        isMobileFocused ? 'border-b border-border/50 md:border md:rounded-lg' : 'md:border md:border-border/50 md:rounded-lg'
+      <div className={`relative h-full min-h-[140px] ${
+        isMobileFocused ? 'border-b-2 border-border md:border md:border-border/50 md:rounded-lg' : 'md:border md:border-border/50 md:rounded-lg'
       }`}>
-        {/* Listening indicator */}
         {isListening && (
           <div className="absolute top-3 left-3 flex items-center gap-2 text-xs text-primary font-medium z-10">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -101,7 +99,7 @@ export const TranslationBox = memo(({
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
-          className="w-full h-full min-h-[160px] resize-none text-base leading-relaxed bg-transparent border-0 p-4 pt-8 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 ease-out"
+          className="w-full h-full min-h-[140px] resize-none text-base leading-relaxed bg-transparent border-0 p-4 pt-6 focus-visible:ring-0 focus-visible:ring-offset-0"
           autoFocus
         />
         

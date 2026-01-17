@@ -156,6 +156,7 @@ export type Database = {
           jlpt_level: string
           min_translations_for_unlock: number
           min_vocabulary_for_unlock: number
+          save_translation_history: boolean
           total_correct_answers: number | null
           total_questions_answered: number | null
           updated_at: string
@@ -168,6 +169,7 @@ export type Database = {
           jlpt_level?: string
           min_translations_for_unlock?: number
           min_vocabulary_for_unlock?: number
+          save_translation_history?: boolean
           total_correct_answers?: number | null
           total_questions_answered?: number | null
           updated_at?: string
@@ -180,6 +182,7 @@ export type Database = {
           jlpt_level?: string
           min_translations_for_unlock?: number
           min_vocabulary_for_unlock?: number
+          save_translation_history?: boolean
           total_correct_answers?: number | null
           total_questions_answered?: number | null
           updated_at?: string

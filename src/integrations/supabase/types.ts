@@ -87,6 +87,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "learning_questions_original_translation_id_fkey"
+            columns: ["original_translation_id"]
+            isOneToOne: false
+            referencedRelation: "translations_anonymized"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "learning_questions_original_vocabulary_id_fkey"
             columns: ["original_vocabulary_id"]
             isOneToOne: false
@@ -296,6 +303,13 @@ export type Database = {
             referencedRelation: "translations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "translation_feedback_translation_id_fkey"
+            columns: ["translation_id"]
+            isOneToOne: false
+            referencedRelation: "translations_anonymized"
+            referencedColumns: ["id"]
+          },
         ]
       }
       translations: {
@@ -396,7 +410,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      translations_anonymized: {
+        Row: {
+          anonymized_user_hash: string | null
+          content_classification: string | null
+          created_at: string | null
+          id: string | null
+          is_favorite: boolean | null
+          source_lang: string | null
+          source_text_length: number | null
+          target_lang: string | null
+          target_text_length: number | null
+        }
+        Insert: {
+          anonymized_user_hash?: never
+          content_classification?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_favorite?: boolean | null
+          source_lang?: string | null
+          source_text_length?: never
+          target_lang?: string | null
+          target_text_length?: never
+        }
+        Update: {
+          anonymized_user_hash?: never
+          content_classification?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_favorite?: boolean | null
+          source_lang?: string | null
+          source_text_length?: never
+          target_lang?: string | null
+          target_text_length?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

@@ -166,34 +166,41 @@ Return ONLY the preset ID (friend/business/polite/academic) that best fits this 
       }
     }
     
-    // High-context language handling (Korean/Japanese)
-    const isHighContextPair = ['ko', 'ja'].includes(sourceLang) && ['ko', 'ja'].includes(targetLang);
-    const highContextGuidelines = isHighContextPair ? `
-HIGH-CONTEXT LANGUAGE RULES (Korean/Japanese):
-- When the subject is omitted, infer naturally based on the most common conversational context
-- Do NOT forcibly specify ambiguous subjects
-- Preserve the natural flow and nuance of high-context communication
-- Maintain the appropriate level of directness/indirectness` : '';
+    // High-context language handling (Korean/Japanese/Chinese)
+    const isHighContextLang = ['ko', 'ja', 'zh'].includes(sourceLang);
+    const highContextGuidelines = isHighContextLang ? `
+HIGH-CONTEXT LANGUAGE RULES:
+- Even if subject/object is omitted, ALWAYS output a COMPLETE sentence
+- When meaning is ambiguous, choose the most common/natural interpretation
+- NEVER stop mid-sentence or output incomplete translations
+- Do NOT refuse to translate due to ambiguity - pick the safest general interpretation` : '';
 
-    // CRITICAL: Enforce strict target language adherence
+    // CRITICAL: Enforce strict target language adherence and output stability
     const systemPrompt = `You are a professional translator. Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}.
 
-CRITICAL RULES:
+CRITICAL OUTPUT STABILITY RULES (MUST FOLLOW):
+- ALWAYS output a COMPLETE, grammatically correct sentence
+- NEVER output truncated, incomplete, or mid-sentence translations
+- Even for short/ambiguous input, produce a full natural sentence
+- If multiple interpretations exist, choose the most common one and translate it completely
+- Example: "嫌い" → "I don't like it." (NOT "I don't" or "I don't w")
+
+TRANSLATION APPROACH:
+- Default is NATURAL translation (의역) - prioritize fluency and native expression
+- Literal translation is secondary/supplementary
 - Output MUST be in ${langNames[targetLang]} ONLY
-- Prioritize NATURAL, ACTUALLY-USED expressions over literal translation
 - Provide ONE main translation that sounds native
-- Add 1-2 alternative expressions ONLY when significantly different nuances exist
+- Add 1-2 alternatives ONLY when significantly different nuances exist
 ${highContextGuidelines}
 
-TRANSLATION GUIDELINES:
-- Focus on how native speakers actually say it, not textbook translations
-- Capture meaning and tone naturally, prioritizing fluency
-- Adapt idioms and expressions appropriately for the target culture
+GUIDELINES:
+- Focus on how native speakers actually say it
+- Capture meaning and tone naturally
+- Adapt idioms appropriately for target culture
 - Preserve emoticons and formatting
-- Do NOT add learning explanations, levels, or test criteria
-- Keep it simple and direct${styleInstructions}
+- Do NOT add learning explanations, levels, or test criteria${styleInstructions}
 
-Output ${langNames[targetLang]} only.`;
+Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
 
     const needsRom = (lang: string) => ['ja', 'ko', 'zh', 'ru', 'ar', 'th', 'hi'].includes(lang);
 

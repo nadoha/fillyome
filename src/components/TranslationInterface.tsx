@@ -11,6 +11,7 @@ import { useDictionary } from "@/hooks/useDictionary";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { attemptQuickTranslation, shouldUseQuickTranslation } from "@/utils/quickTranslation";
 import { splitIntoChunks, combineChunks, shouldChunkText } from "@/utils/textChunking";
 import { DictionarySheet } from "./DictionarySheet";
@@ -47,6 +48,7 @@ export const TranslationInterface = () => {
     i18n
   } = useTranslation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [user, setUser] = useState<User | null>(null);
   const isOnline = useOnlineStatus();
   // Session state persistence - restore last translation on mount
@@ -1414,7 +1416,7 @@ export const TranslationInterface = () => {
                     </div>
                   )}
                   {/* Translation boxes */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
                     {/* Source input */}
                     <div className="border border-border/50 rounded-lg overflow-hidden">
                       <TranslationBox 
@@ -1438,39 +1440,54 @@ export const TranslationInterface = () => {
                       />
                     </div>
                     
-                    {/* Result */}
-                    <TranslationResultBox 
-                      naturalTranslation={targetText} 
-                      literalTranslation={literalTranslation} 
-                      romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} 
-                      onCopy={() => handleCopy(targetText)} 
-                      onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} 
-                      onFeedback={type => {
-                        if (targetText) {
-                          handleFeedback({
-                            id: crypto.randomUUID(),
-                            source_text: sourceText,
-                            target_text: targetText,
-                            source_lang: sourceLang,
-                            target_lang: targetLang,
-                            is_favorite: false,
-                            created_at: new Date().toISOString(),
-                            content_classification: 'safe',
-                            masked_source_text: null,
-                            masked_target_text: null,
-                            source_romanization: sourceRomanization,
-                            target_romanization: targetRomanization,
-                            literal_translation: literalTranslation
-                          }, type);
+                    {/* Result - Mobile: animated expand/collapse, Desktop: always visible */}
+                    <div 
+                      className={`
+                        md:block
+                        ${!isMobile ? '' : 
+                          sourceText.trim() && (targetText || isTranslating) 
+                            ? 'mobile-result-enter' 
+                            : !sourceText.trim() && !targetText 
+                              ? 'mobile-result-hidden' 
+                              : !sourceText.trim() 
+                                ? 'mobile-result-exit' 
+                                : ''
                         }
-                      }} 
-                      isTranslating={isTranslating} 
-                      placeholder={t("translationResult") || "번역 결과"}
-                      speechSpeed={speechSpeed}
-                      onSpeedChange={setSpeechSpeed}
-                      onWordSave={user ? handleWordSaveFromTranslation : undefined}
-                      savedWords={savedWordsFromTranslation}
-                    />
+                      `}
+                    >
+                      <TranslationResultBox 
+                        naturalTranslation={targetText} 
+                        literalTranslation={literalTranslation} 
+                        romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} 
+                        onCopy={() => handleCopy(targetText)} 
+                        onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} 
+                        onFeedback={type => {
+                          if (targetText) {
+                            handleFeedback({
+                              id: crypto.randomUUID(),
+                              source_text: sourceText,
+                              target_text: targetText,
+                              source_lang: sourceLang,
+                              target_lang: targetLang,
+                              is_favorite: false,
+                              created_at: new Date().toISOString(),
+                              content_classification: 'safe',
+                              masked_source_text: null,
+                              masked_target_text: null,
+                              source_romanization: sourceRomanization,
+                              target_romanization: targetRomanization,
+                              literal_translation: literalTranslation
+                            }, type);
+                          }
+                        }} 
+                        isTranslating={isTranslating} 
+                        placeholder={t("translationResult") || "번역 결과"}
+                        speechSpeed={speechSpeed}
+                        onSpeedChange={setSpeechSpeed}
+                        onWordSave={user ? handleWordSaveFromTranslation : undefined}
+                        savedWords={savedWordsFromTranslation}
+                      />
+                    </div>
                   </div>
                 </TabsContent>
 

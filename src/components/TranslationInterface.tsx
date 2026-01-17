@@ -577,14 +577,39 @@ export const TranslationInterface = () => {
 
         const results = await Promise.all(chunkPromises);
         
-        // Combine results in order
+        // Combine results in order with length validation
         const translatedChunks: string[] = [];
         const literalChunks: string[] = [];
+        const minExpectedRatio = 0.15; // Translation should be at least 15% of source length
         
         for (const { index, result } of results.sort((a, b) => a.index - b.index)) {
           const data = (result as any).data;
-          if (data?.translation) {
-            translatedChunks.push(data.translation);
+          const chunkSource = chunks[index];
+          const rawTranslation = data?.translation || "";
+          
+          if (rawTranslation) {
+            // Validate chunk translation length
+            const sourceLen = chunkSource.length;
+            const translationLen = rawTranslation.length;
+            const isChunkSuspiciouslyShort = 
+              sourceLen > 5 && 
+              translationLen > 0 &&
+              translationLen < sourceLen * minExpectedRatio;
+            
+            if (isChunkSuspiciouslyShort && data.literalTranslation) {
+              // Use literal translation if natural seems truncated
+              console.warn(`Chunk ${index} translation too short (${translationLen} vs ${sourceLen}), using literal`);
+              translatedChunks.push(data.literalTranslation);
+            } else if (isChunkSuspiciouslyShort && translationLen < 10) {
+              console.warn(`Chunk ${index} translation incomplete: "${rawTranslation}"`);
+              // Skip this chunk or use literal if available
+              if (data.literalTranslation) {
+                translatedChunks.push(data.literalTranslation);
+              }
+            } else {
+              translatedChunks.push(rawTranslation);
+            }
+            
             if (data.literalTranslation) literalChunks.push(data.literalTranslation);
           }
         }

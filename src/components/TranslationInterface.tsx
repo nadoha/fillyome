@@ -951,8 +951,8 @@ export const TranslationInterface = () => {
       setIsTranslating(false);
     }
 
-    // Shorter delays for faster translation, immediate for language changes
-    const delay = languageChanged ? 50 : (shouldUseQuickTranslation(sourceText) ? 100 : 350);
+    // Shorter delays for faster translation
+    const delay = languageChanged ? 30 : (shouldUseQuickTranslation(sourceText) ? 80 : 250);
     
     translateTimeoutRef.current = setTimeout(() => {
       handleTranslate();
@@ -1462,7 +1462,7 @@ export const TranslationInterface = () => {
                         md:block md:border md:border-border/50 md:rounded-lg
                         ${!isMobile ? '' : 
                           (isInputFocused || sourceText.trim()) && (targetText || isTranslating) 
-                            ? 'mobile-result-enter border-t border-border/50' 
+                            ? 'mobile-result-enter border-t-2 border-border' 
                             : !sourceText.trim() && !targetText && !isInputFocused
                               ? 'mobile-result-hidden' 
                               : !sourceText.trim() && !isInputFocused

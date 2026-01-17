@@ -1416,9 +1416,17 @@ export const TranslationInterface = () => {
                     </div>
                   )}
                   {/* Translation boxes */}
-                  <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
+                  <div className={`flex flex-col md:grid md:grid-cols-2 ${
+                    isMobile && !isInputFocused && !targetText && !isTranslating 
+                      ? 'gap-0' 
+                      : 'gap-4'
+                  }`}>
                     {/* Source input - expanded on mobile when no translation result */}
-                    <div className={`border border-border/50 rounded-lg overflow-hidden transition-all duration-300 ease-out`}>
+                    <div className={`overflow-hidden transition-all duration-300 ease-out ${
+                      isMobile && !isInputFocused && !targetText && !isTranslating
+                        ? '' 
+                        : 'md:border md:border-border/50 md:rounded-lg'
+                    }`}>
                       <TranslationBox 
                         value={sourceText} 
                         onChange={setSourceText} 
@@ -1430,6 +1438,12 @@ export const TranslationInterface = () => {
                         isListening={isListening} 
                         audioLevel={audioLevel}
                         onFocus={() => setIsInputFocused(true)}
+                        onBlur={() => {
+                          // Only collapse if no text and no result
+                          if (!sourceText.trim() && !targetText) {
+                            setIsInputFocused(false);
+                          }
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey && sourceText.trim()) {
                             e.preventDefault();
@@ -1437,22 +1451,23 @@ export const TranslationInterface = () => {
                             handleTranslate();
                           }
                         }}
-                        isMobileExpanded={isMobile && !targetText && !isTranslating}
+                        isMobileExpanded={isMobile && !isInputFocused && !targetText && !isTranslating}
+                        isMobileFocused={isMobile && (isInputFocused || !!targetText || isTranslating)}
                       />
                     </div>
                     
                     {/* Result - Mobile: animated expand/collapse, Desktop: always visible */}
                     <div 
                       className={`
-                        md:block
+                        md:block md:border md:border-border/50 md:rounded-lg
                         ${!isMobile ? '' : 
-                          sourceText.trim() && (targetText || isTranslating) 
-                            ? 'mobile-result-enter' 
-                            : !sourceText.trim() && !targetText 
+                          (isInputFocused || sourceText.trim()) && (targetText || isTranslating) 
+                            ? 'mobile-result-enter border-t border-border/50' 
+                            : !sourceText.trim() && !targetText && !isInputFocused
                               ? 'mobile-result-hidden' 
-                              : !sourceText.trim() 
+                              : !sourceText.trim() && !isInputFocused
                                 ? 'mobile-result-exit' 
-                                : ''
+                                : 'mobile-result-hidden'
                         }
                       `}
                     >

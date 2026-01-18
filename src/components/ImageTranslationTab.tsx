@@ -34,6 +34,7 @@ export const ImageTranslationTab = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isCameraMode, setIsCameraMode] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [showOriginal, setShowOriginal] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -333,7 +334,11 @@ export const ImageTranslationTab = ({
   const clearImage = () => {
     setImage(null);
     setTranslatedImage(null);
+    setShowOriginal(false);
   };
+
+  // Get the displayed image (translated or original based on toggle)
+  const displayedImage = translatedImage && !showOriginal ? translatedImage : image;
 
   return (
     <div className="space-y-4">
@@ -401,11 +406,10 @@ export const ImageTranslationTab = ({
           </div>
         </div>
       ) : (
-        <>
-          {/* Image Uploaded State */}
-          <div className="bg-card rounded-xl shadow-sm p-4 border border-border/50 space-y-4">
-            {/* Language Selector - Only shown after image upload */}
-            <div className="flex items-center gap-3">
+        <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+          {/* Language Selector */}
+          <div className="p-3 border-b border-border/50">
+            <div className="flex items-center gap-2">
               <div className="flex-1">
                 <LanguageSelector
                   value={sourceLang}
@@ -414,7 +418,7 @@ export const ImageTranslationTab = ({
                   type="source"
                 />
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <div className="flex-1">
                 <LanguageSelector
                   value={targetLang}
@@ -424,73 +428,91 @@ export const ImageTranslationTab = ({
                 />
               </div>
             </div>
+          </div>
 
-            {/* Original Image Preview */}
-            <div className="relative">
-              <img 
-                src={image} 
-                alt="Original" 
-                className="w-full max-h-[350px] object-contain rounded-lg bg-muted/30" 
-              />
+          {/* Image Preview with Overlay */}
+          <div className="relative">
+            <img 
+              src={displayedImage || image} 
+              alt={translatedImage && !showOriginal ? "Translated" : "Original"} 
+              className="w-full max-h-[45vh] object-contain bg-muted/20" 
+            />
+            
+            {/* Top Controls */}
+            <div className="absolute top-2 right-2 flex gap-1.5">
+              {translatedImage && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 px-3 bg-background/90 backdrop-blur-sm hover:bg-background text-xs font-medium"
+                  onClick={() => setShowOriginal(!showOriginal)}
+                >
+                  {showOriginal ? "번역 보기" : "원본 보기"}
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 size="icon"
-                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+                className="h-8 w-8 bg-background/90 backdrop-blur-sm hover:bg-background"
                 onClick={clearImage}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
+
+            {/* Translation Status Badge */}
+            {translatedImage && !showOriginal && (
+              <div className="absolute top-2 left-2">
+                <span className="px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-full">
+                  번역됨
+                </span>
+              </div>
+            )}
+
+            {/* Loading Overlay */}
+            {isTranslating && (
+              <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="text-sm font-medium">번역 중...</span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Bottom Action Bar */}
+          <div className="p-3 border-t border-border/50 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="mr-1.5 h-4 w-4" />
+              다른 이미지
+            </Button>
             
-            {/* Action Buttons */}
-            <div className="flex gap-2">
+            {translatedImage ? (
               <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => fileInputRef.current?.click()}
+                size="sm"
+                className="flex-[2]"
+                onClick={handleDownload}
               >
-                다른 이미지
+                <Download className="mr-1.5 h-4 w-4" />
+                번역 이미지 저장
               </Button>
+            ) : (
               <Button
+                size="sm"
                 onClick={handleTranslate}
                 disabled={isTranslating}
                 className="flex-[2]"
               >
-                {isTranslating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    번역 중...
-                  </>
-                ) : (
-                  "번역하기"
-                )}
+                번역하기
               </Button>
-            </div>
+            )}
           </div>
-
-          {/* Translated Image Result */}
-          {translatedImage && (
-            <div className="bg-card rounded-xl shadow-sm p-4 border border-primary/20 space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold text-primary">번역 결과</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownload}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  저장
-                </Button>
-              </div>
-              <img 
-                src={translatedImage} 
-                alt="Translated" 
-                className="w-full max-h-[350px] object-contain rounded-lg bg-muted/30" 
-              />
-            </div>
-          )}
-        </>
+        </div>
       )}
 
       {/* Hidden canvas for rendering */}

@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { DynamicLearningSection } from "@/components/learn/DynamicLearningSection";
 import { LearningLockedScreen } from "@/components/learn/LearningLockedScreen";
+import { GuestModeBanner } from "@/components/GuestModeBanner";
 import { useStreak } from "@/hooks/useStreak";
 import { useLearningUnlock } from "@/hooks/useLearningUnlock";
 import { useTargetLanguage } from "@/hooks/useTargetLanguage";
@@ -199,56 +200,8 @@ const Learn = () => {
     );
   }
 
-  // Show login prompt for learning features if not logged in
-  if (!user) {
-    return (
-      <div className="flex flex-col h-screen bg-background">
-        <div className="flex-1 overflow-y-auto pb-24">
-          <div className="container max-w-lg mx-auto px-5 py-6">
-            <header className="flex items-center gap-3 mb-8">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 -ml-2">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <h1 className="text-xl font-semibold">학습</h1>
-            </header>
-            
-            <div className="space-y-8">
-              <div className="text-center py-4">
-                <h2 className="text-lg font-semibold mb-2">학습 기능 사용하기</h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  학습 기능을 사용하려면<br />
-                  계정 연결이 필요해요
-                </p>
-              </div>
-
-              <Card className="border-border shadow-none">
-                <CardContent className="p-5 text-center space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    계정을 연결하면 번역 기록을 바탕으로<br />
-                    맞춤 학습 문제를 제공해 드려요
-                  </p>
-                  <Button 
-                    className="w-full"
-                    onClick={() => navigate("/auth")}
-                  >
-                    Google 계정 연결하기
-                  </Button>
-                  <Button 
-                    variant="ghost"
-                    className="text-sm text-muted-foreground"
-                    onClick={() => navigate("/")}
-                  >
-                    나중에 하기
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-        <BottomNavigation />
-      </div>
-    );
-  }
+  // Guest mode indicator
+  const isGuestMode = !user;
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -263,13 +216,18 @@ const Learn = () => {
               <h1 className="text-xl font-semibold">{t("learn")}</h1>
             </div>
             {/* Simple streak indicator */}
-            {streak > 0 && (
+            {streak > 0 && !isGuestMode && (
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{streak}</span>
                 <span>{t("consecutiveDays")}</span>
               </div>
             )}
           </header>
+
+          {/* Guest Mode Banner */}
+          {isGuestMode && (
+            <GuestModeBanner message="로그인하면 학습 기록을 저장할 수 있어요" />
+          )}
 
           {/* Current Level - Subtle, informational */}
           <div className="flex items-center justify-between py-3 border-b border-border">

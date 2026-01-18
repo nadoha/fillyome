@@ -1,29 +1,19 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VocabularyList } from "@/components/VocabularyList";
 import { useVocabulary } from "@/hooks/useVocabulary";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { GuestModeBanner } from "@/components/GuestModeBanner";
 
 const Vocabulary = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { vocabulary, isLoading, removeWord, updateNotes, loadVocabulary, user } = useVocabulary();
+  const { vocabulary, isLoading, removeWord, updateNotes, user } = useVocabulary();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("로그인이 필요한 서비스입니다.");
-        navigate("/auth");
-      }
-    };
-    checkAuth();
-  }, [navigate]);
+  const isGuestMode = !user;
 
   const handleSpeak = async (text: string, lang: string) => {
     try {
@@ -92,6 +82,11 @@ const Vocabulary = () => {
             {t("savedWords") || "저장한 단어"} {vocabulary.length}{t("korean") === "한국어" ? "개" : ""}
           </p>
           </div>
+
+          {/* Guest Mode Banner */}
+          {isGuestMode && (
+            <GuestModeBanner message="로그인하면 단어를 저장할 수 있어요" />
+          )}
 
           {/* Vocabulary List */}
           <VocabularyList

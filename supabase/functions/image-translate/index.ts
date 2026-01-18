@@ -77,7 +77,7 @@ serve(async (req) => {
       vi: "Vietnamese", id: "Indonesian", hi: "Hindi", tr: "Turkish"
     };
 
-    // Use Lovable AI to extract text and positions from image
+    // Use Lovable AI to extract text and positions from image with enhanced OCR
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -92,18 +92,41 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: `Extract all text from this image and provide the bounding box coordinates (x, y, width, height) for each text region. Translate each text from ${langNames[sourceLang]} to ${langNames[targetLang]}. Return ONLY a JSON array with this exact structure:
+                text: `You are a professional OCR and translation system. Analyze this image and:
+
+1. Detect ALL visible text regions with precise bounding boxes
+2. For each text region, determine:
+   - The exact text content
+   - Precise bounding box coordinates (normalized 0-1)
+   - Estimated font size relative to image height
+   - Background color behind the text (hex format)
+   - Whether the background is light or dark
+   - Text alignment (left, center, right)
+
+3. Translate each text from ${langNames[sourceLang]} to ${langNames[targetLang]}
+
+Return ONLY a valid JSON array with this exact structure (no markdown, no explanation):
 [
   {
-    "original": "original text",
+    "original": "detected original text",
     "translated": "translated text",
     "x": 0.1,
     "y": 0.2,
     "width": 0.3,
-    "height": 0.05
+    "height": 0.05,
+    "fontSize": 0.03,
+    "bgColor": "#ffffff",
+    "isDarkBg": false,
+    "textAlign": "center"
   }
 ]
-The coordinates should be normalized (0-1 range relative to image dimensions). Do not include any markdown formatting or explanation, just the raw JSON array.`
+
+IMPORTANT:
+- x, y, width, height, fontSize are normalized values (0-1 range relative to image dimensions)
+- x, y represent the top-left corner of the text bounding box
+- fontSize is relative to image height (e.g., 0.05 means text height is 5% of image height)
+- Be precise with bounding boxes to cover exactly the original text area
+- Detect text in natural reading order (top to bottom, left to right)`
               },
               {
                 type: 'image_url',

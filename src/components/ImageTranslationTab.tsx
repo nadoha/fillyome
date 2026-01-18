@@ -11,6 +11,10 @@ interface TextRegion {
   y: number;
   width: number;
   height: number;
+  fontSize?: number;
+  bgColor?: string;
+  isDarkBg?: boolean;
+  textAlign?: 'left' | 'center' | 'right';
 }
 
 interface ImageTranslationTabProps {
@@ -184,6 +188,7 @@ export const ImageTranslationTab = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      // Draw original image
       ctx.drawImage(img, 0, 0);
 
       textRegions.forEach((region) => {
@@ -192,53 +197,122 @@ export const ImageTranslationTab = ({
         const width = region.width * img.width;
         const height = region.height * img.height;
 
-        // Calculate font size - compact and clean
-        const fontSize = Math.max(10, Math.min(height * 0.5, 24));
-        ctx.font = `500 ${fontSize}px "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif`;
+        // Calculate font size based on OCR data or estimate from region height
+        const estimatedFontSize = region.fontSize 
+          ? region.fontSize * img.height 
+          : height * 0.7;
+        const fontSize = Math.max(12, Math.min(estimatedFontSize, 120));
         
-        const words = region.translated.split(' ');
-        const lines: string[] = [];
-        let currentLine = '';
-
-        words.forEach((word) => {
-          const testLine = currentLine + (currentLine ? ' ' : '') + word;
-          const metrics = ctx.measureText(testLine);
-          
-          if (metrics.width > width * 0.88) {
-            if (currentLine) lines.push(currentLine);
-            currentLine = word;
-          } else {
-            currentLine = testLine;
-          }
-        });
-        if (currentLine) lines.push(currentLine);
-
-        const lineHeight = fontSize * 1.2;
-        const totalTextHeight = lines.length * lineHeight;
-        const padding = 4;
-        const boxHeight = totalTextHeight + padding * 2;
-
-        // Draw background box with subtle shadow - directly on original text position
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetY = 1;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-        ctx.fillRect(x, y, width, Math.min(boxHeight, height));
+        // Determine background and text colors
+        const bgColor = region.bgColor || '#ffffff';
+        const isDarkBg = region.isDarkBg ?? false;
+        const textColor = isDarkBg ? '#ffffff' : '#1a1a1a';
         
-        // Reset shadow
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetY = 0;
+        // Text alignment
+        const textAlign = region.textAlign || 'center';
 
-        // Draw text
-        ctx.fillStyle = '#1a1a1a';
-        ctx.textAlign = 'center';
+        // Step 1: Inpaint - Cover original text with matching background
+        // Sample background color from edges and create smooth cover
+        ctx.save();
+        
+        // Create a slightly larger cover area for clean edges
+        const padding = Math.max(2, fontSize * 0.1);
+        const coverX = x - padding;
+        const coverY = y - padding;
+        const coverWidth = width + padding * 2;
+        const coverHeight = height + padding * 2;
+
+        // Draw background cover with slight blur effect
+        ctx.filter = 'blur(1px)';
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(coverX, coverY, coverWidth, coverHeight);
+        ctx.filter = 'none';
+        
+        // Draw solid background on top for crisp text
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(x, y, width, height);
+        
+        ctx.restore();
+
+        // Step 2: Render translated text
+        ctx.save();
+        
+        // Set up font - use system fonts that work well for all languages
+        const fontWeight = '500';
+        ctx.font = `${fontWeight} ${fontSize}px "Pretendard", "Noto Sans JP", "Noto Sans KR", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+        ctx.fillStyle = textColor;
         ctx.textBaseline = 'top';
 
-        const startY = y + padding;
+        // Word wrap for translated text
+        const text = region.translated;
+        const maxWidth = width * 0.95;
+        const lines: string[] = [];
+        
+        // Split by characters for CJK languages, by words for others
+        const isCJK = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]/.test(text);
+        
+        if (isCJK) {
+          // Character-based wrapping for CJK
+          let currentLine = '';
+          for (const char of text) {
+            const testLine = currentLine + char;
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && currentLine) {
+              lines.push(currentLine);
+              currentLine = char;
+            } else {
+              currentLine = testLine;
+            }
+          }
+          if (currentLine) lines.push(currentLine);
+        } else {
+          // Word-based wrapping for other languages
+          const words = text.split(' ');
+          let currentLine = '';
+          for (const word of words) {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && currentLine) {
+              lines.push(currentLine);
+              currentLine = word;
+            } else {
+              currentLine = testLine;
+            }
+          }
+          if (currentLine) lines.push(currentLine);
+        }
+
+        // Calculate line height and vertical centering
+        const lineHeight = fontSize * 1.15;
+        const totalTextHeight = lines.length * lineHeight;
+        const startY = y + Math.max(0, (height - totalTextHeight) / 2);
+
+        // Draw each line with proper alignment
         lines.forEach((line, i) => {
-          ctx.fillText(line, x + width / 2, startY + i * lineHeight);
+          const metrics = ctx.measureText(line);
+          let lineX: number;
+          
+          if (textAlign === 'left') {
+            ctx.textAlign = 'left';
+            lineX = x + fontSize * 0.1;
+          } else if (textAlign === 'right') {
+            ctx.textAlign = 'right';
+            lineX = x + width - fontSize * 0.1;
+          } else {
+            ctx.textAlign = 'center';
+            lineX = x + width / 2;
+          }
+          
+          // Draw text shadow for better readability
+          ctx.shadowColor = isDarkBg ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.8)';
+          ctx.shadowBlur = 2;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+          
+          ctx.fillText(line, lineX, startY + i * lineHeight);
         });
+        
+        ctx.restore();
       });
 
       setTranslatedImage(canvas.toDataURL('image/png'));

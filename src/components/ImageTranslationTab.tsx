@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Upload, Loader2, Download, ArrowRight, Camera, X } from "lucide-react";
+import { Upload, Loader2, Download, ArrowRight, Camera, X, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
 interface TextRegion {
   original: string;
   translated: string;
@@ -331,127 +330,167 @@ export const ImageTranslationTab = ({
     );
   }
 
+  const clearImage = () => {
+    setImage(null);
+    setTranslatedImage(null);
+  };
+
   return (
     <div className="space-y-4">
-      {/* Language Selector */}
-      <div className="bg-card rounded-xl shadow-sm p-4 border border-border/50">
-        <div className="flex items-center gap-3">
-          <div className="flex-1">
-            <LanguageSelector
-              value={sourceLang}
-              onChange={onSourceLangChange}
-              recentPairs={recentPairs}
-              type="source"
-            />
-          </div>
-          <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-          <div className="flex-1">
-            <LanguageSelector
-              value={targetLang}
-              onChange={onTargetLangChange}
-              recentPairs={recentPairs}
-              type="target"
-            />
-          </div>
-        </div>
-      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
-      {/* Upload Section */}
-      <div className="bg-card rounded-xl shadow-sm p-4 border border-border/50">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        
-        {!image ? (
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 h-12"
-                onClick={startCamera}
-              >
-                <Camera className="mr-2 h-5 w-5" />
-                카메라
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 h-12"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="mr-2 h-5 w-5" />
-                갤러리
-              </Button>
+      {/* Initial Upload State - Clean and prominent */}
+      {!image ? (
+        <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+          {/* Main Drop Zone */}
+          <div
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`relative w-full min-h-[280px] border-2 border-dashed rounded-xl m-4 mb-2 flex flex-col items-center justify-center gap-4 transition-all cursor-pointer ${
+              isDragging 
+                ? 'border-primary bg-primary/5' 
+                : 'border-border hover:border-primary/50 hover:bg-muted/30'
+            }`}
+          >
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+              <ImagePlus className="h-8 w-8 text-muted-foreground" />
             </div>
-            <div
-              onDragOver={handleDragOver}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 transition-colors ${
-                isDragging 
-                  ? 'border-primary bg-primary/10' 
-                  : 'border-border'
-              }`}
-            >
-              <Upload className="h-8 w-8 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground text-center px-4">
-                드래그 앤 드롭 또는 <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+V</kbd>
+            <div className="text-center px-4">
+              <p className="text-base font-medium text-foreground mb-1">
+                이미지를 업로드하세요
+              </p>
+              <p className="text-sm text-muted-foreground">
+                드래그 앤 드롭, 클릭, 또는 <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Ctrl+V</kbd>
               </p>
             </div>
           </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <h3 className="font-semibold">원본 이미지</h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                다른 이미지 선택
-              </Button>
-            </div>
-            <img src={image} alt="Original" className="w-full max-h-[400px] object-contain rounded-lg bg-muted/30" />
-            
-            <Button
-              onClick={handleTranslate}
-              disabled={isTranslating}
-              className="w-full h-11"
-            >
-              {isTranslating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  번역 중...
-                </>
-              ) : (
-                "번역하기"
-              )}
-            </Button>
-          </div>
-        )}
-      </div>
 
-      {/* Translated Image Result */}
-      {translatedImage && (
-        <div className="bg-card rounded-xl shadow-sm p-4 border border-border/50 space-y-3">
-          <div className="flex justify-between items-center">
-            <h3 className="font-semibold">번역 결과</h3>
+          {/* Quick Action Buttons */}
+          <div className="px-4 pb-4 flex gap-2">
             <Button
               variant="outline"
-              size="sm"
-              onClick={handleDownload}
-              className="gap-2"
+              className="flex-1 h-11"
+              onClick={(e) => {
+                e.stopPropagation();
+                startCamera();
+              }}
             >
-              <Download className="h-4 w-4" />
-              다운로드
+              <Camera className="mr-2 h-4 w-4" />
+              카메라로 촬영
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 h-11"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              파일 선택
             </Button>
           </div>
-          <img src={translatedImage} alt="Translated" className="w-full max-h-[400px] object-contain rounded-lg bg-muted/30" />
         </div>
+      ) : (
+        <>
+          {/* Image Uploaded State */}
+          <div className="bg-card rounded-xl shadow-sm p-4 border border-border/50 space-y-4">
+            {/* Language Selector - Only shown after image upload */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <LanguageSelector
+                  value={sourceLang}
+                  onChange={onSourceLangChange}
+                  recentPairs={recentPairs}
+                  type="source"
+                />
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <div className="flex-1">
+                <LanguageSelector
+                  value={targetLang}
+                  onChange={onTargetLangChange}
+                  recentPairs={recentPairs}
+                  type="target"
+                />
+              </div>
+            </div>
+
+            {/* Original Image Preview */}
+            <div className="relative">
+              <img 
+                src={image} 
+                alt="Original" 
+                className="w-full max-h-[350px] object-contain rounded-lg bg-muted/30" 
+              />
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+                onClick={clearImage}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                다른 이미지
+              </Button>
+              <Button
+                onClick={handleTranslate}
+                disabled={isTranslating}
+                className="flex-[2]"
+              >
+                {isTranslating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    번역 중...
+                  </>
+                ) : (
+                  "번역하기"
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Translated Image Result */}
+          {translatedImage && (
+            <div className="bg-card rounded-xl shadow-sm p-4 border border-primary/20 space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold text-primary">번역 결과</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownload}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  저장
+                </Button>
+              </div>
+              <img 
+                src={translatedImage} 
+                alt="Translated" 
+                className="w-full max-h-[350px] object-contain rounded-lg bg-muted/30" 
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* Hidden canvas for rendering */}

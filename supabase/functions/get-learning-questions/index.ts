@@ -47,19 +47,31 @@ serve(async (req) => {
     console.log(`[Queue] Target language: ${targetLanguage}, Source language: ${sourceLanguage}`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    // User client for user-specific operations (with RLS)
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
+    
+    // Service client for accessing template_questions (service_role only)
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
+    // Verify user authentication
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    
+    const userId = claimsData.claims.sub;
+    
+    // Create a user object for compatibility
+    const user = { id: userId };
 
     // Get user's JLPT level
     const { data: settings } = await supabase
@@ -106,8 +118,8 @@ serve(async (req) => {
       .map(q => q.template_question_id)
       .filter(Boolean);
 
-    // Fetch template questions matching target language
-    let templateQuery = supabase
+    // Fetch template questions matching target language using service client
+    let templateQuery = serviceClient
       .from("template_questions")
       .select("*")
       .eq("jlpt_level", jlptLevel)
@@ -140,12 +152,12 @@ serve(async (req) => {
         .in("id", personalizedIds);
     }
 
-    // Update template usage count (increment by 1)
+    // Update template usage count using service client (increment by 1)
     const templateIds = selectedTemplates.map(t => t.id);
     if (templateIds.length > 0) {
       // Note: Simplified update - ideally use RPC for atomic increment
       for (const template of selectedTemplates) {
-        await supabase
+        await serviceClient
           .from("template_questions")
           .update({ usage_count: (template.usage_count || 0) + 1 })
           .eq("id", template.id);

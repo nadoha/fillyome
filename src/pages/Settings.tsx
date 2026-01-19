@@ -344,6 +344,24 @@ export default function Settings() {
             </Card>
           </section>
 
+          {/* Privacy Policy Link */}
+          <section>
+            <Card className="border-border shadow-none">
+              <CardContent className="p-0">
+                <div 
+                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => navigate("/privacy")}
+                >
+                  <div className="flex items-center gap-3">
+                    <Database className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-medium">개인정보 처리방침</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
           {/* Privacy notice */}
           <p className="text-xs text-muted-foreground text-center pt-2 leading-relaxed">
             이 앱은 번역 및 학습 서비스 제공을 위해<br />

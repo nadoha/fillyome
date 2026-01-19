@@ -26,6 +26,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TranslationStyleSelector } from "./TranslationStyleSelector";
+import { TranslationHistoryConsent } from "./TranslationHistoryConsent";
 import { cleanAllCaches } from "@/utils/cacheManager";
 interface Translation {
   id: string;
@@ -130,6 +131,7 @@ export const TranslationInterface = () => {
     return saved ? JSON.parse(saved) : true;
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showHistoryConsent, setShowHistoryConsent] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [translationStyle, setTranslationStyle] = useState<{
     formality: "formal" | "informal";
@@ -288,6 +290,32 @@ export const TranslationInterface = () => {
       }, 100);
     }
   }, [noiseCancellation, isListening, stopListening, startListening, resetTranscript]);
+
+  // Handle history consent response
+  const handleHistoryConsent = useCallback(async (agreed: boolean) => {
+    if (!user) {
+      setShowHistoryConsent(false);
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.from("learning_settings").upsert({
+        user_id: user.id,
+        save_translation_history: agreed,
+      }, { onConflict: 'user_id' });
+      
+      if (!error) {
+        setSaveHistoryEnabled(agreed);
+        if (agreed) {
+          toast.success(t("historyConsentAccepted") || "번역 기록이 저장됩니다");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to save consent:", error);
+    }
+    
+    setShowHistoryConsent(false);
+  }, [user, t]);
 
   // Languages that don't need romanization (use Latin alphabet)
   const noRomanizationLangs = useMemo(() => ['en', 'es', 'fr', 'de', 'pt', 'it', 'id', 'tr', 'vi'], []);
@@ -984,16 +1012,21 @@ export const TranslationInterface = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       
-      // Load user's save_translation_history setting
+      // Load user's save_translation_history setting and show consent if needed
       if (session?.user) {
         const { data: settings } = await supabase
           .from("learning_settings")
-          .select("save_translation_history")
+          .select("id, save_translation_history")
           .eq("user_id", session.user.id)
           .maybeSingle();
         
-        // Default is false (privacy-first)
-        setSaveHistoryEnabled(settings?.save_translation_history ?? false);
+        // If no settings exist, show consent modal
+        if (!settings) {
+          setShowHistoryConsent(true);
+          setSaveHistoryEnabled(false);
+        } else {
+          setSaveHistoryEnabled(settings.save_translation_history ?? false);
+        }
       }
     };
     
@@ -1010,11 +1043,17 @@ export const TranslationInterface = () => {
       if (session?.user) {
         const { data: settings } = await supabase
           .from("learning_settings")
-          .select("save_translation_history")
+          .select("id, save_translation_history")
           .eq("user_id", session.user.id)
           .maybeSingle();
         
-        setSaveHistoryEnabled(settings?.save_translation_history ?? false);
+        // If no settings exist, show consent modal
+        if (!settings) {
+          setShowHistoryConsent(true);
+          setSaveHistoryEnabled(false);
+        } else {
+          setSaveHistoryEnabled(settings.save_translation_history ?? false);
+        }
       } else {
         setSaveHistoryEnabled(false);
       }
@@ -1571,6 +1610,11 @@ export const TranslationInterface = () => {
             toast.success(t("listeningStarted") || msg);
           }, 300);
         }} />
+
+          <TranslationHistoryConsent
+            open={showHistoryConsent}
+            onConsent={handleHistoryConsent}
+          />
         </div>
       </div>
     </SidebarProvider>;

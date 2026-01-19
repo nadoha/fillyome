@@ -156,5 +156,17 @@
   "thb": "Thai Baht",
   "php": "Philippine Peso",
   "gbp": "British Pound",
-  "hkd": "Hong Kong Dollar"
+  "hkd": "Hong Kong Dollar",
+
+  "historyConsentTitle": "Save translation history?",
+  "historyConsentDesc": "Saving your translation history allows you to quickly access past translations and use them for learning.",
+  "historyConsentBenefit1": "Quick access to past translations",
+  "historyConsentBenefit2": "Personalized learning questions",
+  "historyConsentBenefit3": "Use favorites feature",
+  "enableSaving": "Enable Saving",
+  "maybeLater": "Maybe Later",
+  "canChangeInSettings": "You can change this anytime in Settings",
+  "historyConsentAccepted": "Translation history will be saved",
+  "saveTranslationHistory": "Save Translation History",
+  "saveTranslationHistoryDesc": "Save translation results to access them later"
 }

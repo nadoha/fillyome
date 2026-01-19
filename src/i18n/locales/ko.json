@@ -238,5 +238,17 @@
   
   "targetLanguage": "학습 언어",
   "studyingJapanese": "일본어 학습 중",
-  "studyingKorean": "한국어 학습 중"
+  "studyingKorean": "한국어 학습 중",
+
+  "historyConsentTitle": "번역 기록을 저장할까요?",
+  "historyConsentDesc": "번역 기록을 저장하면 이전 번역을 빠르게 확인하고 학습에 활용할 수 있어요.",
+  "historyConsentBenefit1": "이전 번역을 빠르게 확인",
+  "historyConsentBenefit2": "맞춤 학습 문제 제공",
+  "historyConsentBenefit3": "즐겨찾기 기능 사용",
+  "enableSaving": "저장하기",
+  "maybeLater": "나중에",
+  "canChangeInSettings": "설정에서 언제든 변경할 수 있어요",
+  "historyConsentAccepted": "번역 기록이 저장됩니다",
+  "saveTranslationHistory": "번역 기록 저장",
+  "saveTranslationHistoryDesc": "번역 결과를 저장하여 나중에 확인할 수 있습니다"
 }

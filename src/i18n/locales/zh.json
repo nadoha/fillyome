@@ -156,5 +156,17 @@
   "thb": "泰铢",
   "php": "菲律宾比索",
   "gbp": "英镑",
-  "hkd": "港币"
+  "hkd": "港币",
+
+  "historyConsentTitle": "保存翻译记录吗？",
+  "historyConsentDesc": "保存翻译记录可以让您快速查看过去的翻译并用于学习。",
+  "historyConsentBenefit1": "快速访问过去的翻译",
+  "historyConsentBenefit2": "个性化学习问题",
+  "historyConsentBenefit3": "使用收藏功能",
+  "enableSaving": "保存",
+  "maybeLater": "以后再说",
+  "canChangeInSettings": "您可以随时在设置中更改",
+  "historyConsentAccepted": "翻译记录将被保存",
+  "saveTranslationHistory": "保存翻译记录",
+  "saveTranslationHistoryDesc": "保存翻译结果以便稍后查看"
 }

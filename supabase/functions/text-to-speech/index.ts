@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { fullContentCheck } from "../_shared/contentFilter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,6 +80,22 @@ serve(async (req) => {
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not configured')
+    }
+
+    // Content filtering - check for inappropriate content
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (LOVABLE_API_KEY) {
+      const contentCheck = await fullContentCheck(trimmedText, LOVABLE_API_KEY, lang);
+      if (contentCheck.isBlocked) {
+        console.log(`[ContentFilter] TTS blocked: ${contentCheck.category}`);
+        return new Response(
+          JSON.stringify({ error: "Content blocked due to policy violation" }), 
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
     }
 
     // Map language codes to appropriate OpenAI voices

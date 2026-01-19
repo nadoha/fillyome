@@ -1,5 +1,6 @@
 project_id = "wnsubdtajsawsotcpozh"
 
+# Public functions - allow anonymous access with rate limiting
 [functions.translate]
 verify_jwt = false
 
@@ -12,17 +13,18 @@ verify_jwt = false
 [functions.scrape-url]
 verify_jwt = false
 
-[functions.verify-quiz]
-verify_jwt = false
-
-[functions.generate-learning-questions]
-verify_jwt = false
-
-[functions.get-learning-questions]
-verify_jwt = false
-
-[functions.replenish-question-queue]
-verify_jwt = false
-
 [functions.image-translate]
 verify_jwt = false
+
+# Protected functions - require authentication
+[functions.verify-quiz]
+verify_jwt = true
+
+[functions.generate-learning-questions]
+verify_jwt = true
+
+[functions.get-learning-questions]
+verify_jwt = true
+
+[functions.replenish-question-queue]
+verify_jwt = true

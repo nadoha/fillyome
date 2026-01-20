@@ -7,6 +7,7 @@ interface TranslationCache {
   literal: string;
   srcRom: string;
   tgtRom: string;
+  litRom: string;
   example: string;
   timestamp: number;
 }
@@ -57,11 +58,15 @@ export const getFromCache = (cacheKey: string): TranslationCache | null => {
     if (!cached) return null;
     
     const data: TranslationCache = JSON.parse(cached);
-    if (Date.now() - data.timestamp > CACHE_TTL) {
+    const normalized: TranslationCache = {
+      ...data,
+      litRom: (data as any).litRom ?? "",
+    };
+    if (Date.now() - normalized.timestamp > CACHE_TTL) {
       localStorage.removeItem(cacheKey);
       return null;
     }
-    return data;
+    return normalized;
   } catch {
     return null;
   }
@@ -202,6 +207,7 @@ export const useTranslationOptimizer = () => {
           literal: data.literalTranslation || '',
           srcRom: data.sourceRomanization || '',
           tgtRom: data.targetRomanization || '',
+          litRom: data.literalRomanization || '',
           example: data.exampleSentence || '',
           timestamp: Date.now()
         };
@@ -279,6 +285,7 @@ export const useTranslationOptimizer = () => {
             literal: translation.literalTranslation || '',
             srcRom: translation.sourceRomanization || '',
             tgtRom: translation.targetRomanization || '',
+            litRom: translation.literalRomanization || '',
             example: translation.exampleSentence || '',
             timestamp: Date.now()
           };

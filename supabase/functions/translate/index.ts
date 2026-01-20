@@ -291,11 +291,11 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
                   },
                   target_rom: { 
                     type: "string", 
-                    description: needsRom(targetLang) ? "Romanization of the NATURAL translation (translation field). For Japanese text containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. Example: 'Previewing latest version' → 'Puribyūingu rētesuto bājon'. NEVER leave English words as-is." : "Empty string" 
+                    description: needsRom(targetLang) ? "Romanization of EXACTLY the NATURAL translation (translation field). Must correspond to the translation text 1:1 (no paraphrasing, no re-translation). Keep punctuation/spacing aligned. For Japanese containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. NEVER leave English words as-is." : "Empty string" 
                   },
                   literal_rom: { 
                     type: "string", 
-                    description: needsRom(targetLang) ? "Romanization of the LITERAL translation (literal field). For Japanese text containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. NEVER leave English words as-is." : "Empty string" 
+                    description: needsRom(targetLang) ? "Romanization of EXACTLY the LITERAL translation (literal field). Must correspond to the literal text 1:1 (no paraphrasing, no re-translation). Keep punctuation/spacing aligned. For Japanese containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. NEVER leave English words as-is." : "Empty string" 
                   },
                   example_sentence: {
                     type: "string",

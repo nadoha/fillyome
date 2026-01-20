@@ -1304,7 +1304,7 @@ export const TranslationInterface = () => {
     }
   }, []);
 
-  // Fallback to browser Web Speech API with improved language matching
+  // Browser TTS with improved language matching for literal/learning TTS
   const speakWithBrowser = useCallback((text: string, lang: string, speed: number) => {
     if (!('speechSynthesis' in window)) {
       toast.error(t('browserNotSupported') || '브라우저가 음성 재생을 지원하지 않습니다');
@@ -1314,6 +1314,7 @@ export const TranslationInterface = () => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
 
+    // BCP-47 language code mapping for accurate pronunciation
     const langMap: Record<string, string> = {
       'ko': 'ko-KR',
       'ja': 'ja-JP',
@@ -1343,8 +1344,9 @@ export const TranslationInterface = () => {
     const prefixLangVoices = voices.filter(v => v.lang.startsWith(lang + '-') || v.lang === lang);
     const languageVoices = exactLangVoices.length > 0 ? exactLangVoices : prefixLangVoices;
     
-    // Priority: Google voices > non-local voices > any matching voice
+    // Priority: Google voices > Microsoft voices > non-local voices > any matching voice
     const selectedVoice = languageVoices.find(v => v.name.includes('Google') && !v.localService)
+      || languageVoices.find(v => v.name.includes('Microsoft') && !v.localService)
       || languageVoices.find(v => !v.localService)
       || languageVoices[0];
 

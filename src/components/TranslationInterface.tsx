@@ -1251,7 +1251,7 @@ export const TranslationInterface = () => {
     }
   }, []);
 
-  // Fallback to browser Web Speech API
+  // Fallback to browser Web Speech API with improved language matching
   const speakWithBrowser = useCallback((text: string, lang: string, speed: number) => {
     if (!('speechSynthesis' in window)) {
       toast.error(t('browserNotSupported') || '브라우저가 음성 재생을 지원하지 않습니다');
@@ -1272,18 +1272,36 @@ export const TranslationInterface = () => {
       'pt': 'pt-PT',
       'it': 'it-IT',
       'ru': 'ru-RU',
+      'ar': 'ar-SA',
+      'th': 'th-TH',
+      'vi': 'vi-VN',
+      'id': 'id-ID',
+      'hi': 'hi-IN',
+      'tr': 'tr-TR',
     };
-    utterance.lang = langMap[lang] || 'en-US';
+    const targetLangCode = langMap[lang] || `${lang}-${lang.toUpperCase()}`;
+    utterance.lang = targetLangCode;
 
+    // Get voices and filter by the FULL language code first, then by language prefix
     const voices = window.speechSynthesis.getVoices();
-    const languageVoices = voices.filter(v => v.lang.startsWith(lang));
+    
+    // Filter voices that match the target language (using full BCP-47 code)
+    const exactLangVoices = voices.filter(v => v.lang === targetLangCode);
+    const prefixLangVoices = voices.filter(v => v.lang.startsWith(lang + '-') || v.lang === lang);
+    const languageVoices = exactLangVoices.length > 0 ? exactLangVoices : prefixLangVoices;
+    
+    // Priority: Google voices > non-local voices > any matching voice
     const selectedVoice = languageVoices.find(v => v.name.includes('Google') && !v.localService)
       || languageVoices.find(v => !v.localService)
       || languageVoices[0];
 
     if (selectedVoice) {
       utterance.voice = selectedVoice;
+      console.log(`[Browser TTS] Using voice: ${selectedVoice.name} (${selectedVoice.lang}) for target lang: ${lang}`);
+    } else {
+      console.warn(`[Browser TTS] No voice found for language: ${lang}, falling back to browser default`);
     }
+    
     utterance.rate = speed;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;

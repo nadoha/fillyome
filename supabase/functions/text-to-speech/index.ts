@@ -12,6 +12,18 @@ const corsHeaders = {
 const RATE_LIMIT_AUTHENTICATED = { maxRequests: 50, windowMs: 60 * 60 * 1000 };  // 50/hour
 const RATE_LIMIT_ANONYMOUS = { maxRequests: 10, windowMs: 60 * 60 * 1000 };       // 10/hour
 
+// ElevenLabs multilingual voice IDs - optimized for different languages
+const ELEVENLABS_VOICES: Record<string, string> = {
+  'default': 'pNInz6obpgDQGcFmaJgB',  // Adam - multilingual
+  'ja': 'pNInz6obpgDQGcFmaJgB',        // Adam - excellent for Japanese
+  'ko': 'pNInz6obpgDQGcFmaJgB',        // Adam - good for Korean
+  'zh': 'pNInz6obpgDQGcFmaJgB',        // Adam - good for Chinese
+  'en': 'pNInz6obpgDQGcFmaJgB',        // Adam - English
+  'es': 'pNInz6obpgDQGcFmaJgB',        // Adam - Spanish
+  'fr': 'pNInz6obpgDQGcFmaJgB',        // Adam - French
+  'de': 'pNInz6obpgDQGcFmaJgB',        // Adam - German
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -74,13 +86,8 @@ serve(async (req) => {
       );
     }
 
-    // Speed validation (OpenAI supports 0.25 to 4.0)
-    const validSpeed = Math.min(4.0, Math.max(0.25, Number(speed) || 1.0));
-
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not configured')
-    }
+    // Speed validation (ElevenLabs doesn't directly support speed, but we can adjust stability)
+    const validSpeed = Math.min(2.0, Math.max(0.5, Number(speed) || 1.0));
 
     // Content filtering - check for inappropriate content
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -98,58 +105,118 @@ serve(async (req) => {
       }
     }
 
-    // Map language codes to appropriate OpenAI voices
-    const voiceMap: Record<string, string> = {
-      'en': 'alloy',
-      'ja': 'shimmer',
-      'ko': 'nova',
-      'zh': 'shimmer',
-      'es': 'nova',
-      'fr': 'alloy',
-      'de': 'echo',
-      'it': 'nova',
-      'pt': 'alloy',
-      'ru': 'echo',
+    // Try ElevenLabs first (primary)
+    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+    
+    if (ELEVENLABS_API_KEY) {
+      try {
+        const voiceId = ELEVENLABS_VOICES[lang] || ELEVENLABS_VOICES['default'];
+        
+        // ElevenLabs Turbo v2.5 model for fast, multilingual TTS
+        const response = await fetch(
+          `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+          {
+            method: 'POST',
+            headers: {
+              'Accept': 'audio/mpeg',
+              'Content-Type': 'application/json',
+              'xi-api-key': ELEVENLABS_API_KEY,
+            },
+            body: JSON.stringify({
+              text: trimmedText,
+              model_id: 'eleven_turbo_v2_5', // Multilingual turbo model
+              voice_settings: {
+                stability: validSpeed > 1 ? 0.4 : 0.5, // Slightly less stable for faster speech
+                similarity_boost: 0.75,
+                style: 0.0,
+                use_speaker_boost: true,
+              },
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const audioBuffer = await response.arrayBuffer();
+          const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+          
+          console.log(`[ElevenLabs] TTS success for lang: ${lang}, length: ${trimmedText.length}`);
+          
+          return new Response(
+            JSON.stringify({ audioContent: base64Audio }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          );
+        } else {
+          const errorText = await response.text();
+          console.error(`[ElevenLabs] TTS failed: ${response.status} - ${errorText}`);
+          // Fall through to other options
+        }
+      } catch (elevenLabsError) {
+        console.error('[ElevenLabs] TTS error:', elevenLabsError);
+        // Fall through to other options
+      }
     }
 
-    const voice = voiceMap[lang] || 'alloy'
+    // Fallback to OpenAI if available
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    
+    if (OPENAI_API_KEY) {
+      // Map language codes to appropriate OpenAI voices
+      const voiceMap: Record<string, string> = {
+        'en': 'alloy',
+        'ja': 'shimmer',
+        'ko': 'nova',
+        'zh': 'shimmer',
+        'es': 'nova',
+        'fr': 'alloy',
+        'de': 'echo',
+        'it': 'nova',
+        'pt': 'alloy',
+        'ru': 'echo',
+      };
 
-    console.log(`Generating speech for text (${trimmedText.length} chars) with voice: ${voice}, speed: ${validSpeed}`)
+      const voice = voiceMap[lang] || 'alloy';
 
-    // Generate speech from text using OpenAI
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'tts-1',
-        input: trimmedText,
-        voice: voice,
-        response_format: 'mp3',
-        speed: validSpeed,
-      }),
-    })
+      console.log(`[OpenAI] Generating speech for text (${trimmedText.length} chars) with voice: ${voice}, speed: ${validSpeed}`);
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error?.message || 'Failed to generate speech')
+      const response = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'tts-1',
+          input: trimmedText,
+          voice: voice,
+          response_format: 'mp3',
+          speed: validSpeed,
+        }),
+      });
+
+      if (response.ok) {
+        const audioBuffer = await response.arrayBuffer();
+        const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+
+        return new Response(
+          JSON.stringify({ audioContent: base64Audio }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      } else {
+        const error = await response.json();
+        console.error('[OpenAI] TTS failed:', error);
+      }
     }
 
-    const audioBuffer = await response.arrayBuffer();
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
-
+    // No TTS service available
     return new Response(
-      JSON.stringify({ audioContent: base64Audio }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      JSON.stringify({ error: 'TTS service unavailable', useBrowserFallback: true }),
+      { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
+    
   } catch (error) {
-    console.error('Text-to-speech error:', error)
+    console.error('Text-to-speech error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error', useBrowserFallback: true }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

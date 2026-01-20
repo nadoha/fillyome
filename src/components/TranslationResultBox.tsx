@@ -86,7 +86,7 @@ export const TranslationResultBox = memo(({
           )}
 
           {/* Main translation with tappable words */}
-          <div className="text-base leading-relaxed whitespace-pre-wrap break-words pr-8">
+          <div className="text-base leading-relaxed whitespace-pre-wrap break-words pr-24">
             {onWordSave ? (
               <TappableWords 
                 text={naturalTranslation} 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
 import { ArrowLeftRight, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -21,13 +21,17 @@ import { LanguageSelector } from "./LanguageSelector";
 import { HamburgerMenu } from "./HamburgerMenu";
 import { AppSidebar } from "./AppSidebar";
 import { VoiceInputOnboarding } from "./VoiceInputOnboarding";
-import { ImageTranslationTab } from "./ImageTranslationTab";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TranslationStyleSelector } from "./TranslationStyleSelector";
 import { TranslationHistoryConsent } from "./TranslationHistoryConsent";
+import { TranslationLoadingIndicator } from "./TranslationLoadingIndicator";
 import { cleanAllCaches } from "@/utils/cacheManager";
+import { generateCacheKey, getFromCache, saveToCache, cancelPendingRequests } from "@/hooks/useTranslationOptimizer";
+
+// Lazy load heavy components for better bundle size
+const ImageTranslationTab = lazy(() => import("./ImageTranslationTab").then(m => ({ default: m.ImageTranslationTab })));
 interface Translation {
   id: string;
   source_text: string;
@@ -459,6 +463,8 @@ export const TranslationInterface = () => {
   const swapLanguages = useCallback(() => {
     // Flush pending translation before language swap
     flushPendingTranslation();
+    // Cancel any pending requests
+    cancelPendingRequests();
     
     const newSource = targetLang;
     const newTarget = sourceLang;
@@ -467,8 +473,11 @@ export const TranslationInterface = () => {
     setTargetText("");
     updateLanguagePair(newSource, newTarget);
   }, [sourceLang, targetLang, updateLanguagePair, flushPendingTranslation]);
+  
   // Track current translation request to avoid race conditions
   const currentTranslationIdRef = useRef<number>(0);
+  // Request queue for deduplication
+  const pendingRequestRef = useRef<Map<string, Promise<any>>>(new Map());
   
   const handleTranslate = useCallback(async (retryCount = 0) => {
     if (!sourceText.trim()) {
@@ -484,7 +493,28 @@ export const TranslationInterface = () => {
       abortController.abort();
     }
 
-    // Try quick translation first (no AI, instant)
+    // Generate cache key for deduplication
+    const cacheKey = generateCacheKey(sourceText, sourceLang, targetLang, translationStyle);
+    
+    // Check if same request is already pending (deduplication)
+    if (pendingRequestRef.current.has(cacheKey)) {
+      try {
+        const result = await pendingRequestRef.current.get(cacheKey);
+        if (result && currentTranslationIdRef.current === translationId) {
+          setTargetText(result.translation);
+          setLiteralTranslation(result.literal || "");
+          setSourceRomanization(result.srcRom || "");
+          setTargetRomanization(result.tgtRom || "");
+          setExampleSentence(result.example || "");
+          setHasTranslated(true);
+        }
+        return;
+      } catch {
+        // Continue with new request if pending failed
+      }
+    }
+
+    // Try quick translation first (no AI, instant) - extended to 100 chars
     if (shouldUseQuickTranslation(sourceText)) {
       const quickResult = attemptQuickTranslation(sourceText, sourceLang, targetLang);
       if (quickResult) {
@@ -531,48 +561,31 @@ export const TranslationInterface = () => {
       }
     }
 
-    // Check cache second (now includes style) - prioritize cache for speed
-    const styleKey = JSON.stringify(translationStyle);
-    const cacheKey = `tr_${sourceLang}_${targetLang}_${styleKey}_${sourceText}`;
-    const cached = localStorage.getItem(cacheKey);
+    // Check cache second (using optimized cache utilities)
+    const cached = getFromCache(cacheKey);
     if (cached) {
-      try {
-        const {
-          translation,
-          literal,
-          srcRom,
-          tgtRom,
-          example,
-          timestamp
-        } = JSON.parse(cached);
-        // Use cache if less than 7 days old (extended for better performance)
-        if (Date.now() - timestamp < 604800000) {
-          // Check if this is still the current request
-          if (currentTranslationIdRef.current !== translationId) return;
-          
-          setTargetText(translation);
-          setLiteralTranslation(literal);
-          setSourceRomanization(srcRom);
-          setTargetRomanization(tgtRom);
-          setExampleSentence(example || "");
-          setHasTranslated(true);
-          
-          // Save to session state for persistence
-          sessionStorage.setItem('translationSessionState', JSON.stringify({
-            sourceText,
-            targetText: translation,
-            literalTranslation: literal,
-            sourceRomanization: srcRom,
-            targetRomanization: tgtRom,
-            sourceLang,
-            targetLang,
-            timestamp: Date.now()
-          }));
-          return;
-        }
-      } catch (e) {
-        // Invalid cache, continue with API call
-      }
+      // Check if this is still the current request
+      if (currentTranslationIdRef.current !== translationId) return;
+      
+      setTargetText(cached.translation);
+      setLiteralTranslation(cached.literal);
+      setSourceRomanization(cached.srcRom);
+      setTargetRomanization(cached.tgtRom);
+      setExampleSentence(cached.example || "");
+      setHasTranslated(true);
+      
+      // Save to session state for persistence
+      sessionStorage.setItem('translationSessionState', JSON.stringify({
+        sourceText,
+        targetText: cached.translation,
+        literalTranslation: cached.literal,
+        sourceRomanization: cached.srcRom,
+        targetRomanization: cached.tgtRom,
+        sourceLang,
+        targetLang,
+        timestamp: Date.now()
+      }));
+      return;
     }
 
     // If offline and no cache, show error
@@ -710,61 +723,17 @@ export const TranslationInterface = () => {
         example = data.exampleSentence || "";
       }
 
-      // Cache result with timestamp (limit cache size to 50 for faster performance)
-      try {
-        const cacheData = {
-          translation,
-          literal,
-          srcRom: srcRomanization,
-          tgtRom: tgtRomanization,
-          example,
-          timestamp: Date.now()
-        };
-        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-
-        // Clean old cache entries (keep max 50, remove entries older than 7 days)
-        const keys = Object.keys(localStorage).filter(k => k.startsWith('tr_'));
-        const now = Date.now();
-        const sevenDays = 7 * 86400000;
-
-        // Remove old entries
-        keys.forEach(k => {
-          try {
-            const cached = JSON.parse(localStorage.getItem(k) || '{}');
-            if (!cached.timestamp || now - cached.timestamp > sevenDays) {
-              localStorage.removeItem(k);
-            }
-          } catch {
-            localStorage.removeItem(k);
-          }
-        });
-
-        // If still too many, remove oldest
-        const remainingKeys = Object.keys(localStorage).filter(k => k.startsWith('tr_'));
-        if (remainingKeys.length > 50) {
-          const keysWithTime = remainingKeys.map(k => {
-            try {
-              const cached = JSON.parse(localStorage.getItem(k) || '{}');
-              return {
-                key: k,
-                time: cached.timestamp || 0
-              };
-            } catch {
-              return {
-                key: k,
-                time: 0
-              };
-            }
-          }).sort((a, b) => a.time - b.time);
-          keysWithTime.slice(0, keysWithTime.length - 50).forEach(({
-            key
-          }) => {
-            localStorage.removeItem(key);
-          });
-        }
-      } catch (e) {
-        // Cache full or error, continue without caching
-      }
+      // Cache result using optimized cache utility (handles size management automatically)
+      saveToCache(cacheKey, {
+        translation,
+        literal,
+        srcRom: srcRomanization,
+        tgtRom: tgtRomanization,
+        example
+      });
+      
+      // Remove from pending requests
+      pendingRequestRef.current.delete(cacheKey);
       
       // Check if this is still the current request before updating state
       if (currentTranslationIdRef.current !== translationId) return;
@@ -940,7 +909,7 @@ export const TranslationInterface = () => {
     };
   }, [sourceText]);
 
-  // Auto-translate with debounce (optimized for speed)
+  // Auto-translate with optimized debounce (300ms default, faster for quick translations)
   useEffect(() => {
     // When text is cleared, reset to new translation state
     if (!sourceText.trim()) {
@@ -951,6 +920,8 @@ export const TranslationInterface = () => {
       setHasTranslated(false);
       // Clear session state when text is emptied
       sessionStorage.removeItem('translationSessionState');
+      // Cancel any pending requests
+      cancelPendingRequests();
       return;
     }
     
@@ -972,6 +943,7 @@ export const TranslationInterface = () => {
         abortController.abort();
         setAbortController(null);
       }
+      cancelPendingRequests();
       // Clear previous timeout
       if (translateTimeoutRef.current) {
         clearTimeout(translateTimeoutRef.current);
@@ -988,8 +960,11 @@ export const TranslationInterface = () => {
       setIsTranslating(false);
     }
 
-    // Shorter delays for faster translation
-    const delay = languageChanged ? 30 : (shouldUseQuickTranslation(sourceText) ? 80 : 250);
+    // Optimized debounce delays:
+    // - Language change: 30ms (near-instant)
+    // - Quick translation (dictionary lookup): 100ms
+    // - AI translation: 300ms (wait for user to stop typing)
+    const delay = languageChanged ? 30 : (shouldUseQuickTranslation(sourceText) ? 100 : 300);
     
     translateTimeoutRef.current = setTimeout(() => {
       handleTranslate();

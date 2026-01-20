@@ -183,10 +183,21 @@ export const attemptQuickTranslation = (
 export const shouldUseQuickTranslation = (text: string): boolean => {
   const trimmed = text.trim();
   
-  // Quick translation for very short, simple text
+  // Extended quick translation threshold for better performance
+  // Uses dictionary lookup for text up to 100 characters or 8 words
   return (
     trimmed.length > 0 &&
-    trimmed.length <= 50 &&
-    trimmed.split(/\s+/).length <= 5
+    trimmed.length <= 100 &&
+    trimmed.split(/\s+/).length <= 8 &&
+    // Avoid complex punctuation that needs context
+    !trimmed.includes('?') &&
+    !trimmed.includes('!') &&
+    !/[.]{2,}/.test(trimmed)
   );
+};
+
+// Check if text is likely a single word or simple phrase that's cacheable
+export const isSimpleCacheableText = (text: string): boolean => {
+  const trimmed = text.trim();
+  return trimmed.length > 0 && trimmed.length <= 200 && trimmed.split(/\s+/).length <= 15;
 };

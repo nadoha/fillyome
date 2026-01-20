@@ -253,6 +253,7 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
 
     const needsRom = (lang: string) => ['ja', 'ko', 'zh', 'ru', 'ar', 'th', 'hi'].includes(lang);
 
+    // Optimized AI parameters for faster, more consistent translations
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -265,6 +266,8 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
           { role: "system", content: systemPrompt },
           { role: "user", content: `"${text}"` }
         ],
+        temperature: 0.2, // Lower temperature for more consistent translations
+        max_tokens: Math.min(text.length * 4 + 200, 2000), // Dynamic token limit based on input
         tools: [
           {
             type: "function",

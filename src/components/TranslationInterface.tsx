@@ -1597,6 +1597,7 @@ export const TranslationInterface = () => {
                         literalRomanization={!noRomanizationLangs.includes(targetLang) ? literalRomanization : undefined}
                         onCopy={() => handleCopy(targetText)} 
                         onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} 
+                        onSpeakLiteral={literalTranslation ? () => speakWithBrowser(literalTranslation, targetLang, speechSpeed) : undefined}
                         onFeedback={type => {
                           if (targetText) {
                             handleFeedback({
@@ -1618,8 +1619,8 @@ export const TranslationInterface = () => {
                         }} 
                         isTranslating={isTranslating} 
                         placeholder={t("translationResult") || "번역 결과"}
-                        speechSpeed={speechSpeed}
-                        onSpeedChange={setSpeechSpeed}
+                        literalSpeechSpeed={speechSpeed}
+                        onLiteralSpeedChange={setSpeechSpeed}
                         onWordSave={user ? handleWordSaveFromTranslation : undefined}
                         savedWords={savedWordsFromTranslation}
                       />

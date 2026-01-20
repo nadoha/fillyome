@@ -16,12 +16,14 @@ interface TranslationResultBoxProps {
   romanization?: string;
   literalRomanization?: string;
   onCopy: () => void;
-  onSpeak: () => void;
+  onSpeak: () => void; // Main TTS (ElevenLabs) - no speed control
+  onSpeakLiteral?: () => void; // Learning TTS (Browser) - with speed control
   onFeedback?: (type: 'positive' | 'negative') => void;
   isTranslating?: boolean;
   placeholder?: string;
-  speechSpeed?: number;
-  onSpeedChange?: (speed: number) => void;
+  // Speed control only for literal/learning TTS
+  literalSpeechSpeed?: number;
+  onLiteralSpeedChange?: (speed: number) => void;
   onWordSave?: (word: string) => void;
   savedWords?: Set<string>;
 }
@@ -42,11 +44,12 @@ export const TranslationResultBox = memo(({
   literalRomanization,
   onCopy,
   onSpeak,
+  onSpeakLiteral,
   onFeedback,
   isTranslating,
   placeholder,
-  speechSpeed = 1.0,
-  onSpeedChange,
+  literalSpeechSpeed = 1.0,
+  onLiteralSpeedChange,
   onWordSave,
   savedWords = new Set(),
 }: TranslationResultBoxProps) => {
@@ -64,7 +67,7 @@ export const TranslationResultBox = memo(({
     sessionStorage.setItem('literalTranslationExpanded', String(newState));
   };
 
-  const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
+  const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === literalSpeechSpeed)?.label || `${literalSpeechSpeed}x`;
 
   return (
     <div className="relative h-full min-h-[160px] p-4 bg-muted/30 rounded-lg">
@@ -100,7 +103,7 @@ export const TranslationResultBox = memo(({
             )}
           </div>
 
-          {/* Romanization */}
+          {/* Romanization for natural translation */}
           {romanization && (
             <p className="text-sm text-muted-foreground italic">
               {romanization}
@@ -128,6 +131,45 @@ export const TranslationResultBox = memo(({
                     <p className="text-xs text-muted-foreground/70 italic mt-1">
                       {literalRomanization}
                     </p>
+                  )}
+                  
+                  {/* Literal TTS controls with speed adjustment */}
+                  {onSpeakLiteral && (
+                    <div className="flex items-center gap-1 mt-2">
+                      {/* Speed selector for learning TTS */}
+                      {onLiteralSpeedChange && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              {currentSpeedLabel}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="min-w-[80px]">
+                            {SPEED_OPTIONS.map((option) => (
+                              <DropdownMenuItem
+                                key={option.value}
+                                onClick={() => onLiteralSpeedChange(option.value)}
+                                className={literalSpeechSpeed === option.value ? "bg-accent" : ""}
+                              >
+                                {option.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+                        onClick={onSpeakLiteral}
+                      >
+                        <Volume2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
@@ -161,34 +203,9 @@ export const TranslationResultBox = memo(({
         <span className="text-muted-foreground">{placeholder}</span>
       )}
       
-      {/* Action buttons */}
+      {/* Main TTS action buttons - NO speed control for ElevenLabs */}
       {!isTranslating && naturalTranslation && (
         <div className="absolute top-3 right-3 flex items-center gap-1">
-          {/* Speed selector */}
-          {onSpeedChange && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  {currentSpeedLabel}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[80px]">
-                {SPEED_OPTIONS.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => onSpeedChange(option.value)}
-                    className={speechSpeed === option.value ? "bg-accent" : ""}
-                  >
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
           <Button 
             variant="ghost" 
             size="icon" 

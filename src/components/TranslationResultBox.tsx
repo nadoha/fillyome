@@ -3,55 +3,53 @@ import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Sparkles }
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TappableWords } from "./TappableWords";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 interface TranslationResultBoxProps {
   naturalTranslation: string;
   literalTranslation?: string;
   romanization?: string;
-  literalRomanization?: string;
   onCopy: () => void;
-  onSpeak: () => void; // Main TTS (ElevenLabs) - no speed control
-  onSpeakLiteral?: () => void; // Learning TTS (Browser) - with speed control
+  onSpeak: () => void;
   onFeedback?: (type: 'positive' | 'negative') => void;
   isTranslating?: boolean;
   placeholder?: string;
-  // Speed control only for literal/learning TTS
-  literalSpeechSpeed?: number;
-  onLiteralSpeedChange?: (speed: number) => void;
+  speechSpeed?: number;
+  onSpeedChange?: (speed: number) => void;
   onWordSave?: (word: string) => void;
   savedWords?: Set<string>;
 }
-
-const SPEED_OPTIONS = [
-  { value: 0.5, label: "0.5x" },
-  { value: 0.75, label: "0.75x" },
-  { value: 1.0, label: "1x" },
-  { value: 1.25, label: "1.25x" },
-  { value: 1.5, label: "1.5x" },
-  { value: 2.0, label: "2x" },
-];
-
+const SPEED_OPTIONS = [{
+  value: 0.5,
+  label: "0.5x"
+}, {
+  value: 0.75,
+  label: "0.75x"
+}, {
+  value: 1.0,
+  label: "1x"
+}, {
+  value: 1.25,
+  label: "1.25x"
+}, {
+  value: 1.5,
+  label: "1.5x"
+}, {
+  value: 2.0,
+  label: "2x"
+}];
 export const TranslationResultBox = memo(({
   naturalTranslation,
   literalTranslation,
   romanization,
-  literalRomanization,
   onCopy,
   onSpeak,
-  onSpeakLiteral,
   onFeedback,
   isTranslating,
   placeholder,
-  literalSpeechSpeed = 1.0,
-  onLiteralSpeedChange,
+  speechSpeed = 1.0,
+  onSpeedChange,
   onWordSave,
-  savedWords = new Set(),
+  savedWords = new Set()
 }: TranslationResultBoxProps) => {
   // Load literal translation state from sessionStorage, default to expanded (true)
   const [showLiteral, setShowLiteral] = useState(() => {
@@ -66,166 +64,72 @@ export const TranslationResultBox = memo(({
     setShowLiteral(newState);
     sessionStorage.setItem('literalTranslationExpanded', String(newState));
   };
-
-  const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === literalSpeechSpeed)?.label || `${literalSpeechSpeed}x`;
-
-  return (
-    <div className="relative h-full min-h-[160px] p-4 bg-muted/30 rounded-lg">
-      {isTranslating ? (
-        <div className="space-y-3">
+  const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
+  return <div className="relative h-full min-h-[160px] p-4 bg-muted/30 rounded-lg">
+      {isTranslating ? <div className="space-y-3">
           <Skeleton className="h-5 w-full" />
           <Skeleton className="h-5 w-4/5" />
           <Skeleton className="h-5 w-3/5" />
-        </div>
-      ) : naturalTranslation ? (
-        <div className="space-y-3">
+        </div> : naturalTranslation ? <div className="space-y-3">
           {/* Word save hint - dismissible */}
-          {onWordSave && showWordHint && (
-            <div 
-              className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted transition-colors"
-              onClick={() => setShowWordHint(false)}
-            >
+          {onWordSave && showWordHint && <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted transition-colors" onClick={() => setShowWordHint(false)}>
               <Sparkles className="h-3 w-3 text-primary" />
               <span>단어를 탭하면 학습 목록에 저장됩니다</span>
-            </div>
-          )}
+            </div>}
 
           {/* Main translation with tappable words */}
           <div className="text-base leading-relaxed whitespace-pre-wrap break-words pr-24">
-            {onWordSave ? (
-              <TappableWords 
-                text={naturalTranslation} 
-                savedWords={savedWords}
-                onWordTap={onWordSave}
-              />
-            ) : (
-              naturalTranslation
-            )}
+            {onWordSave ? <TappableWords text={naturalTranslation} savedWords={savedWords} onWordTap={onWordSave} /> : naturalTranslation}
           </div>
 
-          {/* Romanization for natural translation */}
-          {romanization && (
-            <p className="text-sm text-muted-foreground italic">
+          {/* Romanization */}
+          {romanization && <p className="text-sm text-muted-foreground italic">
               {romanization}
-            </p>
-          )}
+            </p>}
 
-          {/* Literal translation - expanded by default, only target language */}
-          {literalTranslation && (
-            <div className="pt-2 border-t border-border/50">
-              <button
-                onClick={handleToggleLiteral}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
+          {/* Literal translation - expanded by default */}
+          {literalTranslation && <div className="pt-2 border-t border-border/50">
+              <button onClick={handleToggleLiteral} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 {showLiteral ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 직역
               </button>
-              {showLiteral && (
-                <div className="mt-2 pl-3 border-l-2 border-primary/30">
-                  {/* Only show literal translation in target language - no source language mixing */}
-                  <p className="text-sm text-muted-foreground">
-                    {literalTranslation}
-                  </p>
-                  {/* Only show romanization that corresponds to the literal translation */}
-                  {literalRomanization && literalRomanization !== romanization && (
-                    <p className="text-xs text-muted-foreground/70 italic mt-1">
-                      {literalRomanization}
-                    </p>
-                  )}
-                  
-                  {/* Literal TTS controls with speed adjustment */}
-                  {onSpeakLiteral && (
-                    <div className="flex items-center gap-1 mt-2">
-                      {/* Speed selector for learning TTS */}
-                      {onLiteralSpeedChange && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                            >
-                              {currentSpeedLabel}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="min-w-[80px]">
-                            {SPEED_OPTIONS.map((option) => (
-                              <DropdownMenuItem
-                                key={option.value}
-                                onClick={() => onLiteralSpeedChange(option.value)}
-                                className={literalSpeechSpeed === option.value ? "bg-accent" : ""}
-                              >
-                                {option.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
-                        onClick={onSpeakLiteral}
-                      >
-                        <Volume2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+              {showLiteral && <p className="mt-2 text-sm text-muted-foreground pl-3 border-l-2 border-primary/30">
+                  {literalTranslation}
+                </p>}
+            </div>}
 
           {/* Feedback */}
-          {onFeedback && (
-            <div className="flex items-center gap-1 pt-2">
+          {onFeedback && <div className="flex items-center gap-1 pt-2">
               <span className="text-xs text-muted-foreground mr-1">번역 품질:</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onFeedback('positive')}
-                className="h-7 w-7 rounded-full hover:bg-green-500/10 hover:text-green-600"
-              >
+              <Button variant="ghost" size="icon" onClick={() => onFeedback('positive')} className="h-7 w-7 rounded-full hover:bg-green-500/10 hover:text-green-600">
                 <ThumbsUp className="h-3.5 w-3.5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onFeedback('negative')}
-                className="h-7 w-7 rounded-full hover:bg-orange-500/10 hover:text-orange-600"
-              >
-                <ThumbsDown className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <span className="text-muted-foreground">{placeholder}</span>
-      )}
+              
+            </div>}
+        </div> : <span className="text-muted-foreground">{placeholder}</span>}
       
-      {/* Main TTS action buttons - NO speed control for ElevenLabs */}
-      {!isTranslating && naturalTranslation && (
-        <div className="absolute top-3 right-3 flex items-center gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-            onClick={onSpeak}
-          >
+      {/* Action buttons */}
+      {!isTranslating && naturalTranslation && <div className="absolute top-3 right-3 flex items-center gap-1">
+          {/* Speed selector */}
+          {onSpeedChange && <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
+                  {currentSpeedLabel}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[80px]">
+                {SPEED_OPTIONS.map(option => <DropdownMenuItem key={option.value} onClick={() => onSpeedChange(option.value)} className={speechSpeed === option.value ? "bg-accent" : ""}>
+                    {option.label}
+                  </DropdownMenuItem>)}
+              </DropdownMenuContent>
+            </DropdownMenu>}
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={onSpeak}>
             <Volume2 className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-            onClick={onCopy}
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={onCopy}>
             <Copy className="h-4 w-4" />
           </Button>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 });
-
 TranslationResultBox.displayName = "TranslationResultBox";

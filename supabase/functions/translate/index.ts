@@ -291,14 +291,18 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
                   },
                   target_rom: { 
                     type: "string", 
-                    description: needsRom(targetLang) ? "Romanization of target text. For Japanese text containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. Example: 'Previewing latest version' → 'Puribyūingu rētesuto bājon'. NEVER leave English words as-is." : "Empty string" 
+                    description: needsRom(targetLang) ? "Romanization of the NATURAL translation (translation field). For Japanese text containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. Example: 'Previewing latest version' → 'Puribyūingu rētesuto bājon'. NEVER leave English words as-is." : "Empty string" 
+                  },
+                  literal_rom: { 
+                    type: "string", 
+                    description: needsRom(targetLang) ? "Romanization of the LITERAL translation (literal field). For Japanese text containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. NEVER leave English words as-is." : "Empty string" 
                   },
                   example_sentence: {
                     type: "string",
                     description: `A natural example sentence in ${langNames[targetLang]} that demonstrates how the translated word/phrase is used in context. Should be practical and relevant to everyday usage.`
                   }
                 },
-                required: ["translation", "literal", "source_rom", "target_rom", "example_sentence"]
+                required: ["translation", "literal", "source_rom", "target_rom", "literal_rom", "example_sentence"]
               }
             }
           }
@@ -359,6 +363,7 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
     const literalTranslation = result.literal || "";
     const sourceRomanization = result.source_rom || "";
     const targetRomanization = result.target_rom || "";
+    const literalRomanization = result.literal_rom || "";
     const exampleSentence = result.example_sentence || "";
 
     return new Response(
@@ -367,6 +372,7 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
         literalTranslation,
         sourceRomanization,
         targetRomanization,
+        literalRomanization,
         exampleSentence
       }),
       { 

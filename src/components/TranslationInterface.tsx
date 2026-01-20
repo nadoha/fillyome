@@ -108,6 +108,7 @@ export const TranslationInterface = () => {
     }
     return "";
   });
+  const [literalRomanization, setLiteralRomanization] = useState("");
   const [exampleSentence, setExampleSentence] = useState("");
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
@@ -604,6 +605,7 @@ export const TranslationInterface = () => {
       let literal = "";
       let srcRomanization = "";
       let tgtRomanization = "";
+      let litRomanization = "";
       let example = "";
 
       // Check if text should be chunked for parallel processing
@@ -720,6 +722,7 @@ export const TranslationInterface = () => {
         literal = data.literalTranslation || "";
         srcRomanization = data.sourceRomanization || "";
         tgtRomanization = data.targetRomanization || "";
+        litRomanization = data.literalRomanization || "";
         example = data.exampleSentence || "";
       }
 
@@ -742,6 +745,7 @@ export const TranslationInterface = () => {
       setLiteralTranslation(literal);
       setSourceRomanization(srcRomanization);
       setTargetRomanization(tgtRomanization);
+      setLiteralRomanization(litRomanization);
       setExampleSentence(example);
       setHasTranslated(true);
       
@@ -752,6 +756,7 @@ export const TranslationInterface = () => {
         literalTranslation: literal,
         sourceRomanization: srcRomanization,
         targetRomanization: tgtRomanization,
+        literalRomanization: litRomanization,
         sourceLang,
         targetLang,
         timestamp: Date.now()
@@ -1540,7 +1545,8 @@ export const TranslationInterface = () => {
                       <TranslationResultBox 
                         naturalTranslation={targetText} 
                         literalTranslation={literalTranslation} 
-                        romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined} 
+                        romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
+                        literalRomanization={!noRomanizationLangs.includes(targetLang) ? literalRomanization : undefined}
                         onCopy={() => handleCopy(targetText)} 
                         onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} 
                         onFeedback={type => {

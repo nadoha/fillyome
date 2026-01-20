@@ -14,6 +14,7 @@ interface TranslationResultBoxProps {
   naturalTranslation: string;
   literalTranslation?: string;
   romanization?: string;
+  literalRomanization?: string;
   onCopy: () => void;
   onSpeak: () => void;
   onFeedback?: (type: 'positive' | 'negative') => void;
@@ -38,6 +39,7 @@ export const TranslationResultBox = memo(({
   naturalTranslation,
   literalTranslation,
   romanization,
+  literalRomanization,
   onCopy,
   onSpeak,
   onFeedback,
@@ -116,9 +118,16 @@ export const TranslationResultBox = memo(({
                 직역
               </button>
               {showLiteral && (
-                <p className="mt-2 text-sm text-muted-foreground pl-3 border-l-2 border-primary/30">
-                  {literalTranslation}
-                </p>
+                <div className="mt-2 pl-3 border-l-2 border-primary/30">
+                  <p className="text-sm text-muted-foreground">
+                    {literalTranslation}
+                  </p>
+                  {literalRomanization && (
+                    <p className="text-xs text-muted-foreground/70 italic mt-1">
+                      {literalRomanization}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}

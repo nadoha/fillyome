@@ -64,6 +64,22 @@ const CurrencyExchange = () => {
     return () => clearInterval(interval);
   }, [autoRefresh, amount, fromCurrency, toCurrency, selectedPeriod]);
 
+  // Validate currency code to prevent injection
+  const isValidCurrencyCode = (code: string): boolean => {
+    return CURRENCY_CODES.some(c => c.code === code);
+  };
+
+  // Validate exchange rate is a valid positive number
+  const isValidRate = (rate: unknown): rate is number => {
+    return (
+      typeof rate === 'number' &&
+      !isNaN(rate) &&
+      isFinite(rate) &&
+      rate > 0 &&
+      rate < 10000000 // Sanity check: no rate should exceed 10 million
+    );
+  };
+
   const convertCurrency = async () => {
     if (!amount || isNaN(Number(amount))) {
       setResult(null);
@@ -71,10 +87,20 @@ const CurrencyExchange = () => {
       return;
     }
 
+    // Validate currency codes before making request
+    if (!isValidCurrencyCode(fromCurrency) || !isValidCurrencyCode(toCurrency)) {
+      toast({
+        title: t("authError"),
+        description: t("exchangeRateFetchError"),
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(
-        `https://open.exchangerate-api.com/v6/latest/${fromCurrency}`
+        `https://open.exchangerate-api.com/v6/latest/${encodeURIComponent(fromCurrency)}`
       );
       
       if (!response.ok) {
@@ -82,10 +108,26 @@ const CurrencyExchange = () => {
       }
 
       const data = await response.json();
+
+      // Validate response structure
+      if (!data || typeof data !== 'object' || !data.rates || typeof data.rates !== 'object') {
+        throw new Error('Invalid API response structure');
+      }
+
       const exchangeRate = data.rates[toCurrency];
       
-      if (!exchangeRate) {
+      // Validate exchange rate is valid
+      if (!isValidRate(exchangeRate)) {
         throw new Error(t("exchangeRateNotFound"));
+      }
+
+      // Check for suspicious rate changes (>50% change from last known rate)
+      if (rate !== null && Math.abs(exchangeRate - rate) / rate > 0.5) {
+        toast({
+          title: t("disclaimer"),
+          description: t("disclaimerText"),
+          variant: "destructive",
+        });
       }
 
       setRate(exchangeRate);
@@ -141,12 +183,17 @@ const CurrencyExchange = () => {
   const fetchHistoryData = async () => {
     if (!fromCurrency || !toCurrency) return;
     
+    // Validate currency codes before making request
+    if (!isValidCurrencyCode(fromCurrency) || !isValidCurrencyCode(toCurrency)) {
+      setHistoryData([]);
+      return;
+    }
+    
     setLoadingHistory(true);
     try {
       const { start, end } = getDateRange(selectedPeriod);
       const startDate = new Date(start);
       const endDate = new Date(end);
-      const dates: HistoryData[] = [];
       
       // Generate all dates in range
       const dateArray: Date[] = [];
@@ -157,7 +204,7 @@ const CurrencyExchange = () => {
       // Fetch rates for each date (use latest for simplification)
       // Note: Free tier doesn't support historical data, so we'll use current rate for all dates
       const response = await fetch(
-        `https://open.exchangerate-api.com/v6/latest/${fromCurrency}`
+        `https://open.exchangerate-api.com/v6/latest/${encodeURIComponent(fromCurrency)}`
       );
       
       if (!response.ok) {
@@ -165,15 +212,22 @@ const CurrencyExchange = () => {
       }
 
       const data = await response.json();
+
+      // Validate response structure
+      if (!data || typeof data !== 'object' || !data.rates || typeof data.rates !== 'object') {
+        throw new Error('Invalid API response structure');
+      }
+
       const currentRate = data.rates[toCurrency];
       
-      if (!currentRate) {
+      // Validate rate
+      if (!isValidRate(currentRate)) {
         setHistoryData([]);
         return;
       }
       
       // Create simulated historical data with slight variations for visualization
-      const formattedData: HistoryData[] = dateArray.map((date, index) => {
+      const formattedData: HistoryData[] = dateArray.map((date) => {
         const variation = (Math.random() - 0.5) * 0.02; // ±1% variation
         return {
           date: date.toISOString().split('T')[0],

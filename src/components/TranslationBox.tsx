@@ -59,7 +59,7 @@ export const TranslationBox = memo(({
             onFocus={onFocus}
             onBlur={onBlur}
             onKeyDown={onKeyDown}
-            className="w-full h-full min-h-[60vh] md:min-h-[160px] resize-none text-lg md:text-base leading-relaxed bg-transparent border-0 p-6 text-center placeholder:text-muted-foreground/50 placeholder:text-lg md:placeholder:text-base focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="w-full h-full min-h-[60vh] md:min-h-[160px] resize-none text-lg md:text-base leading-relaxed bg-transparent border-0 p-6 pr-16 text-center placeholder:text-muted-foreground/50 placeholder:text-lg md:placeholder:text-base focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           
           {/* Mic button - minimal */}
@@ -99,7 +99,7 @@ export const TranslationBox = memo(({
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
-          className="w-full h-full min-h-[140px] resize-none text-base leading-relaxed bg-transparent border-0 p-4 pt-6 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="w-full h-full min-h-[140px] resize-none text-base leading-relaxed bg-transparent border-0 p-4 pt-6 pr-20 focus-visible:ring-0 focus-visible:ring-offset-0"
           autoFocus
         />
         

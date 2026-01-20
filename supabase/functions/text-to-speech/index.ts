@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { fullContentCheck } from "../_shared/contentFilter.ts";
 
@@ -137,7 +138,7 @@ serve(async (req) => {
 
         if (response.ok) {
           const audioBuffer = await response.arrayBuffer();
-          const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+          const base64Audio = base64Encode(audioBuffer);
           
           console.log(`[ElevenLabs] TTS success for lang: ${lang}, length: ${trimmedText.length}`);
           
@@ -195,7 +196,7 @@ serve(async (req) => {
 
       if (response.ok) {
         const audioBuffer = await response.arrayBuffer();
-        const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+        const base64Audio = base64Encode(audioBuffer);
 
         return new Response(
           JSON.stringify({ audioContent: base64Audio }),

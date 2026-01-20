@@ -108,7 +108,18 @@ export const TranslationInterface = () => {
     }
     return "";
   });
-  const [literalRomanization, setLiteralRomanization] = useState("");
+  const [literalRomanization, setLiteralRomanization] = useState(() => {
+    const saved = sessionStorage.getItem('translationSessionState');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        return state.literalRomanization || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
   const [exampleSentence, setExampleSentence] = useState("");
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
@@ -506,6 +517,7 @@ export const TranslationInterface = () => {
           setLiteralTranslation(result.literal || "");
           setSourceRomanization(result.srcRom || "");
           setTargetRomanization(result.tgtRom || "");
+          setLiteralRomanization(result.litRom || "");
           setExampleSentence(result.example || "");
           setHasTranslated(true);
         }
@@ -526,6 +538,7 @@ export const TranslationInterface = () => {
         setLiteralTranslation(quickResult.literal || "");
         setSourceRomanization(quickResult.sourceRom || "");
         setTargetRomanization(quickResult.targetRom || "");
+        setLiteralRomanization("");
         setExampleSentence("");
         setHasTranslated(true);
         
@@ -536,6 +549,7 @@ export const TranslationInterface = () => {
           literalTranslation: quickResult.literal || "",
           sourceRomanization: quickResult.sourceRom || "",
           targetRomanization: quickResult.targetRom || "",
+          literalRomanization: "",
           sourceLang,
           targetLang,
           timestamp: Date.now()
@@ -572,6 +586,7 @@ export const TranslationInterface = () => {
       setLiteralTranslation(cached.literal);
       setSourceRomanization(cached.srcRom);
       setTargetRomanization(cached.tgtRom);
+      setLiteralRomanization((cached as any).litRom || "");
       setExampleSentence(cached.example || "");
       setHasTranslated(true);
       
@@ -582,6 +597,7 @@ export const TranslationInterface = () => {
         literalTranslation: cached.literal,
         sourceRomanization: cached.srcRom,
         targetRomanization: cached.tgtRom,
+        literalRomanization: (cached as any).litRom || "",
         sourceLang,
         targetLang,
         timestamp: Date.now()
@@ -634,6 +650,9 @@ export const TranslationInterface = () => {
         // Combine results in order with length validation
         const translatedChunks: string[] = [];
         const literalChunks: string[] = [];
+        const srcRomChunks: string[] = [];
+        const tgtRomChunks: string[] = [];
+        const litRomChunks: string[] = [];
         const minExpectedRatio = 0.15; // Translation should be at least 15% of source length
         
         for (const { index, result } of results.sort((a, b) => a.index - b.index)) {
@@ -663,18 +682,24 @@ export const TranslationInterface = () => {
             } else {
               translatedChunks.push(rawTranslation);
             }
-            
+
             if (data.literalTranslation) literalChunks.push(data.literalTranslation);
+            if (data.sourceRomanization) srcRomChunks.push(data.sourceRomanization);
+            if (data.targetRomanization) tgtRomChunks.push(data.targetRomanization);
+            if (data.literalRomanization) litRomChunks.push(data.literalRomanization);
           }
         }
 
         translation = combineChunks(translatedChunks);
         literal = literalChunks.length > 0 ? combineChunks(literalChunks) : "";
         
-        // Use first chunk's romanization and example
+        // Combine romanization chunks (best-effort) and use first chunk's example
+        const joinRom = (arr: string[]) => arr.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+        srcRomanization = joinRom(srcRomChunks);
+        tgtRomanization = joinRom(tgtRomChunks);
+        litRomanization = joinRom(litRomChunks);
+
         const firstData = (results[0]?.result as any)?.data;
-        srcRomanization = firstData?.sourceRomanization || "";
-        tgtRomanization = firstData?.targetRomanization || "";
         example = firstData?.exampleSentence || "";
       } else {
         // Single request for short text with timeout
@@ -732,6 +757,7 @@ export const TranslationInterface = () => {
         literal,
         srcRom: srcRomanization,
         tgtRom: tgtRomanization,
+        litRom: litRomanization,
         example
       });
       
@@ -922,6 +948,7 @@ export const TranslationInterface = () => {
       setLiteralTranslation("");
       setSourceRomanization("");
       setTargetRomanization("");
+      setLiteralRomanization("");
       setHasTranslated(false);
       // Clear session state when text is emptied
       sessionStorage.removeItem('translationSessionState');
@@ -962,6 +989,7 @@ export const TranslationInterface = () => {
       setTargetText("");
       setLiteralTranslation("");
       setTargetRomanization("");
+      setLiteralRomanization("");
       setIsTranslating(false);
     }
 

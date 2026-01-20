@@ -107,7 +107,7 @@ export const TranslationResultBox = memo(({
             </p>
           )}
 
-          {/* Literal translation - expanded by default */}
+          {/* Literal translation - expanded by default, only target language */}
           {literalTranslation && (
             <div className="pt-2 border-t border-border/50">
               <button
@@ -119,10 +119,12 @@ export const TranslationResultBox = memo(({
               </button>
               {showLiteral && (
                 <div className="mt-2 pl-3 border-l-2 border-primary/30">
+                  {/* Only show literal translation in target language - no source language mixing */}
                   <p className="text-sm text-muted-foreground">
                     {literalTranslation}
                   </p>
-                  {literalRomanization && (
+                  {/* Only show romanization that corresponds to the literal translation */}
+                  {literalRomanization && literalRomanization !== romanization && (
                     <p className="text-xs text-muted-foreground/70 italic mt-1">
                       {literalRomanization}
                     </p>

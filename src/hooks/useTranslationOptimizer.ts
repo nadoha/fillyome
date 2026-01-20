@@ -234,7 +234,8 @@ export const useTranslationOptimizer = () => {
           tgtRom: data.targetRomanization || '',
           litRom: data.literalRomanization || '',
           example: data.exampleSentence || '',
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          schemaVersion: CACHE_SCHEMA_VERSION
         };
         
         // Save to cache
@@ -312,7 +313,8 @@ export const useTranslationOptimizer = () => {
             tgtRom: translation.targetRomanization || '',
             litRom: translation.literalRomanization || '',
             example: translation.exampleSentence || '',
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            schemaVersion: CACHE_SCHEMA_VERSION
           };
           results[originalIndex] = result;
           

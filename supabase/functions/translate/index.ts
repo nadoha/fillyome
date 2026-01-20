@@ -283,7 +283,7 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
                   },
                   literal: { 
                     type: "string", 
-                    description: "Word-by-word literal translation for learning purposes" 
+                    description: `Word-by-word literal translation IN ${langNames[targetLang] || targetLang} ONLY. The literal translation MUST be in the target language (${langNames[targetLang]}), NOT in English or any other language. Preserve source sentence structure but output entirely in ${langNames[targetLang]}.` 
                   },
                   source_rom: { 
                     type: "string", 

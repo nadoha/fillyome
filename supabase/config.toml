@@ -4,6 +4,9 @@ project_id = "wnsubdtajsawsotcpozh"
 [functions.translate]
 verify_jwt = false
 
+[functions.translate-batch]
+verify_jwt = false
+
 [functions.dictionary]
 verify_jwt = false
 

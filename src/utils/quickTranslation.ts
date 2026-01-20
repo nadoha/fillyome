@@ -184,11 +184,11 @@ export const shouldUseQuickTranslation = (text: string): boolean => {
   const trimmed = text.trim();
   
   // Extended quick translation threshold for better performance
-  // Uses dictionary lookup for text up to 100 characters or 8 words
+  // Uses dictionary lookup for text up to 200 characters or 15 words
   return (
     trimmed.length > 0 &&
-    trimmed.length <= 100 &&
-    trimmed.split(/\s+/).length <= 8 &&
+    trimmed.length <= 200 &&
+    trimmed.split(/\s+/).length <= 15 &&
     // Avoid complex punctuation that needs context
     !trimmed.includes('?') &&
     !trimmed.includes('!') &&

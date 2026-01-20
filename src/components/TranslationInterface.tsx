@@ -962,9 +962,9 @@ export const TranslationInterface = () => {
 
     // Optimized debounce delays:
     // - Language change: 30ms (near-instant)
-    // - Quick translation (dictionary lookup): 100ms
-    // - AI translation: 300ms (wait for user to stop typing)
-    const delay = languageChanged ? 30 : (shouldUseQuickTranslation(sourceText) ? 100 : 300);
+    // - Quick translation (dictionary lookup): 80ms
+    // - AI translation: 200ms (faster response)
+    const delay = languageChanged ? 30 : (shouldUseQuickTranslation(sourceText) ? 80 : 200);
     
     translateTimeoutRef.current = setTimeout(() => {
       handleTranslate();

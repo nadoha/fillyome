@@ -658,36 +658,48 @@ export const TranslationInterface = () => {
         for (const { index, result } of results.sort((a, b) => a.index - b.index)) {
           const data = (result as any).data;
           const chunkSource = chunks[index];
-          const rawTranslation = data?.translation || "";
-          
-          if (rawTranslation) {
-            // Validate chunk translation length
-            const sourceLen = chunkSource.length;
-            const translationLen = rawTranslation.length;
-            const isChunkSuspiciouslyShort = 
-              sourceLen > 5 && 
-              translationLen > 0 &&
-              translationLen < sourceLen * minExpectedRatio;
-            
-            if (isChunkSuspiciouslyShort && data.literalTranslation) {
-              // Use literal translation if natural seems truncated
-              console.warn(`Chunk ${index} translation too short (${translationLen} vs ${sourceLen}), using literal`);
-              translatedChunks.push(data.literalTranslation);
-            } else if (isChunkSuspiciouslyShort && translationLen < 10) {
-              console.warn(`Chunk ${index} translation incomplete: "${rawTranslation}"`);
-              // Skip this chunk or use literal if available
-              if (data.literalTranslation) {
-                translatedChunks.push(data.literalTranslation);
-              }
-            } else {
-              translatedChunks.push(rawTranslation);
-            }
 
-            if (data.literalTranslation) literalChunks.push(data.literalTranslation);
-            if (data.sourceRomanization) srcRomChunks.push(data.sourceRomanization);
-            if (data.targetRomanization) tgtRomChunks.push(data.targetRomanization);
-            if (data.literalRomanization) litRomChunks.push(data.literalRomanization);
+          const rawTranslation = data?.translation || "";
+          const rawTargetRom = data?.targetRomanization || "";
+          const rawLiteral = data?.literalTranslation || "";
+          const rawLiteralRom = data?.literalRomanization || "";
+
+          // Nothing usable for this chunk
+          if (!rawTranslation && !rawLiteral) continue;
+
+          // Validate chunk translation length
+          const sourceLen = chunkSource.length;
+          const translationLen = rawTranslation.length;
+          const isChunkSuspiciouslyShort =
+            sourceLen > 5 &&
+            translationLen > 0 &&
+            translationLen < sourceLen * minExpectedRatio;
+
+          // Decide what we will display as the "main" (의역) text for this chunk
+          let mainText = rawTranslation || rawLiteral;
+          let mainRom = rawTargetRom;
+
+          if (isChunkSuspiciouslyShort && rawLiteral) {
+            // Use literal translation if natural seems truncated
+            console.warn(
+              `Chunk ${index} translation too short (${translationLen} vs ${sourceLen}), using literal`
+            );
+            mainText = rawLiteral;
+            mainRom = rawLiteralRom || rawTargetRom;
+          } else if (isChunkSuspiciouslyShort && translationLen < 10 && rawLiteral) {
+            console.warn(`Chunk ${index} translation incomplete: "${rawTranslation}"`);
+            mainText = rawLiteral;
+            mainRom = rawLiteralRom || rawTargetRom;
           }
+
+          translatedChunks.push(mainText);
+
+          // Always collect the dedicated literal output separately
+          if (rawLiteral) literalChunks.push(rawLiteral);
+
+          if (data?.sourceRomanization) srcRomChunks.push(data.sourceRomanization);
+          if (mainRom) tgtRomChunks.push(mainRom);
+          if (rawLiteralRom) litRomChunks.push(rawLiteralRom);
         }
 
         translation = combineChunks(translatedChunks);
@@ -722,20 +734,28 @@ export const TranslationInterface = () => {
         
         // Validate translation length - if suspiciously short, use literal instead or retry
         const rawTranslation = data.translation || "";
+        const rawLiteral = data.literalTranslation || "";
+        const rawTargetRom = data.targetRomanization || "";
+        const rawLiteralRom = data.literalRomanization || "";
+
         const minExpectedRatio = 0.15; // Translation should be at least 15% of source length
         const sourceLen = sourceText.length;
         const translationLen = rawTranslation.length;
-        
+
         // Check if translation seems incomplete (too short relative to source)
-        const isTranslationSuspiciouslyShort = 
+        const isTranslationSuspiciouslyShort =
           sourceLen > 5 && // Only check for non-trivial inputs
           translationLen > 0 &&
           translationLen < sourceLen * minExpectedRatio;
-        
-        if (isTranslationSuspiciouslyShort && data.literalTranslation) {
+
+        const usedLiteralAsMain = !!(isTranslationSuspiciouslyShort && rawLiteral);
+
+        if (usedLiteralAsMain) {
           // Use literal translation if natural translation seems truncated
-          console.warn(`Translation suspiciously short (${translationLen} vs source ${sourceLen}), using literal`);
-          translation = data.literalTranslation;
+          console.warn(
+            `Translation suspiciously short (${translationLen} vs source ${sourceLen}), using literal`
+          );
+          translation = rawLiteral;
         } else if (isTranslationSuspiciouslyShort && translationLen < 10) {
           // If extremely short and no fallback, throw to trigger retry or error
           console.warn(`Translation too short: "${rawTranslation}" for source: "${sourceText}"`);
@@ -743,11 +763,11 @@ export const TranslationInterface = () => {
         } else {
           translation = rawTranslation;
         }
-        
-        literal = data.literalTranslation || "";
+
+        literal = rawLiteral;
         srcRomanization = data.sourceRomanization || "";
-        tgtRomanization = data.targetRomanization || "";
-        litRomanization = data.literalRomanization || "";
+        litRomanization = rawLiteralRom;
+        tgtRomanization = usedLiteralAsMain ? (rawLiteralRom || rawTargetRom) : rawTargetRom;
         example = data.exampleSentence || "";
       }
 

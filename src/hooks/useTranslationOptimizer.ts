@@ -3,6 +3,10 @@ import { useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TranslationCache {
+  /**
+   * Used to invalidate old caches when response shape/semantics change.
+   */
+  schemaVersion: number;
   translation: string;
   literal: string;
   srcRom: string;
@@ -23,6 +27,9 @@ const requestQueue = new Map<string, PendingRequest>();
 // Cache TTL: 7 days
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 const MAX_CACHE_SIZE = 100;
+
+// Bump this to invalidate older cached romanization/translation mappings
+const CACHE_SCHEMA_VERSION = 2;
 
 export interface TranslationStyle {
   formality: "formal" | "informal";
@@ -56,16 +63,30 @@ export const getFromCache = (cacheKey: string): TranslationCache | null => {
   try {
     const cached = localStorage.getItem(cacheKey);
     if (!cached) return null;
-    
-    const data: TranslationCache = JSON.parse(cached);
+
+    const raw = JSON.parse(cached) as any;
     const normalized: TranslationCache = {
-      ...data,
-      litRom: (data as any).litRom ?? "",
+      schemaVersion: raw?.schemaVersion ?? 0,
+      translation: raw?.translation ?? "",
+      literal: raw?.literal ?? "",
+      srcRom: raw?.srcRom ?? "",
+      tgtRom: raw?.tgtRom ?? "",
+      litRom: raw?.litRom ?? "",
+      example: raw?.example ?? "",
+      timestamp: raw?.timestamp ?? 0,
     };
+
+    // Invalidate caches created before we fixed romanization field mapping
+    if (normalized.schemaVersion !== CACHE_SCHEMA_VERSION) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+
     if (Date.now() - normalized.timestamp > CACHE_TTL) {
       localStorage.removeItem(cacheKey);
       return null;
     }
+
     return normalized;
   } catch {
     return null;
@@ -73,14 +94,18 @@ export const getFromCache = (cacheKey: string): TranslationCache | null => {
 };
 
 // Save to cache with size management
-export const saveToCache = (cacheKey: string, data: Omit<TranslationCache, 'timestamp'>): void => {
+export const saveToCache = (
+  cacheKey: string,
+  data: Omit<TranslationCache, 'timestamp' | 'schemaVersion'>
+): void => {
   try {
     const cacheData: TranslationCache = {
       ...data,
-      timestamp: Date.now()
+      schemaVersion: CACHE_SCHEMA_VERSION,
+      timestamp: Date.now(),
     };
     localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-    
+
     // Clean old entries periodically
     cleanCacheIfNeeded();
   } catch {

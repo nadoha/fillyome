@@ -261,7 +261,7 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash", // Fast and balanced model
+        model: "google/gemini-2.5-flash-lite", // Fastest model for quick translations
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `"${text}"` }

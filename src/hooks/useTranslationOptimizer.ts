@@ -228,7 +228,6 @@ export const useTranslationOptimizer = () => {
         }
         
         const result: TranslationCache = {
-          schemaVersion: CACHE_SCHEMA_VERSION,
           translation: data.translation || '',
           literal: data.literalTranslation || '',
           srcRom: data.sourceRomanization || '',
@@ -307,7 +306,6 @@ export const useTranslationOptimizer = () => {
         data.translations.forEach((translation: any, i: number) => {
           const originalIndex = uncachedTexts[i].index;
           const result: TranslationCache = {
-            schemaVersion: CACHE_SCHEMA_VERSION,
             translation: translation.translation || '',
             literal: translation.literalTranslation || '',
             srcRom: translation.sourceRomanization || '',

@@ -273,7 +273,7 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
             type: "function",
             function: {
               name: "translate",
-              description: "Provide natural translation with usage context cards (only when needed)",
+              description: "Provide translation with contextual usage judgment for real-world communication",
               parameters: {
                 type: "object",
                 properties: {
@@ -297,58 +297,33 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
                     type: "string", 
                     description: needsRom(targetLang) ? "Romanization of the literal translation." : "Empty string" 
                   },
-                  alternatives: {
-                    type: "array",
-                    description: "Alternative translations ONLY if nuances differ significantly (max 2). Include only when tone/formality creates meaningful difference. Empty array if main translation covers all cases.",
-                    items: {
-                      type: "object",
-                      properties: {
-                        text: { type: "string", description: "Alternative translation text" },
-                        tags: { 
-                          type: "array", 
-                          items: { type: "string" },
-                          description: "1-2 word tags: 공식/캐주얼/친구/가게/비즈니스/존댓말/반말 etc."
-                        },
-                        note: { type: "string", description: "Max 10 words explaining when to use" }
-                      },
-                      required: ["text", "tags"]
-                    }
-                  },
-                  usage_cards: {
-                    type: "array",
-                    description: "Context cards ONLY when: 1) multiple valid translations exist, 2) tone/formality matters, 3) literal might sound awkward. Empty array for straightforward translations.",
-                    items: {
-                      type: "object",
-                      properties: {
-                        type: { 
-                          type: "string", 
-                          enum: ["situation", "tone", "recommend", "caution"],
-                          description: "situation: usage context, tone: formality level, recommend: preferred choice, caution: what to avoid"
-                        },
-                        title: { type: "string", description: "Card title: 상황/톤/추천/주의" },
-                        items: { 
-                          type: "array", 
-                          items: { type: "string" },
-                          description: "For situation/tone: 1-3 word tags. Empty for recommend/caution."
-                        },
-                        text: { 
-                          type: "string", 
-                          description: "For recommend/caution: single line advice (max 15 words). Empty for situation/tone."
-                        }
-                      },
-                      required: ["type", "title"]
-                    }
-                  },
-                  example: {
+                  usage_judgment: {
                     type: "object",
-                    description: "Example sentence ONLY if usage context is non-obvious. Null/omit for simple words.",
+                    description: "ONLY provide when formality/context matters. Null for simple translations.",
                     properties: {
-                      source: { type: "string", description: "Example in target language" },
-                      target: { type: "string", description: "Translation in source language" }
+                      ok_for: { 
+                        type: "array", 
+                        items: { type: "string" },
+                        description: "1-2 word contexts where this is appropriate: 친구, 가족, 캐주얼, etc."
+                      },
+                      avoid_when: { 
+                        type: "array", 
+                        items: { type: "string" },
+                        description: "1-2 word contexts to avoid: 비즈니스, 가게, 격식, etc."
+                      }
+                    }
+                  },
+                  safer_alternative: {
+                    type: "object",
+                    description: "ONLY provide ONE safer/more formal alternative when the main translation has usage restrictions. Null otherwise.",
+                    properties: {
+                      text: { type: "string", description: "The safer alternative expression" },
+                      romanization: { type: "string", description: "Romanization if target needs it" },
+                      note: { type: "string", description: "Max 10 words: when to use this instead" }
                     }
                   }
                 },
-                required: ["translation", "literal", "source_rom", "target_rom", "literal_rom", "alternatives", "usage_cards"]
+                required: ["translation", "literal", "source_rom", "target_rom", "literal_rom"]
               }
             }
           }
@@ -410,9 +385,8 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
     const sourceRomanization = result.source_rom || "";
     const targetRomanization = result.target_rom || "";
     const literalRomanization = result.literal_rom || "";
-    const alternatives = result.alternatives || [];
-    const usageCards = result.usage_cards || [];
-    const example = result.example || null;
+    const usageJudgment = result.usage_judgment || null;
+    const saferAlternative = result.safer_alternative || null;
 
     return new Response(
       JSON.stringify({ 
@@ -421,9 +395,8 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
         sourceRomanization,
         targetRomanization,
         literalRomanization,
-        alternatives,
-        usageCards,
-        example
+        usageJudgment,
+        saferAlternative
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 

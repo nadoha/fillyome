@@ -122,11 +122,10 @@ export const TranslationInterface = () => {
   });
   const [exampleSentence, setExampleSentence] = useState("");
   
-  // Context card state for decision-ready translation UI (matches LLM schema)
-  const [usageJudgment, setUsageJudgment] = useState<{ok_for: string[]; avoid_when: string[]} | null>(null);
-  const [saferAlternative, setSaferAlternative] = useState<{text: string | null; romaji?: string | null; reason?: string | null} | null>(null);
-  const [alternatives, setAlternatives] = useState<Array<{text: string; romaji?: string | null; situations: string[]}> | null>(null);
-  const [usageExample, setUsageExample] = useState<{jp: string | null; kr: string | null} | null>(null);
+  // New: Usage cards state for structured translation context
+  const [alternatives, setAlternatives] = useState<Array<{text: string; tags: string[]; note?: string}>>([]);
+  const [usageCards, setUsageCards] = useState<Array<{type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string}>>([]);
+  const [usageExample, setUsageExample] = useState<{source: string; target: string} | null>(null);
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
     return saved as any || "ko";
@@ -776,17 +775,17 @@ export const TranslationInterface = () => {
         tgtRomanization = usedLiteralAsMain ? (rawLiteralRom || rawTargetRom) : rawTargetRom;
         example = data.exampleSentence || "";
         
-        // Extract context card data for decision-ready UI (already in correct schema)
-        console.log("[TranslationInterface] Raw response usageJudgment:", JSON.stringify(data.usageJudgment));
-        console.log("[TranslationInterface] Raw response saferAlternative:", JSON.stringify(data.saferAlternative));
-        console.log("[TranslationInterface] Raw response alternatives:", JSON.stringify(data.alternatives));
-        console.log("[TranslationInterface] Raw response example:", JSON.stringify(data.example));
+        // Extract new usage context data
+        const respAlternatives = data.alternatives || [];
+        const respUsageCards = (data.usageCards || []).filter(
+          (card: any) => ["situation", "tone", "recommend", "caution"].includes(card.type)
+        ) as Array<{type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string}>;
+        const respExample = data.example || null;
         
-        // Set context card states directly (LLM schema matches frontend)
-        setUsageJudgment(data.usageJudgment || { ok_for: [], avoid_when: [] });
-        setSaferAlternative(data.saferAlternative || null);
-        setAlternatives(data.alternatives || null);
-        setUsageExample(data.example || null);
+        // Update usage cards state
+        setAlternatives(respAlternatives);
+        setUsageCards(respUsageCards);
+        setUsageExample(respExample);
       }
 
       // Cache result using optimized cache utility (handles size management automatically)
@@ -1614,7 +1613,6 @@ export const TranslationInterface = () => {
                         naturalTranslation={targetText} 
                         literalTranslation={literalTranslation} 
                         romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
-                        sourceText={sourceText}
                         onCopy={() => handleCopy(targetText)} 
                         onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} 
                         onFeedback={type => {
@@ -1642,20 +1640,10 @@ export const TranslationInterface = () => {
                         onSpeedChange={setSpeechSpeed}
                         onWordSave={user ? handleWordSaveFromTranslation : undefined}
                         savedWords={savedWordsFromTranslation}
-                        usageJudgment={usageJudgment}
-                        saferAlternative={saferAlternative}
                         alternatives={alternatives}
-                        usageExample={usageExample}
+                        usageCards={usageCards}
+                        example={usageExample}
                         onAlternativeSpeak={(text) => handleSpeak(text, targetLang, "")}
-                        onAlternativeSelect={(text, romaji) => {
-                          // Replace main translation with selected alternative
-                          setTargetText(text);
-                          if (romaji) {
-                            setTargetRomanization(romaji);
-                          }
-                          toast.success("번역이 교체되었습니다");
-                        }}
-                        onExampleSpeak={(text) => handleSpeak(text, targetLang, "")}
                       />
                     </div>
                   </div>

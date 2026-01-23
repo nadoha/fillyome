@@ -27,7 +27,12 @@ export const TranslationStyleSelector = memo(({
     });
   };
   return <div className="flex items-center justify-start gap-4">
-      
+      <div className="flex items-center gap-2">
+        <Label htmlFor="formality-toggle" className="text-sm font-medium">
+          {selectedStyle.formality === "formal" ? "격식체" : "반말체"}
+        </Label>
+        <Switch id="formality-toggle" checked={selectedStyle.formality === "formal"} onCheckedChange={handleFormalityToggle} />
+      </div>
       
       
     </div>;

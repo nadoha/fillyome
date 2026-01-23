@@ -1,16 +1,15 @@
 import { memo, useState } from "react";
-import { Copy, Volume2, ThumbsUp, Sparkles } from "lucide-react";
+import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TappableWords } from "./TappableWords";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ContextCard, UsageJudgment, SaferAlternative, TranslationAlternative, TranslationExample } from "./ContextCard";
+import { UsageCards, Alternative, UsageCard, UsageExample } from "./UsageCards";
 
 interface TranslationResultBoxProps {
   naturalTranslation: string;
   literalTranslation?: string;
   romanization?: string;
-  sourceText?: string;
   onCopy: () => void;
   onSpeak: () => void;
   onFeedback?: (type: 'positive' | 'negative') => void;
@@ -20,29 +19,34 @@ interface TranslationResultBoxProps {
   onSpeedChange?: (speed: number) => void;
   onWordSave?: (word: string) => void;
   savedWords?: Set<string>;
-  usageJudgment?: UsageJudgment | null;
-  saferAlternative?: SaferAlternative | null;
-  alternatives?: TranslationAlternative[] | null;
-  usageExample?: TranslationExample | null;
+  alternatives?: Alternative[];
+  usageCards?: UsageCard[];
+  example?: UsageExample | null;
   onAlternativeSpeak?: (text: string) => void;
-  onAlternativeSelect?: (text: string, romaji?: string | null) => void;
-  onExampleSpeak?: (text: string) => void;
 }
-
-const SPEED_OPTIONS = [
-  { value: 0.5, label: "0.5x" },
-  { value: 0.75, label: "0.75x" },
-  { value: 1.0, label: "1x" },
-  { value: 1.25, label: "1.25x" },
-  { value: 1.5, label: "1.5x" },
-  { value: 2.0, label: "2x" }
-];
-
+const SPEED_OPTIONS = [{
+  value: 0.5,
+  label: "0.5x"
+}, {
+  value: 0.75,
+  label: "0.75x"
+}, {
+  value: 1.0,
+  label: "1x"
+}, {
+  value: 1.25,
+  label: "1.25x"
+}, {
+  value: 1.5,
+  label: "1.5x"
+}, {
+  value: 2.0,
+  label: "2x"
+}];
 export const TranslationResultBox = memo(({
   naturalTranslation,
   literalTranslation,
   romanization,
-  sourceText,
   onCopy,
   onSpeak,
   onFeedback,
@@ -52,31 +56,25 @@ export const TranslationResultBox = memo(({
   onSpeedChange,
   onWordSave,
   savedWords = new Set(),
-  usageJudgment,
-  saferAlternative,
-  alternatives,
-  usageExample,
+  alternatives = [],
+  usageCards = [],
+  example,
   onAlternativeSpeak,
-  onAlternativeSelect,
-  onExampleSpeak,
 }: TranslationResultBoxProps) => {
-  // Literal translation tab state: 'literal' or 'original'
-  const [activeTab, setActiveTab] = useState<'literal' | 'original'>(() => {
-    const saved = sessionStorage.getItem('translationActiveTab');
-    return (saved === 'original') ? 'original' : 'literal';
+  // Load literal translation state from sessionStorage, default to expanded (true)
+  const [showLiteral, setShowLiteral] = useState(() => {
+    const saved = sessionStorage.getItem('literalTranslationExpanded');
+    return saved !== null ? saved === 'true' : true; // Default: expanded
   });
   const [showWordHint, setShowWordHint] = useState(true);
 
-  // Save tab state to sessionStorage when changed
-  const handleTabChange = (tab: 'literal' | 'original') => {
-    setActiveTab(tab);
-    sessionStorage.setItem('translationActiveTab', tab);
+  // Save literal state to sessionStorage when changed
+  const handleToggleLiteral = () => {
+    const newState = !showLiteral;
+    setShowLiteral(newState);
+    sessionStorage.setItem('literalTranslationExpanded', String(newState));
   };
-
   const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
-  
-  // Check if context card has any data to show
-  const hasContextData = usageJudgment || saferAlternative || alternatives || usageExample;
   
   return (
     <div className="relative h-full min-h-[160px] p-4 bg-muted/30 rounded-lg">
@@ -113,61 +111,31 @@ export const TranslationResultBox = memo(({
             <p className="text-sm text-muted-foreground italic">{romanization}</p>
           )}
 
-          {/* Literal/Original Tabs - Improved Design */}
-          {(literalTranslation || sourceText) && (
-            <div className="pt-3 border-t border-border/50">
-              {/* Tab buttons */}
-              <div className="flex gap-1 mb-3 p-1 bg-muted/50 rounded-lg w-fit">
-                {literalTranslation && (
-                  <button
-                    onClick={() => handleTabChange('literal')}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      activeTab === 'literal'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    직역
-                  </button>
-                )}
-                {sourceText && (
-                  <button
-                    onClick={() => handleTabChange('original')}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      activeTab === 'original'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    원문
-                  </button>
-                )}
-              </div>
-              {/* Tab content */}
-              <div className="text-sm text-muted-foreground pl-3 border-l-2 border-primary/30">
-                {activeTab === 'literal' && literalTranslation && (
-                  <p>{literalTranslation}</p>
-                )}
-                {activeTab === 'original' && sourceText && (
-                  <p>{sourceText}</p>
-                )}
-              </div>
+          {/* Literal translation - expanded by default */}
+          {literalTranslation && (
+            <div className="pt-2 border-t border-border/50">
+              <button 
+                onClick={handleToggleLiteral} 
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showLiteral ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                직역
+              </button>
+              {showLiteral && (
+                <p className="mt-2 text-sm text-muted-foreground pl-3 border-l-2 border-primary/30">
+                  {literalTranslation}
+                </p>
+              )}
             </div>
           )}
 
-          {/* Context Card - always render container when translation exists */}
-          {hasContextData && (
-            <ContextCard
-              coreMeaning={sourceText || ""}
-              usage={usageJudgment}
-              saferAlternative={saferAlternative}
-              alternatives={alternatives}
-              example={usageExample}
-              onAlternativeClick={() => saferAlternative?.text && onAlternativeSpeak?.(saferAlternative.text)}
-              onAlternativeSelect={onAlternativeSelect}
-              onExampleSpeak={onExampleSpeak}
-            />
-          )}
+          {/* Usage Cards - conditional rendering */}
+          <UsageCards
+            alternatives={alternatives}
+            usageCards={usageCards}
+            example={example}
+            onAlternativeSpeak={onAlternativeSpeak}
+          />
 
           {/* Feedback */}
           {onFeedback && (
@@ -188,18 +156,14 @@ export const TranslationResultBox = memo(({
         <span className="text-muted-foreground">{placeholder}</span>
       )}
       
-      {/* Action buttons - Larger touch targets */}
+      {/* Action buttons */}
       {!isTranslating && naturalTranslation && (
-        <div className="absolute top-2 right-2 flex items-center gap-1">
+        <div className="absolute top-3 right-3 flex items-center gap-1">
           {/* Speed selector */}
           {onSpeedChange && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-10 px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                >
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
                   {currentSpeedLabel}
                 </Button>
               </DropdownMenuTrigger>
@@ -219,18 +183,18 @@ export const TranslationResultBox = memo(({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" 
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" 
             onClick={onSpeak}
           >
-            <Volume2 className="h-5 w-5" />
+            <Volume2 className="h-4 w-4" />
           </Button>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" 
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" 
             onClick={onCopy}
           >
-            <Copy className="h-5 w-5" />
+            <Copy className="h-4 w-4" />
           </Button>
         </div>
       )}

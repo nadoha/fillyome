@@ -12,6 +12,29 @@ const corsHeaders = {
 const RATE_LIMIT_AUTHENTICATED = { maxRequests: 100, windowMs: 60 * 60 * 1000 }; // 100/hour
 const RATE_LIMIT_ANONYMOUS = { maxRequests: 20, windowMs: 60 * 60 * 1000 };      // 20/hour
 
+// Forced response schema for consistent output
+interface TranslationSchema {
+  main_translation: string;
+  main_romaji: string | null;
+  core_meaning_kr: string;
+  usage: {
+    ok_for: string[];
+    avoid_when: string[];
+  };
+  safer_alternative: {
+    text: string | null;
+    romaji: string | null;
+    reason: string | null;
+  };
+  example: {
+    jp: string | null;
+    kr: string | null;
+  };
+  literal_translation: string;
+  literal_romaji: string | null;
+  source_romaji: string | null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -47,7 +70,7 @@ serve(async (req) => {
       console.log(`[RateLimit] Blocked ${identifier}`);
       return rateLimitResponse(rateLimitResult, corsHeaders);
     }
-    const { text, sourceLang, targetLang, style, requestRecommendation } = await req.json();
+    const { text, sourceLang, targetLang, style } = await req.json();
     
     // Input validation
     if (!text || !sourceLang || !targetLang) {
@@ -137,123 +160,64 @@ serve(async (req) => {
     };
 
     console.log(`Translation request: ${langNames[sourceLang]} → ${langNames[targetLang]}`);
-    
-    // If recommendation is requested, analyze the text first
-    if (requestRecommendation) {
-      const recommendationPrompt = `Analyze this text and recommend the most appropriate translation style preset:
 
-Text: "${text}"
-Source language: ${langNames[sourceLang]}
-
-Available presets:
-- friend: Informal, casual, natural (for chatting with friends)
-- business: Formal, business context, natural (for work emails/documents)
-- polite: Formal, casual context, natural (for polite conversation)
-- academic: Formal, academic context, literal (for research/papers)
-
-Return ONLY the preset ID (friend/business/polite/academic) that best fits this text's context and purpose.`;
-
-      try {
-        const recResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite", // Use fastest model for recommendations
-        messages: [
-          { role: "user", content: recommendationPrompt }
-        ],
-        max_completion_tokens: 50, // Limit response size
-      }),
-        });
-
-        if (recResponse.ok) {
-          const recData = await recResponse.json();
-          const recommendedPreset = recData.choices[0].message.content.trim().toLowerCase();
-          console.log(`AI recommended preset: ${recommendedPreset}`);
-          
-          return new Response(
-            JSON.stringify({ recommendedPreset }),
-            { 
-              status: 200, 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
-            }
-          );
-        }
-      } catch (error) {
-        console.error("Recommendation failed:", error);
-      }
-    }
-
-    // Build style-aware system prompt
+    // Build style-aware instructions
     let styleInstructions = "";
-    
     if (style) {
-      // Formality
       if (style.formality === "formal") {
         styleInstructions += "\n- Use FORMAL language (존댓말/敬語/formal tone)";
       } else if (style.formality === "informal") {
         styleInstructions += "\n- Use INFORMAL language (반말/タメ口/casual tone)";
       }
-
-      // Domain
       if (style.domain === "business") {
         styleInstructions += "\n- Use BUSINESS terminology and professional expressions";
       } else if (style.domain === "academic") {
         styleInstructions += "\n- Use ACADEMIC terminology and scholarly expressions";
-      } else if (style.domain === "casual") {
-        styleInstructions += "\n- Use CASUAL everyday expressions";
-      }
-
-      // Translation type
-      if (style.translationType === "literal") {
-        styleInstructions += "\n- Prioritize LITERAL translation (word-for-word accuracy)";
-      } else if (style.translationType === "natural") {
-        styleInstructions += "\n- Prioritize NATURAL translation (idiomatic fluency)";
       }
     }
-    
-    // High-context language handling (Korean/Japanese/Chinese)
-    const isHighContextLang = ['ko', 'ja', 'zh'].includes(sourceLang);
-    const highContextGuidelines = isHighContextLang ? `
-HIGH-CONTEXT LANGUAGE RULES:
-- Even if subject/object is omitted, ALWAYS output a COMPLETE sentence
-- When meaning is ambiguous, choose the most common/natural interpretation
-- NEVER stop mid-sentence or output incomplete translations
-- Do NOT refuse to translate due to ambiguity - pick the safest general interpretation` : '';
-
-    // CRITICAL: Enforce strict target language adherence and output stability
-    const systemPrompt = `You are a professional translator. Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}.
-
-CRITICAL OUTPUT STABILITY RULES (MUST FOLLOW):
-- ALWAYS output a COMPLETE, grammatically correct sentence
-- NEVER output truncated, incomplete, or mid-sentence translations
-- Even for short/ambiguous input, produce a full natural sentence
-- If multiple interpretations exist, choose the most common one and translate it completely
-- Example: "嫌い" → "I don't like it." (NOT "I don't" or "I don't w")
-
-TRANSLATION APPROACH:
-- Default is NATURAL translation (의역) - prioritize fluency and native expression
-- Literal translation is secondary/supplementary
-- Output MUST be in ${langNames[targetLang]} ONLY
-- Provide ONE main translation that sounds native
-- Add 1-2 alternatives ONLY when significantly different nuances exist
-${highContextGuidelines}
-
-GUIDELINES:
-- Focus on how native speakers actually say it
-- Capture meaning and tone naturally
-- Adapt idioms appropriately for target culture
-- Preserve emoticons and formatting
-- Do NOT add learning explanations, levels, or test criteria${styleInstructions}
-
-Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
 
     const needsRom = (lang: string) => ['ja', 'ko', 'zh', 'ru', 'ar', 'th', 'hi'].includes(lang);
+    const sourceNeedsRom = needsRom(sourceLang);
+    const targetNeedsRom = needsRom(targetLang);
 
-    // Optimized AI parameters for faster, more consistent translations
+    // Forced JSON schema prompt
+    const systemPrompt = `You are a professional translator. Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}.
+
+Return ONLY valid JSON matching the schema below. No markdown. No extra text. No code blocks.
+If you are unsure about any field, still fill it with your best guess. NEVER omit any keys.
+
+SCHEMA:
+{
+  "main_translation": "Natural translation in ${langNames[targetLang]}",
+  "main_romaji": ${targetNeedsRom ? '"Romanization of main_translation"' : 'null'},
+  "core_meaning_kr": "Original meaning in Korean (for context display)",
+  "usage": {
+    "ok_for": ["1-2 word contexts where this expression is appropriate, e.g. 친구, 가족, 캐주얼"],
+    "avoid_when": ["1-2 word contexts to avoid, e.g. 비즈니스, 격식, 가게"]
+  },
+  "safer_alternative": {
+    "text": "A more formal/safer alternative expression if the main translation has usage restrictions, or null",
+    "romaji": ${targetNeedsRom ? '"Romanization of safer alternative"' : 'null'},
+    "reason": "Max 10 words: when to use this instead, or null"
+  },
+  "example": {
+    "jp": "One example sentence in ${langNames[targetLang]} using the expression, or null",
+    "kr": "Korean translation of the example, or null"
+  },
+  "literal_translation": "Word-by-word literal translation in ${langNames[targetLang]}",
+  "literal_romaji": ${targetNeedsRom ? '"Romanization of literal translation"' : 'null'},
+  "source_romaji": ${sourceNeedsRom ? '"Romanization of source text"' : 'null'}
+}
+
+CRITICAL RULES:
+- Output ONLY the JSON object, nothing else
+- All keys must be present (use null or [] for empty values)
+- usage.ok_for and usage.avoid_when must ALWAYS have at least 1 item each for phrases/sentences
+- For simple words without context sensitivity, ok_for can have ["일반"], avoid_when can have []
+- main_translation must be a COMPLETE, natural sentence
+- Do NOT add markdown formatting or code fences
+${styleInstructions}`;
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -261,74 +225,13 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite", // Fastest model for quick translations
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `"${text}"` }
+          { role: "user", content: `Translate: "${text}"` }
         ],
-        temperature: 0.2, // Lower temperature for more consistent translations
-        max_tokens: Math.min(text.length * 4 + 400, 2500), // Dynamic token limit based on input
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "translate",
-              description: "Provide translation with contextual usage judgment for real-world communication",
-              parameters: {
-                type: "object",
-                properties: {
-                  translation: { 
-                    type: "string", 
-                    description: "Natural, fluent translation that sounds native. Adapt idioms and expressions appropriately." 
-                  },
-                  literal: { 
-                    type: "string", 
-                    description: `Word-by-word literal translation IN ${langNames[targetLang] || targetLang} ONLY. Preserve source sentence structure but output entirely in ${langNames[targetLang]}.` 
-                  },
-                  source_rom: { 
-                    type: "string", 
-                    description: needsRom(sourceLang) ? "Romanization of source text." : "Empty string" 
-                  },
-                  target_rom: { 
-                    type: "string", 
-                    description: needsRom(targetLang) ? "Romanization of the natural translation." : "Empty string" 
-                  },
-                  literal_rom: { 
-                    type: "string", 
-                    description: needsRom(targetLang) ? "Romanization of the literal translation." : "Empty string" 
-                  },
-                  usage_judgment: {
-                    type: "object",
-                    description: "ONLY provide when formality/context matters. Null for simple translations.",
-                    properties: {
-                      ok_for: { 
-                        type: "array", 
-                        items: { type: "string" },
-                        description: "1-2 word contexts where this is appropriate: 친구, 가족, 캐주얼, etc."
-                      },
-                      avoid_when: { 
-                        type: "array", 
-                        items: { type: "string" },
-                        description: "1-2 word contexts to avoid: 비즈니스, 가게, 격식, etc."
-                      }
-                    }
-                  },
-                  safer_alternative: {
-                    type: "object",
-                    description: "ONLY provide ONE safer/more formal alternative when the main translation has usage restrictions. Null otherwise.",
-                    properties: {
-                      text: { type: "string", description: "The safer alternative expression" },
-                      romanization: { type: "string", description: "Romanization if target needs it" },
-                      note: { type: "string", description: "Max 10 words: when to use this instead" }
-                    }
-                  }
-                },
-                required: ["translation", "literal", "source_rom", "target_rom", "literal_rom"]
-              }
-            }
-          }
-        ],
-        tool_choice: { type: "function", function: { name: "translate" } }
+        temperature: 0.2,
+        max_tokens: Math.min(text.length * 6 + 800, 3000),
       }),
     });
 
@@ -337,20 +240,14 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
         console.error("Rate limit exceeded");
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), 
-          { 
-            status: 429, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         console.error("Payment required");
         return new Response(
           JSON.stringify({ error: "Translation credits exhausted. Please add credits." }), 
-          { 
-            status: 402, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
@@ -358,49 +255,93 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
       console.error("AI gateway error:", response.status, errorText);
       return new Response(
         JSON.stringify({ error: "Translation failed" }), 
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    const rawContent = data.choices?.[0]?.message?.content || "";
     
-    if (!toolCall?.function?.arguments) {
-      console.error("No tool call in response");
+    // Log raw response for debugging
+    console.log("[Translate] Raw LLM response:", rawContent.substring(0, 500));
+
+    // Parse JSON from response (handle potential markdown code blocks)
+    let parsed: TranslationSchema;
+    try {
+      // Remove markdown code fences if present
+      let jsonStr = rawContent.trim();
+      if (jsonStr.startsWith("```json")) {
+        jsonStr = jsonStr.slice(7);
+      } else if (jsonStr.startsWith("```")) {
+        jsonStr = jsonStr.slice(3);
+      }
+      if (jsonStr.endsWith("```")) {
+        jsonStr = jsonStr.slice(0, -3);
+      }
+      jsonStr = jsonStr.trim();
+      
+      parsed = JSON.parse(jsonStr);
+      console.log("[Translate] Parsed JSON keys:", Object.keys(parsed));
+    } catch (parseError) {
+      console.error("[Translate] JSON parse failed:", parseError);
+      console.error("[Translate] Raw content was:", rawContent);
+      
+      // Fallback: return basic translation from raw content
       return new Response(
-        JSON.stringify({ error: "Translation failed" }), 
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
+        JSON.stringify({
+          translation: rawContent.substring(0, 200),
+          literalTranslation: "",
+          sourceRomanization: "",
+          targetRomanization: "",
+          literalRomanization: "",
+          usageJudgment: { ok_for: ["일반"], avoid_when: [] },
+          saferAlternative: null,
+          example: null,
+          _parseError: true
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const result = JSON.parse(toolCall.function.arguments);
-    const translation = result.translation;
-    const literalTranslation = result.literal || "";
-    const sourceRomanization = result.source_rom || "";
-    const targetRomanization = result.target_rom || "";
-    const literalRomanization = result.literal_rom || "";
-    const usageJudgment = result.usage_judgment || null;
-    const saferAlternative = result.safer_alternative || null;
+    // Ensure all required fields have defaults
+    const result: TranslationSchema = {
+      main_translation: parsed.main_translation || text,
+      main_romaji: parsed.main_romaji || null,
+      core_meaning_kr: parsed.core_meaning_kr || text,
+      usage: {
+        ok_for: parsed.usage?.ok_for || ["일반"],
+        avoid_when: parsed.usage?.avoid_when || []
+      },
+      safer_alternative: {
+        text: parsed.safer_alternative?.text || null,
+        romaji: parsed.safer_alternative?.romaji || null,
+        reason: parsed.safer_alternative?.reason || null
+      },
+      example: {
+        jp: parsed.example?.jp || null,
+        kr: parsed.example?.kr || null
+      },
+      literal_translation: parsed.literal_translation || parsed.main_translation || text,
+      literal_romaji: parsed.literal_romaji || null,
+      source_romaji: parsed.source_romaji || null
+    };
 
+    console.log("[Translate] Final result - usage:", JSON.stringify(result.usage));
+    console.log("[Translate] Final result - safer_alternative:", JSON.stringify(result.safer_alternative));
+
+    // Map to frontend expected format
     return new Response(
       JSON.stringify({ 
-        translation,
-        literalTranslation,
-        sourceRomanization,
-        targetRomanization,
-        literalRomanization,
-        usageJudgment,
-        saferAlternative
+        translation: result.main_translation,
+        literalTranslation: result.literal_translation,
+        sourceRomanization: result.source_romaji || "",
+        targetRomanization: result.main_romaji || "",
+        literalRomanization: result.literal_romaji || "",
+        usageJudgment: result.usage,
+        saferAlternative: result.safer_alternative.text ? result.safer_alternative : null,
+        example: (result.example.jp || result.example.kr) ? result.example : null
       }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {

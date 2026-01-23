@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TappableWords } from "./TappableWords";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ContextCard, UsageJudgment, SaferAlternative, TranslationExample } from "./ContextCard";
+import { ContextCard, UsageJudgment, SaferAlternative, TranslationAlternative, TranslationExample } from "./ContextCard";
 
 interface TranslationResultBoxProps {
   naturalTranslation: string;
@@ -22,8 +22,10 @@ interface TranslationResultBoxProps {
   savedWords?: Set<string>;
   usageJudgment?: UsageJudgment | null;
   saferAlternative?: SaferAlternative | null;
+  alternatives?: TranslationAlternative[] | null;
   usageExample?: TranslationExample | null;
   onAlternativeSpeak?: (text: string) => void;
+  onAlternativeSelect?: (text: string, romaji?: string | null) => void;
 }
 
 const SPEED_OPTIONS = [
@@ -51,8 +53,10 @@ export const TranslationResultBox = memo(({
   savedWords = new Set(),
   usageJudgment,
   saferAlternative,
+  alternatives,
   usageExample,
   onAlternativeSpeak,
+  onAlternativeSelect,
 }: TranslationResultBoxProps) => {
   // Literal translation tab state: 'literal' or 'original'
   const [activeTab, setActiveTab] = useState<'literal' | 'original'>(() => {
@@ -70,7 +74,7 @@ export const TranslationResultBox = memo(({
   const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
   
   // Check if context card has any data to show
-  const hasContextData = usageJudgment || saferAlternative || usageExample;
+  const hasContextData = usageJudgment || saferAlternative || alternatives || usageExample;
   
   return (
     <div className="relative h-full min-h-[160px] p-4 bg-muted/30 rounded-lg">
@@ -155,8 +159,10 @@ export const TranslationResultBox = memo(({
               coreMeaning={sourceText || ""}
               usage={usageJudgment}
               saferAlternative={saferAlternative}
+              alternatives={alternatives}
               example={usageExample}
               onAlternativeClick={() => saferAlternative?.text && onAlternativeSpeak?.(saferAlternative.text)}
+              onAlternativeSelect={onAlternativeSelect}
             />
           )}
 

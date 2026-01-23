@@ -26,6 +26,11 @@ interface TranslationSchema {
     romaji: string | null;
     reason: string | null;
   };
+  alternatives: Array<{
+    text: string;
+    romaji: string | null;
+    situations: string[];
+  }>;
   example: {
     jp: string | null;
     kr: string | null;
@@ -200,6 +205,13 @@ SCHEMA:
     "romaji": ${targetNeedsRom ? '"Romanization of safer alternative"' : 'null'},
     "reason": "Max 10 words: when to use this instead, or null"
   },
+  "alternatives": [
+    {
+      "text": "Alternative expression with different nuance/formality",
+      "romaji": ${targetNeedsRom ? '"Romanization"' : 'null'},
+      "situations": ["1-2 word situations where this is best, e.g. 일반, 비즈니스"]
+    }
+  ],
   "example": {
     "jp": "One example sentence in ${langNames[targetLang]} using the expression, or null",
     "kr": "Korean translation of the example, or null"
@@ -214,6 +226,7 @@ CRITICAL RULES:
 - All keys must be present (use null or [] for empty values)
 - usage.ok_for and usage.avoid_when must ALWAYS have at least 1 item each for phrases/sentences
 - For simple words without context sensitivity, ok_for can have ["일반"], avoid_when can have []
+- alternatives array: Include 1-3 alternative expressions ONLY when multiple valid translations exist with different nuances (e.g., apology expressions, greetings). Leave as empty array [] for simple/direct translations.
 - main_translation must be a COMPLETE, natural sentence
 - Do NOT add markdown formatting or code fences
 ${styleInstructions}`;
@@ -296,6 +309,7 @@ ${styleInstructions}`;
           literalRomanization: "",
           usageJudgment: { ok_for: ["일반"], avoid_when: [] },
           saferAlternative: null,
+          alternatives: [],
           example: null,
           _parseError: true
         }),
@@ -317,6 +331,11 @@ ${styleInstructions}`;
         romaji: parsed.safer_alternative?.romaji || null,
         reason: parsed.safer_alternative?.reason || null
       },
+      alternatives: (parsed.alternatives || []).map((alt: any) => ({
+        text: alt.text || "",
+        romaji: alt.romaji || null,
+        situations: alt.situations || []
+      })),
       example: {
         jp: parsed.example?.jp || null,
         kr: parsed.example?.kr || null
@@ -328,6 +347,7 @@ ${styleInstructions}`;
 
     console.log("[Translate] Final result - usage:", JSON.stringify(result.usage));
     console.log("[Translate] Final result - safer_alternative:", JSON.stringify(result.safer_alternative));
+    console.log("[Translate] Final result - alternatives:", JSON.stringify(result.alternatives));
 
     // Map to frontend expected format
     return new Response(
@@ -339,6 +359,7 @@ ${styleInstructions}`;
         literalRomanization: result.literal_romaji || "",
         usageJudgment: result.usage,
         saferAlternative: result.safer_alternative.text ? result.safer_alternative : null,
+        alternatives: result.alternatives.length > 0 ? result.alternatives : null,
         example: (result.example.jp || result.example.kr) ? result.example : null
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

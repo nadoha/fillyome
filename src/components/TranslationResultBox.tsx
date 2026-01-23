@@ -1,9 +1,11 @@
 import { memo, useState } from "react";
-import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react";
+import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TappableWords } from "./TappableWords";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { UsageCards, Alternative, UsageCard, UsageExample } from "./UsageCards";
+
 interface TranslationResultBoxProps {
   naturalTranslation: string;
   literalTranslation?: string;
@@ -17,6 +19,10 @@ interface TranslationResultBoxProps {
   onSpeedChange?: (speed: number) => void;
   onWordSave?: (word: string) => void;
   savedWords?: Set<string>;
+  alternatives?: Alternative[];
+  usageCards?: UsageCard[];
+  example?: UsageExample | null;
+  onAlternativeSpeak?: (text: string) => void;
 }
 const SPEED_OPTIONS = [{
   value: 0.5,
@@ -49,7 +55,11 @@ export const TranslationResultBox = memo(({
   speechSpeed = 1.0,
   onSpeedChange,
   onWordSave,
-  savedWords = new Set()
+  savedWords = new Set(),
+  alternatives = [],
+  usageCards = [],
+  example,
+  onAlternativeSpeak,
 }: TranslationResultBoxProps) => {
   // Load literal translation state from sessionStorage, default to expanded (true)
   const [showLiteral, setShowLiteral] = useState(() => {
@@ -65,71 +75,131 @@ export const TranslationResultBox = memo(({
     sessionStorage.setItem('literalTranslationExpanded', String(newState));
   };
   const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
-  return <div className="relative h-full min-h-[160px] p-4 bg-muted/30 rounded-lg">
-      {isTranslating ? <div className="space-y-3">
+  
+  return (
+    <div className="relative h-full min-h-[160px] p-4 bg-muted/30 rounded-lg">
+      {isTranslating ? (
+        <div className="space-y-3">
           <Skeleton className="h-5 w-full" />
           <Skeleton className="h-5 w-4/5" />
           <Skeleton className="h-5 w-3/5" />
-        </div> : naturalTranslation ? <div className="space-y-3">
+        </div>
+      ) : naturalTranslation ? (
+        <div className="space-y-3">
           {/* Word save hint - dismissible */}
-          {onWordSave && showWordHint && <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted transition-colors" onClick={() => setShowWordHint(false)}>
+          {onWordSave && showWordHint && (
+            <div 
+              className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted transition-colors" 
+              onClick={() => setShowWordHint(false)}
+            >
               <Sparkles className="h-3 w-3 text-primary" />
               <span>단어를 탭하면 학습 목록에 저장됩니다</span>
-            </div>}
+            </div>
+          )}
 
           {/* Main translation with tappable words */}
           <div className="text-base leading-relaxed whitespace-pre-wrap break-words pr-24">
-            {onWordSave ? <TappableWords text={naturalTranslation} savedWords={savedWords} onWordTap={onWordSave} /> : naturalTranslation}
+            {onWordSave ? (
+              <TappableWords text={naturalTranslation} savedWords={savedWords} onWordTap={onWordSave} />
+            ) : (
+              naturalTranslation
+            )}
           </div>
 
           {/* Romanization */}
-          {romanization && <p className="text-sm text-muted-foreground italic">
-              {romanization}
-            </p>}
+          {romanization && (
+            <p className="text-sm text-muted-foreground italic">{romanization}</p>
+          )}
 
           {/* Literal translation - expanded by default */}
-          {literalTranslation && <div className="pt-2 border-t border-border/50">
-              <button onClick={handleToggleLiteral} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+          {literalTranslation && (
+            <div className="pt-2 border-t border-border/50">
+              <button 
+                onClick={handleToggleLiteral} 
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
                 {showLiteral ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 직역
               </button>
-              {showLiteral && <p className="mt-2 text-sm text-muted-foreground pl-3 border-l-2 border-primary/30">
+              {showLiteral && (
+                <p className="mt-2 text-sm text-muted-foreground pl-3 border-l-2 border-primary/30">
                   {literalTranslation}
-                </p>}
-            </div>}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Usage Cards - conditional rendering */}
+          <UsageCards
+            alternatives={alternatives}
+            usageCards={usageCards}
+            example={example}
+            onAlternativeSpeak={onAlternativeSpeak}
+          />
 
           {/* Feedback */}
-          {onFeedback && <div className="flex items-center gap-1 pt-2">
+          {onFeedback && (
+            <div className="flex items-center gap-1 pt-2">
               <span className="text-xs text-muted-foreground mr-1">번역 품질:</span>
-              <Button variant="ghost" size="icon" onClick={() => onFeedback('positive')} className="h-7 w-7 rounded-full hover:bg-green-500/10 hover:text-green-600">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => onFeedback('positive')} 
+                className="h-7 w-7 rounded-full hover:bg-accent hover:text-accent-foreground"
+              >
                 <ThumbsUp className="h-3.5 w-3.5" />
               </Button>
-              
-            </div>}
-        </div> : <span className="text-muted-foreground">{placeholder}</span>}
+            </div>
+          )}
+        </div>
+      ) : (
+        <span className="text-muted-foreground">{placeholder}</span>
+      )}
       
       {/* Action buttons */}
-      {!isTranslating && naturalTranslation && <div className="absolute top-3 right-3 flex items-center gap-1">
+      {!isTranslating && naturalTranslation && (
+        <div className="absolute top-3 right-3 flex items-center gap-1">
           {/* Speed selector */}
-          {onSpeedChange && <DropdownMenu>
+          {onSpeedChange && (
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
                   {currentSpeedLabel}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[80px]">
-                {SPEED_OPTIONS.map(option => <DropdownMenuItem key={option.value} onClick={() => onSpeedChange(option.value)} className={speechSpeed === option.value ? "bg-accent" : ""}>
+                {SPEED_OPTIONS.map(option => (
+                  <DropdownMenuItem 
+                    key={option.value} 
+                    onClick={() => onSpeedChange(option.value)} 
+                    className={speechSpeed === option.value ? "bg-accent" : ""}
+                  >
                     {option.label}
-                  </DropdownMenuItem>)}
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
-            </DropdownMenu>}
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={onSpeak}>
+            </DropdownMenu>
+          )}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" 
+            onClick={onSpeak}
+          >
             <Volume2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={onCopy}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" 
+            onClick={onCopy}
+          >
             <Copy className="h-4 w-4" />
           </Button>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 });
+
 TranslationResultBox.displayName = "TranslationResultBox";

@@ -267,13 +267,13 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
           { role: "user", content: `"${text}"` }
         ],
         temperature: 0.2, // Lower temperature for more consistent translations
-        max_tokens: Math.min(text.length * 4 + 200, 2000), // Dynamic token limit based on input
+        max_tokens: Math.min(text.length * 4 + 400, 2500), // Dynamic token limit based on input
         tools: [
           {
             type: "function",
             function: {
               name: "translate",
-              description: "Provide natural translation with context",
+              description: "Provide natural translation with usage context cards (only when needed)",
               parameters: {
                 type: "object",
                 properties: {
@@ -283,26 +283,72 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
                   },
                   literal: { 
                     type: "string", 
-                    description: `Word-by-word literal translation IN ${langNames[targetLang] || targetLang} ONLY. The literal translation MUST be in the target language (${langNames[targetLang]}), NOT in English or any other language. Preserve source sentence structure but output entirely in ${langNames[targetLang]}.` 
+                    description: `Word-by-word literal translation IN ${langNames[targetLang] || targetLang} ONLY. Preserve source sentence structure but output entirely in ${langNames[targetLang]}.` 
                   },
                   source_rom: { 
                     type: "string", 
-                    description: needsRom(sourceLang) ? "Romanization of source text. For Japanese text containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. Example: 'Previewing latest version' → 'Puribyūingu rētesuto bājon'" : "Empty string" 
+                    description: needsRom(sourceLang) ? "Romanization of source text." : "Empty string" 
                   },
                   target_rom: { 
                     type: "string", 
-                    description: needsRom(targetLang) ? "Romanization of EXACTLY the NATURAL translation (translation field). Must correspond to the translation text 1:1 (no paraphrasing, no re-translation). Keep punctuation/spacing aligned. For Japanese containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. NEVER leave English words as-is." : "Empty string" 
+                    description: needsRom(targetLang) ? "Romanization of the natural translation." : "Empty string" 
                   },
                   literal_rom: { 
                     type: "string", 
-                    description: needsRom(targetLang) ? "Romanization of EXACTLY the LITERAL translation (literal field). Must correspond to the literal text 1:1 (no paraphrasing, no re-translation). Keep punctuation/spacing aligned. For Japanese containing English words, convert ALL English words to Japanese pronunciation (katakana reading) in romaji. NEVER leave English words as-is." : "Empty string" 
+                    description: needsRom(targetLang) ? "Romanization of the literal translation." : "Empty string" 
                   },
-                  example_sentence: {
-                    type: "string",
-                    description: `A natural example sentence in ${langNames[targetLang]} that demonstrates how the translated word/phrase is used in context. Should be practical and relevant to everyday usage.`
+                  alternatives: {
+                    type: "array",
+                    description: "Alternative translations ONLY if nuances differ significantly (max 2). Include only when tone/formality creates meaningful difference. Empty array if main translation covers all cases.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        text: { type: "string", description: "Alternative translation text" },
+                        tags: { 
+                          type: "array", 
+                          items: { type: "string" },
+                          description: "1-2 word tags: 공식/캐주얼/친구/가게/비즈니스/존댓말/반말 etc."
+                        },
+                        note: { type: "string", description: "Max 10 words explaining when to use" }
+                      },
+                      required: ["text", "tags"]
+                    }
+                  },
+                  usage_cards: {
+                    type: "array",
+                    description: "Context cards ONLY when: 1) multiple valid translations exist, 2) tone/formality matters, 3) literal might sound awkward. Empty array for straightforward translations.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        type: { 
+                          type: "string", 
+                          enum: ["situation", "tone", "recommend", "caution"],
+                          description: "situation: usage context, tone: formality level, recommend: preferred choice, caution: what to avoid"
+                        },
+                        title: { type: "string", description: "Card title: 상황/톤/추천/주의" },
+                        items: { 
+                          type: "array", 
+                          items: { type: "string" },
+                          description: "For situation/tone: 1-3 word tags. Empty for recommend/caution."
+                        },
+                        text: { 
+                          type: "string", 
+                          description: "For recommend/caution: single line advice (max 15 words). Empty for situation/tone."
+                        }
+                      },
+                      required: ["type", "title"]
+                    }
+                  },
+                  example: {
+                    type: "object",
+                    description: "Example sentence ONLY if usage context is non-obvious. Null/omit for simple words.",
+                    properties: {
+                      source: { type: "string", description: "Example in target language" },
+                      target: { type: "string", description: "Translation in source language" }
+                    }
                   }
                 },
-                required: ["translation", "literal", "source_rom", "target_rom", "literal_rom", "example_sentence"]
+                required: ["translation", "literal", "source_rom", "target_rom", "literal_rom", "alternatives", "usage_cards"]
               }
             }
           }
@@ -364,7 +410,9 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
     const sourceRomanization = result.source_rom || "";
     const targetRomanization = result.target_rom || "";
     const literalRomanization = result.literal_rom || "";
-    const exampleSentence = result.example_sentence || "";
+    const alternatives = result.alternatives || [];
+    const usageCards = result.usage_cards || [];
+    const example = result.example || null;
 
     return new Response(
       JSON.stringify({ 
@@ -373,7 +421,9 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
         sourceRomanization,
         targetRomanization,
         literalRomanization,
-        exampleSentence
+        alternatives,
+        usageCards,
+        example
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 

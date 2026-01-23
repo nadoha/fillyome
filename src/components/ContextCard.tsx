@@ -1,6 +1,5 @@
 import { memo } from "react";
-import { Check, AlertTriangle } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Check, AlertTriangle, Lightbulb, MessageCircle } from "lucide-react";
 
 // Standardized schema types matching LLM output
 export interface UsageJudgment {
@@ -34,87 +33,99 @@ export const ContextCard = memo(({
   example,
   onAlternativeClick,
 }: ContextCardProps) => {
-  // Check if we have any data to display
-  const hasUsage = usage && (usage.ok_for?.length > 0 || usage.avoid_when?.length > 0);
+  const hasOkFor = usage && usage.ok_for?.length > 0;
+  const hasAvoidWhen = usage && usage.avoid_when?.length > 0;
   const hasSaferAlt = saferAlternative && saferAlternative.text;
   const hasExample = example && (example.jp || example.kr);
+  const hasAnyContent = hasOkFor || hasAvoidWhen || hasSaferAlt || hasExample || coreMeaning;
 
-  // Always render the card container, but sections are conditional
+  if (!hasAnyContent) {
+    return null;
+  }
+
   return (
-    <Card className="mt-4 p-4 bg-card border-border/60 animate-fade-in">
-      {/* Core Meaning - always show if available */}
+    <div className="mt-4 space-y-3 animate-fade-in">
+      {/* Core Meaning - 원문 */}
       {coreMeaning && (
-        <div className="mb-4 pb-3 border-b border-border/40">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">원문</p>
-          <p className="text-sm text-foreground/80">{coreMeaning}</p>
+        <div className="border-l-4 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-r-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <MessageCircle className="h-4 w-4 text-slate-500" />
+            <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-300">원문</h3>
+          </div>
+          <p className="text-sm text-slate-600 dark:text-slate-400">{coreMeaning}</p>
         </div>
       )}
 
-      {/* Usage Judgment */}
-      {hasUsage && (
-        <div className="space-y-3 mb-4">
-          {/* OK for */}
-          {usage.ok_for && usage.ok_for.length > 0 && (
-            <div className="flex items-start gap-2">
-              <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-1">사용 가능</p>
-                <p className="text-sm text-foreground/80">
-                  {usage.ok_for.join(' · ')}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Avoid when */}
-          {usage.avoid_when && usage.avoid_when.length > 0 && (
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mb-1">주의</p>
-                <p className="text-sm text-foreground/80">
-                  {usage.avoid_when.join(' · ')}
-                </p>
-              </div>
-            </div>
-          )}
+      {/* OK for - 추천 (Green) */}
+      {hasOkFor && (
+        <div className="border-l-4 border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-r-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <h3 className="font-semibold text-sm text-emerald-700 dark:text-emerald-300">추천</h3>
+          </div>
+          <ul className="space-y-1">
+            {usage!.ok_for.map((item, idx) => (
+              <li key={idx} className="text-sm text-emerald-700 dark:text-emerald-300">
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
-      {/* Safer Alternative */}
+      {/* Avoid when - 주의 (Orange) */}
+      {hasAvoidWhen && (
+        <div className="border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-r-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <h3 className="font-semibold text-sm text-amber-700 dark:text-amber-300">주의</h3>
+          </div>
+          <ul className="space-y-1">
+            {usage!.avoid_when.map((item, idx) => (
+              <li key={idx} className="text-sm text-amber-700 dark:text-amber-300">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Safer Alternative - 대안 표현 (Blue) */}
       {hasSaferAlt && (
-        <div className="pt-3 border-t border-border/40">
-          <p className="text-xs text-muted-foreground mb-2">
-            {saferAlternative.reason || '격식 있는 상황에서 추천'}
-          </p>
+        <div className="border-l-4 border-blue-400 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-r-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Lightbulb className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-semibold text-sm text-blue-700 dark:text-blue-300">대안 표현</h3>
+          </div>
           <div 
-            className={`inline-block bg-muted/50 px-3 py-2 rounded-md ${onAlternativeClick ? 'cursor-pointer active:bg-muted transition-colors' : ''}`}
+            className={`bg-white dark:bg-blue-950/50 p-3 rounded-lg ${onAlternativeClick ? 'cursor-pointer active:bg-blue-100 dark:active:bg-blue-900/50 transition-colors' : ''}`}
             onClick={onAlternativeClick}
           >
-            <p className="text-base font-medium text-foreground">{saferAlternative.text}</p>
-            {saferAlternative.romaji && (
-              <p className="text-xs text-muted-foreground mt-0.5">({saferAlternative.romaji})</p>
+            <p className="text-lg font-medium text-blue-800 dark:text-blue-200">{saferAlternative!.text}</p>
+            {saferAlternative!.romaji && (
+              <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5">({saferAlternative!.romaji})</p>
+            )}
+            {saferAlternative!.reason && (
+              <p className="text-sm text-blue-600 dark:text-blue-300 mt-2">{saferAlternative!.reason}</p>
             )}
           </div>
         </div>
       )}
 
-      {/* Example sentence */}
+      {/* Example sentence - 예문 (Purple) */}
       {hasExample && (
-        <div className={`${hasSaferAlt ? 'mt-3 pt-3 border-t border-border/40' : 'pt-3 border-t border-border/40'}`}>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">예문</p>
-          {example.jp && <p className="text-sm text-foreground">{example.jp}</p>}
-          {example.kr && <p className="text-xs text-muted-foreground mt-0.5">{example.kr}</p>}
+        <div className="border-l-4 border-purple-400 bg-purple-50 dark:bg-purple-900/20 p-4 rounded-r-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm">📝</span>
+            <h3 className="font-semibold text-sm text-purple-700 dark:text-purple-300">예문</h3>
+          </div>
+          <div className="space-y-1">
+            {example!.jp && <p className="text-sm text-purple-800 dark:text-purple-200">{example!.jp}</p>}
+            {example!.kr && <p className="text-xs text-purple-600 dark:text-purple-400">{example!.kr}</p>}
+          </div>
         </div>
       )}
-
-      {/* Empty state - show when no data */}
-      {!hasUsage && !hasSaferAlt && !hasExample && !coreMeaning && (
-        <p className="text-sm text-muted-foreground text-center py-2">
-          맥락 정보 없음
-        </p>
-      )}
-    </Card>
+    </div>
   );
 });
 

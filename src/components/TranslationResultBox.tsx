@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Copy, Volume2, ChevronDown, ChevronUp, ThumbsUp, Sparkles } from "lucide-react";
+import { Copy, Volume2, ThumbsUp, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TappableWords } from "./TappableWords";
@@ -54,18 +54,17 @@ export const TranslationResultBox = memo(({
   usageExample,
   onAlternativeSpeak,
 }: TranslationResultBoxProps) => {
-  // Load literal translation state from sessionStorage, default to expanded (true)
-  const [showLiteral, setShowLiteral] = useState(() => {
-    const saved = sessionStorage.getItem('literalTranslationExpanded');
-    return saved !== null ? saved === 'true' : true; // Default: expanded
+  // Literal translation tab state: 'literal' or 'original'
+  const [activeTab, setActiveTab] = useState<'literal' | 'original'>(() => {
+    const saved = sessionStorage.getItem('translationActiveTab');
+    return (saved === 'original') ? 'original' : 'literal';
   });
   const [showWordHint, setShowWordHint] = useState(true);
 
-  // Save literal state to sessionStorage when changed
-  const handleToggleLiteral = () => {
-    const newState = !showLiteral;
-    setShowLiteral(newState);
-    sessionStorage.setItem('literalTranslationExpanded', String(newState));
+  // Save tab state to sessionStorage when changed
+  const handleTabChange = (tab: 'literal' | 'original') => {
+    setActiveTab(tab);
+    sessionStorage.setItem('translationActiveTab', tab);
   };
 
   const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
@@ -108,21 +107,45 @@ export const TranslationResultBox = memo(({
             <p className="text-sm text-muted-foreground italic">{romanization}</p>
           )}
 
-          {/* Literal translation - expanded by default */}
-          {literalTranslation && (
-            <div className="pt-2 border-t border-border/50">
-              <button 
-                onClick={handleToggleLiteral} 
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showLiteral ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                직역
-              </button>
-              {showLiteral && (
-                <p className="mt-2 text-sm text-muted-foreground pl-3 border-l-2 border-primary/30">
-                  {literalTranslation}
-                </p>
-              )}
+          {/* Literal/Original Tabs - Improved Design */}
+          {(literalTranslation || sourceText) && (
+            <div className="pt-3 border-t border-border/50">
+              {/* Tab buttons */}
+              <div className="flex gap-1 mb-3 p-1 bg-muted/50 rounded-lg w-fit">
+                {literalTranslation && (
+                  <button
+                    onClick={() => handleTabChange('literal')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      activeTab === 'literal'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    직역
+                  </button>
+                )}
+                {sourceText && (
+                  <button
+                    onClick={() => handleTabChange('original')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      activeTab === 'original'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    원문
+                  </button>
+                )}
+              </div>
+              {/* Tab content */}
+              <div className="text-sm text-muted-foreground pl-3 border-l-2 border-primary/30">
+                {activeTab === 'literal' && literalTranslation && (
+                  <p>{literalTranslation}</p>
+                )}
+                {activeTab === 'original' && sourceText && (
+                  <p>{sourceText}</p>
+                )}
+              </div>
             </div>
           )}
 
@@ -156,14 +179,18 @@ export const TranslationResultBox = memo(({
         <span className="text-muted-foreground">{placeholder}</span>
       )}
       
-      {/* Action buttons */}
+      {/* Action buttons - Larger touch targets */}
       {!isTranslating && naturalTranslation && (
-        <div className="absolute top-3 right-3 flex items-center gap-1">
+        <div className="absolute top-2 right-2 flex items-center gap-1">
           {/* Speed selector */}
           {onSpeedChange && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-10 px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
                   {currentSpeedLabel}
                 </Button>
               </DropdownMenuTrigger>
@@ -183,18 +210,18 @@ export const TranslationResultBox = memo(({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" 
+            className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" 
             onClick={onSpeak}
           >
-            <Volume2 className="h-4 w-4" />
+            <Volume2 className="h-5 w-5" />
           </Button>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" 
+            className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" 
             onClick={onCopy}
           >
-            <Copy className="h-4 w-4" />
+            <Copy className="h-5 w-5" />
           </Button>
         </div>
       )}

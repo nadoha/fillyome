@@ -121,6 +121,11 @@ export const TranslationInterface = () => {
     return "";
   });
   const [exampleSentence, setExampleSentence] = useState("");
+  
+  // New: Usage cards state for structured translation context
+  const [alternatives, setAlternatives] = useState<Array<{text: string; tags: string[]; note?: string}>>([]);
+  const [usageCards, setUsageCards] = useState<Array<{type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string}>>([]);
+  const [usageExample, setUsageExample] = useState<{source: string; target: string} | null>(null);
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
     return saved as any || "ko";
@@ -769,6 +774,18 @@ export const TranslationInterface = () => {
         litRomanization = rawLiteralRom;
         tgtRomanization = usedLiteralAsMain ? (rawLiteralRom || rawTargetRom) : rawTargetRom;
         example = data.exampleSentence || "";
+        
+        // Extract new usage context data
+        const respAlternatives = data.alternatives || [];
+        const respUsageCards = (data.usageCards || []).filter(
+          (card: any) => ["situation", "tone", "recommend", "caution"].includes(card.type)
+        ) as Array<{type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string}>;
+        const respExample = data.example || null;
+        
+        // Update usage cards state
+        setAlternatives(respAlternatives);
+        setUsageCards(respUsageCards);
+        setUsageExample(respExample);
       }
 
       // Cache result using optimized cache utility (handles size management automatically)
@@ -1623,6 +1640,10 @@ export const TranslationInterface = () => {
                         onSpeedChange={setSpeechSpeed}
                         onWordSave={user ? handleWordSaveFromTranslation : undefined}
                         savedWords={savedWordsFromTranslation}
+                        alternatives={alternatives}
+                        usageCards={usageCards}
+                        example={usageExample}
+                        onAlternativeSpeak={(text) => handleSpeak(text, targetLang, "")}
                       />
                     </div>
                   </div>

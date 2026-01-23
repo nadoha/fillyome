@@ -1655,6 +1655,7 @@ export const TranslationInterface = () => {
                           }
                           toast.success("번역이 교체되었습니다");
                         }}
+                        onExampleSpeak={(text) => handleSpeak(text, targetLang, "")}
                       />
                     </div>
                   </div>

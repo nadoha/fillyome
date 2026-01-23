@@ -20,6 +20,7 @@ export interface TranslationAlternative {
 
 export interface TranslationExample {
   jp: string | null;
+  jp_romaji?: string | null;
   kr: string | null;
 }
 
@@ -31,6 +32,7 @@ interface ContextCardProps {
   example?: TranslationExample | null;
   onAlternativeClick?: () => void;
   onAlternativeSelect?: (text: string, romaji?: string | null) => void;
+  onExampleSpeak?: (text: string) => void;
 }
 
 export const ContextCard = memo(({
@@ -41,6 +43,7 @@ export const ContextCard = memo(({
   example,
   onAlternativeClick,
   onAlternativeSelect,
+  onExampleSpeak,
 }: ContextCardProps) => {
   const hasOkFor = usage && usage.ok_for?.length > 0;
   const hasAvoidWhen = usage && usage.avoid_when?.length > 0;
@@ -161,9 +164,36 @@ export const ContextCard = memo(({
             <span className="text-sm">📝</span>
             <h3 className="font-bold text-sm text-purple-700 dark:text-purple-300">예문</h3>
           </div>
-          <div className="space-y-1">
-            {example!.jp && <p className="text-sm text-purple-800 dark:text-purple-200">{example!.jp}</p>}
-            {example!.kr && <p className="text-xs text-purple-600 dark:text-purple-400">{example!.kr}</p>}
+          <div className="space-y-2">
+            {/* Japanese example with speaker */}
+            {example!.jp && (
+              <div className="bg-white dark:bg-purple-950/50 p-3 rounded-lg">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-purple-800 dark:text-purple-200">{example!.jp}</p>
+                    {example!.jp_romaji && (
+                      <p className="text-xs text-purple-500 dark:text-purple-400 mt-1 italic">{example!.jp_romaji}</p>
+                    )}
+                  </div>
+                  {onExampleSpeak && (
+                    <button
+                      onClick={() => onExampleSpeak(example!.jp!)}
+                      className="p-2 rounded-full text-purple-500 hover:bg-purple-100 dark:hover:bg-purple-800/50 transition-colors shrink-0"
+                      aria-label="예문 듣기"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {/* Korean translation */}
+            {example!.kr && (
+              <p className="text-xs text-purple-600 dark:text-purple-400 pl-1">{example!.kr}</p>
+            )}
           </div>
         </div>
       )}

@@ -125,6 +125,7 @@ export const TranslationInterface = () => {
   // Context card state for decision-ready translation UI (matches LLM schema)
   const [usageJudgment, setUsageJudgment] = useState<{ok_for: string[]; avoid_when: string[]} | null>(null);
   const [saferAlternative, setSaferAlternative] = useState<{text: string | null; romaji?: string | null; reason?: string | null} | null>(null);
+  const [alternatives, setAlternatives] = useState<Array<{text: string; romaji?: string | null; situations: string[]}> | null>(null);
   const [usageExample, setUsageExample] = useState<{jp: string | null; kr: string | null} | null>(null);
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
@@ -778,11 +779,13 @@ export const TranslationInterface = () => {
         // Extract context card data for decision-ready UI (already in correct schema)
         console.log("[TranslationInterface] Raw response usageJudgment:", JSON.stringify(data.usageJudgment));
         console.log("[TranslationInterface] Raw response saferAlternative:", JSON.stringify(data.saferAlternative));
+        console.log("[TranslationInterface] Raw response alternatives:", JSON.stringify(data.alternatives));
         console.log("[TranslationInterface] Raw response example:", JSON.stringify(data.example));
         
         // Set context card states directly (LLM schema matches frontend)
         setUsageJudgment(data.usageJudgment || { ok_for: [], avoid_when: [] });
         setSaferAlternative(data.saferAlternative || null);
+        setAlternatives(data.alternatives || null);
         setUsageExample(data.example || null);
       }
 
@@ -1641,8 +1644,17 @@ export const TranslationInterface = () => {
                         savedWords={savedWordsFromTranslation}
                         usageJudgment={usageJudgment}
                         saferAlternative={saferAlternative}
+                        alternatives={alternatives}
                         usageExample={usageExample}
                         onAlternativeSpeak={(text) => handleSpeak(text, targetLang, "")}
+                        onAlternativeSelect={(text, romaji) => {
+                          // Replace main translation with selected alternative
+                          setTargetText(text);
+                          if (romaji) {
+                            setTargetRomanization(romaji);
+                          }
+                          toast.success("번역이 교체되었습니다");
+                        }}
                       />
                     </div>
                   </div>

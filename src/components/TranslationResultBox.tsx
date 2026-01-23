@@ -26,6 +26,7 @@ interface TranslationResultBoxProps {
   usageExample?: TranslationExample | null;
   onAlternativeSpeak?: (text: string) => void;
   onAlternativeSelect?: (text: string, romaji?: string | null) => void;
+  onExampleSpeak?: (text: string) => void;
 }
 
 const SPEED_OPTIONS = [
@@ -57,6 +58,7 @@ export const TranslationResultBox = memo(({
   usageExample,
   onAlternativeSpeak,
   onAlternativeSelect,
+  onExampleSpeak,
 }: TranslationResultBoxProps) => {
   // Literal translation tab state: 'literal' or 'original'
   const [activeTab, setActiveTab] = useState<'literal' | 'original'>(() => {
@@ -163,6 +165,7 @@ export const TranslationResultBox = memo(({
               example={usageExample}
               onAlternativeClick={() => saferAlternative?.text && onAlternativeSpeak?.(saferAlternative.text)}
               onAlternativeSelect={onAlternativeSelect}
+              onExampleSpeak={onExampleSpeak}
             />
           )}
 

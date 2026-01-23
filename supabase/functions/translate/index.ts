@@ -33,6 +33,7 @@ interface TranslationSchema {
   }>;
   example: {
     jp: string | null;
+    jp_romaji: string | null;
     kr: string | null;
   };
   literal_translation: string;
@@ -213,8 +214,9 @@ SCHEMA:
     }
   ],
   "example": {
-    "jp": "One example sentence in ${langNames[targetLang]} using the expression, or null",
-    "kr": "Korean translation of the example, or null"
+    "jp": "One example sentence in ${langNames[targetLang]} using the main_translation expression",
+    "jp_romaji": ${targetNeedsRom ? '"Romanization of the example sentence"' : 'null'},
+    "kr": "Korean translation of the example"
   },
   "literal_translation": "Word-by-word literal translation in ${langNames[targetLang]}",
   "literal_romaji": ${targetNeedsRom ? '"Romanization of literal translation"' : 'null'},
@@ -226,9 +228,14 @@ CRITICAL RULES:
 - All keys must be present (use null or [] for empty values)
 - usage.ok_for and usage.avoid_when must ALWAYS have at least 1 item each for phrases/sentences
 - For simple words without context sensitivity, ok_for can have ["일반"], avoid_when can have []
-- alternatives array: Include 1-3 alternative expressions ONLY when multiple valid translations exist with different nuances (e.g., apology expressions, greetings). Leave as empty array [] for simple/direct translations.
+- **ALTERNATIVES ARE MANDATORY** for these categories:
+  * Apology expressions (사과): 죄송합니다, 미안합니다 → Return 2-3 alternatives (ごめんなさい, すみません, 申し訳ありません, etc.)
+  * Greeting expressions (인사): 안녕하세요, 감사합니다 → Return 2-3 alternatives
+  * Polite requests (요청): ~해주세요, ~해도 될까요 → Return 2-3 alternatives
+- Each alternative MUST have text, romaji (if target needs romanization), and situations (1-2 word contexts)
+- For simple/direct translations without multiple valid options, alternatives can be empty []
 - main_translation must be a COMPLETE, natural sentence
-- Do NOT add markdown formatting or code fences
+- example.jp and example.jp_romaji MUST always be provided for phrases/sentences
 ${styleInstructions}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -338,6 +345,7 @@ ${styleInstructions}`;
       })),
       example: {
         jp: parsed.example?.jp || null,
+        jp_romaji: parsed.example?.jp_romaji || null,
         kr: parsed.example?.kr || null
       },
       literal_translation: parsed.literal_translation || parsed.main_translation || text,

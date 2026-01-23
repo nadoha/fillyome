@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TappableWords } from "./TappableWords";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UsageCards, Alternative, UsageCard, UsageExample } from "./UsageCards";
+import { ContextCard, UsageJudgment, SaferAlternative } from "./ContextCard";
 
 interface TranslationResultBoxProps {
   naturalTranslation: string;
   literalTranslation?: string;
   romanization?: string;
+  sourceText?: string;
   onCopy: () => void;
   onSpeak: () => void;
   onFeedback?: (type: 'positive' | 'negative') => void;
@@ -19,34 +20,25 @@ interface TranslationResultBoxProps {
   onSpeedChange?: (speed: number) => void;
   onWordSave?: (word: string) => void;
   savedWords?: Set<string>;
-  alternatives?: Alternative[];
-  usageCards?: UsageCard[];
-  example?: UsageExample | null;
+  usageJudgment?: UsageJudgment | null;
+  saferAlternative?: SaferAlternative | null;
   onAlternativeSpeak?: (text: string) => void;
 }
-const SPEED_OPTIONS = [{
-  value: 0.5,
-  label: "0.5x"
-}, {
-  value: 0.75,
-  label: "0.75x"
-}, {
-  value: 1.0,
-  label: "1x"
-}, {
-  value: 1.25,
-  label: "1.25x"
-}, {
-  value: 1.5,
-  label: "1.5x"
-}, {
-  value: 2.0,
-  label: "2x"
-}];
+
+const SPEED_OPTIONS = [
+  { value: 0.5, label: "0.5x" },
+  { value: 0.75, label: "0.75x" },
+  { value: 1.0, label: "1x" },
+  { value: 1.25, label: "1.25x" },
+  { value: 1.5, label: "1.5x" },
+  { value: 2.0, label: "2x" }
+];
+
 export const TranslationResultBox = memo(({
   naturalTranslation,
   literalTranslation,
   romanization,
+  sourceText,
   onCopy,
   onSpeak,
   onFeedback,
@@ -56,9 +48,8 @@ export const TranslationResultBox = memo(({
   onSpeedChange,
   onWordSave,
   savedWords = new Set(),
-  alternatives = [],
-  usageCards = [],
-  example,
+  usageJudgment,
+  saferAlternative,
   onAlternativeSpeak,
 }: TranslationResultBoxProps) => {
   // Load literal translation state from sessionStorage, default to expanded (true)
@@ -74,6 +65,7 @@ export const TranslationResultBox = memo(({
     setShowLiteral(newState);
     sessionStorage.setItem('literalTranslationExpanded', String(newState));
   };
+
   const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
   
   return (
@@ -129,12 +121,15 @@ export const TranslationResultBox = memo(({
             </div>
           )}
 
-          {/* Usage Cards - conditional rendering */}
-          <UsageCards
-            alternatives={alternatives}
-            usageCards={usageCards}
-            example={example}
-            onAlternativeSpeak={onAlternativeSpeak}
+          {/* Context Card - unified usage judgment */}
+          <ContextCard
+            primaryExpression={naturalTranslation}
+            romanization={romanization}
+            coreMeaning={sourceText || ""}
+            judgment={usageJudgment || undefined}
+            saferAlternative={saferAlternative || undefined}
+            onPrimaryClick={onSpeak}
+            onAlternativeClick={() => saferAlternative && onAlternativeSpeak?.(saferAlternative.text)}
           />
 
           {/* Feedback */}

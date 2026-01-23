@@ -122,10 +122,9 @@ export const TranslationInterface = () => {
   });
   const [exampleSentence, setExampleSentence] = useState("");
   
-  // New: Usage cards state for structured translation context
-  const [alternatives, setAlternatives] = useState<Array<{text: string; tags: string[]; note?: string}>>([]);
-  const [usageCards, setUsageCards] = useState<Array<{type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string}>>([]);
-  const [usageExample, setUsageExample] = useState<{source: string; target: string} | null>(null);
+  // Context card state for decision-ready translation UI
+  const [usageJudgment, setUsageJudgment] = useState<{okFor: string[]; avoidWhen: string[]} | null>(null);
+  const [saferAlternative, setSaferAlternative] = useState<{text: string; romanization?: string; note?: string} | null>(null);
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
     return saved as any || "ko";
@@ -775,17 +774,16 @@ export const TranslationInterface = () => {
         tgtRomanization = usedLiteralAsMain ? (rawLiteralRom || rawTargetRom) : rawTargetRom;
         example = data.exampleSentence || "";
         
-        // Extract new usage context data
-        const respAlternatives = data.alternatives || [];
-        const respUsageCards = (data.usageCards || []).filter(
-          (card: any) => ["situation", "tone", "recommend", "caution"].includes(card.type)
-        ) as Array<{type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string}>;
-        const respExample = data.example || null;
+        // Extract context card data for decision-ready UI
+        const respUsageJudgment = data.usageJudgment ? {
+          okFor: data.usageJudgment.ok_for || [],
+          avoidWhen: data.usageJudgment.avoid_when || []
+        } : null;
+        const respSaferAlt = data.saferAlternative || null;
         
-        // Update usage cards state
-        setAlternatives(respAlternatives);
-        setUsageCards(respUsageCards);
-        setUsageExample(respExample);
+        // Update context card state
+        setUsageJudgment(respUsageJudgment);
+        setSaferAlternative(respSaferAlt);
       }
 
       // Cache result using optimized cache utility (handles size management automatically)
@@ -1613,6 +1611,7 @@ export const TranslationInterface = () => {
                         naturalTranslation={targetText} 
                         literalTranslation={literalTranslation} 
                         romanization={!noRomanizationLangs.includes(targetLang) ? targetRomanization : undefined}
+                        sourceText={sourceText}
                         onCopy={() => handleCopy(targetText)} 
                         onSpeak={() => handleSpeak(targetText, targetLang, targetRomanization)} 
                         onFeedback={type => {
@@ -1640,9 +1639,8 @@ export const TranslationInterface = () => {
                         onSpeedChange={setSpeechSpeed}
                         onWordSave={user ? handleWordSaveFromTranslation : undefined}
                         savedWords={savedWordsFromTranslation}
-                        alternatives={alternatives}
-                        usageCards={usageCards}
-                        example={usageExample}
+                        usageJudgment={usageJudgment}
+                        saferAlternative={saferAlternative}
                         onAlternativeSpeak={(text) => handleSpeak(text, targetLang, "")}
                       />
                     </div>

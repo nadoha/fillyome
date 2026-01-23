@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TappableWords } from "./TappableWords";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ContextCard, UsageJudgment, SaferAlternative } from "./ContextCard";
+import { ContextCard, UsageJudgment, SaferAlternative, TranslationExample } from "./ContextCard";
 
 interface TranslationResultBoxProps {
   naturalTranslation: string;
@@ -22,6 +22,7 @@ interface TranslationResultBoxProps {
   savedWords?: Set<string>;
   usageJudgment?: UsageJudgment | null;
   saferAlternative?: SaferAlternative | null;
+  usageExample?: TranslationExample | null;
   onAlternativeSpeak?: (text: string) => void;
 }
 
@@ -50,6 +51,7 @@ export const TranslationResultBox = memo(({
   savedWords = new Set(),
   usageJudgment,
   saferAlternative,
+  usageExample,
   onAlternativeSpeak,
 }: TranslationResultBoxProps) => {
   // Load literal translation state from sessionStorage, default to expanded (true)
@@ -67,6 +69,9 @@ export const TranslationResultBox = memo(({
   };
 
   const currentSpeedLabel = SPEED_OPTIONS.find(o => o.value === speechSpeed)?.label || `${speechSpeed}x`;
+  
+  // Check if context card has any data to show
+  const hasContextData = usageJudgment || saferAlternative || usageExample;
   
   return (
     <div className="relative h-full min-h-[160px] p-4 bg-muted/30 rounded-lg">
@@ -121,16 +126,16 @@ export const TranslationResultBox = memo(({
             </div>
           )}
 
-          {/* Context Card - unified usage judgment */}
-          <ContextCard
-            primaryExpression={naturalTranslation}
-            romanization={romanization}
-            coreMeaning={sourceText || ""}
-            judgment={usageJudgment || undefined}
-            saferAlternative={saferAlternative || undefined}
-            onPrimaryClick={onSpeak}
-            onAlternativeClick={() => saferAlternative && onAlternativeSpeak?.(saferAlternative.text)}
-          />
+          {/* Context Card - always render container when translation exists */}
+          {hasContextData && (
+            <ContextCard
+              coreMeaning={sourceText || ""}
+              usage={usageJudgment}
+              saferAlternative={saferAlternative}
+              example={usageExample}
+              onAlternativeClick={() => saferAlternative?.text && onAlternativeSpeak?.(saferAlternative.text)}
+            />
+          )}
 
           {/* Feedback */}
           {onFeedback && (

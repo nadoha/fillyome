@@ -122,9 +122,10 @@ export const TranslationInterface = () => {
   });
   const [exampleSentence, setExampleSentence] = useState("");
   
-  // Context card state for decision-ready translation UI
-  const [usageJudgment, setUsageJudgment] = useState<{okFor: string[]; avoidWhen: string[]} | null>(null);
-  const [saferAlternative, setSaferAlternative] = useState<{text: string; romanization?: string; note?: string} | null>(null);
+  // Context card state for decision-ready translation UI (matches LLM schema)
+  const [usageJudgment, setUsageJudgment] = useState<{ok_for: string[]; avoid_when: string[]} | null>(null);
+  const [saferAlternative, setSaferAlternative] = useState<{text: string | null; romaji?: string | null; reason?: string | null} | null>(null);
+  const [usageExample, setUsageExample] = useState<{jp: string | null; kr: string | null} | null>(null);
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
     return saved as any || "ko";
@@ -774,16 +775,15 @@ export const TranslationInterface = () => {
         tgtRomanization = usedLiteralAsMain ? (rawLiteralRom || rawTargetRom) : rawTargetRom;
         example = data.exampleSentence || "";
         
-        // Extract context card data for decision-ready UI
-        const respUsageJudgment = data.usageJudgment ? {
-          okFor: data.usageJudgment.ok_for || [],
-          avoidWhen: data.usageJudgment.avoid_when || []
-        } : null;
-        const respSaferAlt = data.saferAlternative || null;
+        // Extract context card data for decision-ready UI (already in correct schema)
+        console.log("[TranslationInterface] Raw response usageJudgment:", JSON.stringify(data.usageJudgment));
+        console.log("[TranslationInterface] Raw response saferAlternative:", JSON.stringify(data.saferAlternative));
+        console.log("[TranslationInterface] Raw response example:", JSON.stringify(data.example));
         
-        // Update context card state
-        setUsageJudgment(respUsageJudgment);
-        setSaferAlternative(respSaferAlt);
+        // Set context card states directly (LLM schema matches frontend)
+        setUsageJudgment(data.usageJudgment || { ok_for: [], avoid_when: [] });
+        setSaferAlternative(data.saferAlternative || null);
+        setUsageExample(data.example || null);
       }
 
       // Cache result using optimized cache utility (handles size management automatically)
@@ -1641,6 +1641,7 @@ export const TranslationInterface = () => {
                         savedWords={savedWordsFromTranslation}
                         usageJudgment={usageJudgment}
                         saferAlternative={saferAlternative}
+                        usageExample={usageExample}
                         onAlternativeSpeak={(text) => handleSpeak(text, targetLang, "")}
                       />
                     </div>

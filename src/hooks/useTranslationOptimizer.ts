@@ -14,6 +14,10 @@ interface TranslationCache {
   litRom: string;
   example: string;
   timestamp: number;
+  // Context cards for Usage Layout
+  alternatives?: Array<{ text: string; tags: string[]; note?: string }>;
+  usageCards?: Array<{ type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string }>;
+  usageExample?: { source: string; target: string } | null;
 }
 
 interface PendingRequest {
@@ -29,7 +33,8 @@ const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 const MAX_CACHE_SIZE = 100;
 
 // Bump this to invalidate older cached romanization/translation mappings
-const CACHE_SCHEMA_VERSION = 2;
+// Version 3: Added context cards (alternatives, usageCards, usageExample)
+const CACHE_SCHEMA_VERSION = 3;
 
 export interface TranslationStyle {
   formality: "formal" | "informal";
@@ -74,6 +79,10 @@ export const getFromCache = (cacheKey: string): TranslationCache | null => {
       litRom: raw?.litRom ?? "",
       example: raw?.example ?? "",
       timestamp: raw?.timestamp ?? 0,
+      // Context cards for Usage Layout
+      alternatives: raw?.alternatives ?? [],
+      usageCards: raw?.usageCards ?? [],
+      usageExample: raw?.usageExample ?? null,
     };
 
     // Invalidate caches created before we fixed romanization field mapping

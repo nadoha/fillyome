@@ -593,6 +593,12 @@ export const TranslationInterface = () => {
       setTargetRomanization(cached.tgtRom);
       setLiteralRomanization((cached as any).litRom || "");
       setExampleSentence(cached.example || "");
+      
+      // Restore context cards from cache
+      setAlternatives((cached as any).alternatives || []);
+      setUsageCards((cached as any).usageCards || []);
+      setUsageExample((cached as any).usageExample || null);
+      
       setHasTranslated(true);
       
       // Save to session state for persistence
@@ -789,13 +795,17 @@ export const TranslationInterface = () => {
       }
 
       // Cache result using optimized cache utility (handles size management automatically)
+      // Include context cards in cache for full restoration
       saveToCache(cacheKey, {
         translation,
         literal,
         srcRom: srcRomanization,
         tgtRom: tgtRomanization,
         litRom: litRomanization,
-        example
+        example,
+        alternatives,
+        usageCards,
+        usageExample
       });
       
       // Remove from pending requests

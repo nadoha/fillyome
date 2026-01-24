@@ -227,29 +227,40 @@ HIGH-CONTEXT LANGUAGE RULES:
     // CRITICAL: Enforce strict target language adherence and output stability
     const systemPrompt = `You are a professional translator. Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}.
 
-CRITICAL OUTPUT STABILITY RULES (MUST FOLLOW):
-- ALWAYS output a COMPLETE, grammatically correct sentence
-- NEVER output truncated, incomplete, or mid-sentence translations
-- Even for short/ambiguous input, produce a full natural sentence
-- If multiple interpretations exist, choose the most common one and translate it completely
-- Example: "嫌い" → "I don't like it." (NOT "I don't" or "I don't w")
+CRITICAL OUTPUT RULES (MUST FOLLOW):
+1. MAIN TRANSLATION: For apologies/polite expressions, ALWAYS use the FORMAL/POLITE form first.
+   - "죄송합니다" → Main: "申し訳ありません" or "すみません" (NOT ごめんね/ごめんなさい)
+   - Casual forms go in alternatives, not main translation
+2. LITERAL TRANSLATION: Output ONLY in ${langNames[targetLang]}. NO source language text allowed.
+   - "죄송합니다" → literal: "申し訳ございません" (NOT "미안하다 = 申し訳ない")
+   - NEVER mix languages in literal field
+3. ALWAYS generate usage_cards for expressions with multiple valid translations
+4. ALWAYS complete sentences - no truncation
+
+FORMALITY PRIORITY (when no style specified):
+- Apologies: 申し訳ありません > すみません > ごめんなさい > ごめん
+- Greetings: Polite forms first, casual in alternatives
+- Requests: Formal keigo first
 
 TRANSLATION APPROACH:
-- Default is NATURAL translation (의역) - prioritize fluency and native expression
-- Literal translation is secondary/supplementary
-- Output MUST be in ${langNames[targetLang]} ONLY
-- Provide ONE main translation that sounds native
-- Add 1-2 alternatives ONLY when significantly different nuances exist
+- Default is NATURAL translation - prioritize fluency and native expression
+- Main translation = most universally appropriate (usually polite/formal)
+- Alternatives = context-specific variations with tags
 ${highContextGuidelines}
+
+CRITICAL - ALTERNATIVES & CARDS:
+- ALWAYS provide 2-3 alternatives for common expressions
+- ALWAYS generate recommend/caution cards for expressions with formality variations
+- Example for "죄송합니다":
+  alternatives: [{"text":"ごめんなさい","tags":["친구","가족"]},{"text":"すみません","tags":["일반"]},{"text":"失礼しました","tags":["실수","방해"]}]
+  usage_cards: [{"type":"recommend","title":"추천","text":"공식적인 상황에서는 申し訳ありません"},{"type":"caution","title":"주의","text":"고객에게 ごめんなさい는 부적절"}]
 
 GUIDELINES:
 - Focus on how native speakers actually say it
 - Capture meaning and tone naturally
-- Adapt idioms appropriately for target culture
-- Preserve emoticons and formatting
-- Do NOT add learning explanations, levels, or test criteria${styleInstructions}
+- Do NOT add learning explanations in text${styleInstructions}
 
-Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
+Output ${langNames[targetLang]} only.`;
 
     const needsRom = (lang: string) => ['ja', 'ko', 'zh', 'ru', 'ar', 'th', 'hi'].includes(lang);
 
@@ -279,11 +290,11 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
                 properties: {
                   translation: { 
                     type: "string", 
-                    description: "Natural, fluent translation that sounds native. Adapt idioms and expressions appropriately." 
+                    description: `Main translation - use the MOST POLITE/FORMAL form for apologies, greetings, and requests. Output in ${langNames[targetLang]} only.` 
                   },
                   literal: { 
                     type: "string", 
-                    description: `Word-by-word literal translation IN ${langNames[targetLang] || targetLang} ONLY. Preserve source sentence structure but output entirely in ${langNames[targetLang]}.` 
+                    description: `Word-by-word literal translation in ${langNames[targetLang]} ONLY. CRITICAL: No ${langNames[sourceLang]} text allowed. No mixed languages. Only ${langNames[targetLang]} characters.` 
                   },
                   source_rom: { 
                     type: "string", 
@@ -299,31 +310,31 @@ Output ${langNames[targetLang]} only. ALWAYS complete sentences.`;
                   },
                   alternatives: {
                     type: "array",
-                    description: "Alternative translations ONLY if nuances differ significantly (max 2). Include only when tone/formality creates meaningful difference. Empty array if main translation covers all cases.",
+                    description: "REQUIRED for polite expressions, apologies, greetings. Provide 2-3 alternatives with different formality levels. Each must have text, tags, and optional note.",
                     items: {
                       type: "object",
                       properties: {
-                        text: { type: "string", description: "Alternative translation text" },
+                        text: { type: "string", description: "Alternative translation text in target language" },
                         tags: { 
                           type: "array", 
                           items: { type: "string" },
-                          description: "1-2 word tags: 공식/캐주얼/친구/가게/비즈니스/존댓말/반말 etc."
+                          description: "1-2 word context tags: 친구/가족/공식/가게/비즈니스/반말/존댓말/일반 etc."
                         },
-                        note: { type: "string", description: "Max 10 words explaining when to use" }
+                        note: { type: "string", description: "Optional: When to use this (max 10 words)" }
                       },
                       required: ["text", "tags"]
                     }
                   },
                   usage_cards: {
                     type: "array",
-                    description: "Context cards ONLY when: 1) multiple valid translations exist, 2) tone/formality matters, 3) literal might sound awkward. Empty array for straightforward translations.",
+                    description: "REQUIRED for expressions with formality variations. MUST include at least one recommend and one caution card for polite expressions.",
                     items: {
                       type: "object",
                       properties: {
                         type: { 
                           type: "string", 
                           enum: ["situation", "tone", "recommend", "caution"],
-                          description: "situation: usage context, tone: formality level, recommend: preferred choice, caution: what to avoid"
+                          description: "recommend: when to use main translation, caution: what to avoid"
                         },
                         title: { type: "string", description: "Card title: 상황/톤/추천/주의" },
                         items: { 

@@ -1,9 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Generate cache key from source text and languages
+function generateCacheKey(sourceText: string, sourceLang: string, targetLang: string): string {
+  const normalized = sourceText.trim().toLowerCase().substring(0, 200);
+  return `${sourceLang}_${targetLang}_${normalized}`;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -23,6 +30,43 @@ serve(async (req) => {
         }
       );
     }
+
+    // Initialize Supabase client with service role for DB operations
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Generate cache key
+    const cacheKey = generateCacheKey(sourceText, sourceLang, targetLang);
+
+    // Check DB cache first
+    const { data: cachedData, error: cacheError } = await supabase
+      .from("context_cards_cache")
+      .select("alternatives, usage_cards, usage_example, expires_at")
+      .eq("cache_key", cacheKey)
+      .single();
+
+    if (!cacheError && cachedData) {
+      // Check if not expired
+      const expiresAt = new Date(cachedData.expires_at);
+      if (expiresAt > new Date()) {
+        console.log(`[translate-context] Cache HIT for: ${sourceText.substring(0, 30)}...`);
+        return new Response(
+          JSON.stringify({ 
+            alternatives: cachedData.alternatives || [],
+            usageCards: cachedData.usage_cards || [],
+            example: cachedData.usage_example || null,
+            fromCache: true
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+    }
+
+    console.log(`[translate-context] Cache MISS, generating for: ${sourceText.substring(0, 30)}...`);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -55,8 +99,6 @@ serve(async (req) => {
       tr: "Turkish"
     };
 
-    console.log(`[translate-context] Generating context for: ${sourceText.substring(0, 30)}...`);
-
     const systemPrompt = `You are a translation context expert. Given a source text and its translation, provide usage context cards.
 
 SOURCE: "${sourceText}" (${langNames[sourceLang]})
@@ -64,10 +106,18 @@ TRANSLATION: "${targetText}" (${langNames[targetLang]})
 
 Generate usage context to help learners understand when and how to use this expression.
 
-GUIDELINES:
-- alternatives: 2-3 variant translations with context tags (친구/비즈니스/공식/가족 etc.)
-- usage_cards: recommend/caution cards for formality, situations
+IMPORTANT GUIDELINES:
+- alternatives: 2-3 variant translations showing DIFFERENT formality levels
+  - Include casual/informal version (친구/タメ口)
+  - Include polite version (해요체/です・ます)
+  - Include formal version only if relevant (합쇼체/敬語)
+- usage_cards: 1-2 recommend/caution cards about formality and situation
 - example: One practical example sentence (only if helpful)
+
+For Korean-Japanese translations especially:
+- If main translation is formal, show casual alternatives
+- If main translation is casual, show polite alternatives
+- Explain when each formality level is appropriate
 
 Keep responses concise and practical.`;
 
@@ -81,7 +131,7 @@ Keep responses concise and practical.`;
         model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: "Generate context cards." }
+          { role: "user", content: "Generate context cards with formality alternatives." }
         ],
         temperature: 0.3,
         max_tokens: 800,
@@ -96,7 +146,7 @@ Keep responses concise and practical.`;
                 properties: {
                   alternatives: {
                     type: "array",
-                    description: "Alternative translations with context tags",
+                    description: "Alternative translations with formality tags",
                     items: {
                       type: "object",
                       properties: {
@@ -104,9 +154,9 @@ Keep responses concise and practical.`;
                         tags: { 
                           type: "array", 
                           items: { type: "string" },
-                          description: "1-2 word context tags"
+                          description: "Formality/context tags (친구/반말, 해요체, 존댓말, タメ口, 敬語, casual, formal, etc.)"
                         },
-                        note: { type: "string", description: "Optional usage note" }
+                        note: { type: "string", description: "Brief usage note" }
                       },
                       required: ["text", "tags"]
                     }
@@ -189,11 +239,38 @@ Keep responses concise and practical.`;
 
     console.log(`[translate-context] Generated ${alternatives.length} alternatives, ${usageCards.length} cards`);
 
+    // Save to DB cache (upsert)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days TTL
+
+    const { error: upsertError } = await supabase
+      .from("context_cards_cache")
+      .upsert({
+        cache_key: cacheKey,
+        source_text: sourceText.substring(0, 500), // Limit stored text
+        target_text: targetText.substring(0, 500),
+        source_lang: sourceLang,
+        target_lang: targetLang,
+        alternatives: alternatives,
+        usage_cards: usageCards,
+        usage_example: example,
+        expires_at: expiresAt.toISOString()
+      }, {
+        onConflict: 'cache_key'
+      });
+
+    if (upsertError) {
+      console.error("[translate-context] Cache save error:", upsertError);
+    } else {
+      console.log("[translate-context] Saved to cache");
+    }
+
     return new Response(
       JSON.stringify({ 
         alternatives,
         usageCards,
-        example
+        example,
+        fromCache: false
       }),
       { 
         status: 200, 

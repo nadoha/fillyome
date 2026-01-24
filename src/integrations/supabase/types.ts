@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      context_cards_cache: {
+        Row: {
+          alternatives: Json | null
+          cache_key: string
+          created_at: string
+          expires_at: string
+          id: string
+          source_lang: string
+          source_text: string
+          target_lang: string
+          target_text: string
+          updated_at: string
+          usage_cards: Json | null
+          usage_example: Json | null
+        }
+        Insert: {
+          alternatives?: Json | null
+          cache_key: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          source_lang: string
+          source_text: string
+          target_lang: string
+          target_text: string
+          updated_at?: string
+          usage_cards?: Json | null
+          usage_example?: Json | null
+        }
+        Update: {
+          alternatives?: Json | null
+          cache_key?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          source_lang?: string
+          source_text?: string
+          target_lang?: string
+          target_text?: string
+          updated_at?: string
+          usage_cards?: Json | null
+          usage_example?: Json | null
+        }
+        Relationships: []
+      }
       learning_questions: {
         Row: {
           created_at: string

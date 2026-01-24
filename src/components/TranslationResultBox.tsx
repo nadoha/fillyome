@@ -104,17 +104,6 @@ export const TranslationResultBox = memo(({
   
   const hasContextCards = alternatives.length > 0 || usageCards.length > 0 || example;
   
-  // Debug logging for context cards
-  console.log('[TranslationResultBox] Context cards debug:', {
-    alternativesCount: alternatives.length,
-    usageCardsCount: usageCards.length,
-    hasExample: !!example,
-    hasContextCards,
-    showCards,
-    alternatives: alternatives.slice(0, 2),
-    usageCards: usageCards.slice(0, 2)
-  });
-  
   return (
     <div className="relative h-full min-h-[160px] flex flex-col bg-muted/30 rounded-lg">
       {/* Main Translation Area - Fixed at top (메인 번역 신성불가침) */}

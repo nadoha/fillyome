@@ -227,8 +227,8 @@ export const TranslationResultBox = memo(({
 
       {/* Context Cards Area - Scrollable (Progressive Disclosure) */}
       {naturalTranslation && hasContextCards && (
-        <ScrollArea className="flex-1 max-h-[200px]">
-          <div className="px-4 pb-4">
+        <ScrollArea className="flex-1 max-h-[280px]">
+          <div className="px-4 pb-24">
             <UsageCards
               alternatives={alternatives}
               usageCards={usageCards}

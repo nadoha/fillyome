@@ -13,12 +13,21 @@ const Auth = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Check if already logged in
+    // Set up auth state listener FIRST to catch OAuth callback
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        navigate("/");
+      }
+    });
+
+    // THEN check if already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate("/");
       }
     });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleGoogleLogin = async () => {

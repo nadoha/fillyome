@@ -55,17 +55,21 @@ export default function Settings() {
     
     loadUserAndSettings();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      // CRITICAL: Only synchronous state updates here to prevent deadlock
       setUser(session?.user ?? null);
       
+      // Defer Supabase calls with setTimeout to prevent auth deadlock
       if (session?.user) {
-        const { data: settings } = await supabase
-          .from("learning_settings")
-          .select("save_translation_history")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-        
-        setSaveTranslationHistory(settings?.save_translation_history ?? false);
+        setTimeout(async () => {
+          const { data: settings } = await supabase
+            .from("learning_settings")
+            .select("save_translation_history")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          
+          setSaveTranslationHistory(settings?.save_translation_history ?? false);
+        }, 0);
       } else {
         setSaveTranslationHistory(false);
       }

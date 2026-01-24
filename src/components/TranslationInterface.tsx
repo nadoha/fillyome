@@ -1091,24 +1091,26 @@ export const TranslationInterface = () => {
       data: {
         subscription
       }
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      // CRITICAL: Only synchronous state updates here to prevent deadlock
       setUser(session?.user ?? null);
       
-      // Update save history setting when auth changes
+      // Defer Supabase calls with setTimeout to prevent auth deadlock
       if (session?.user) {
-        const { data: settings } = await supabase
-          .from("learning_settings")
-          .select("id, save_translation_history")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-        
-        // If no settings exist, show consent modal
-        if (!settings) {
-          setShowHistoryConsent(true);
-          setSaveHistoryEnabled(false);
-        } else {
-          setSaveHistoryEnabled(settings.save_translation_history ?? false);
-        }
+        setTimeout(async () => {
+          const { data: settings } = await supabase
+            .from("learning_settings")
+            .select("id, save_translation_history")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          
+          if (!settings) {
+            setShowHistoryConsent(true);
+            setSaveHistoryEnabled(false);
+          } else {
+            setSaveHistoryEnabled(settings.save_translation_history ?? false);
+          }
+        }, 0);
       } else {
         setSaveHistoryEnabled(false);
       }

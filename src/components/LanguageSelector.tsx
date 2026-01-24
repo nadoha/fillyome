@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 interface LanguageSelectorProps {
   value: string;
@@ -40,14 +41,26 @@ export const LanguageSelector = memo(({
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-auto min-w-[80px] h-9 bg-transparent border-0 font-medium text-sm hover:bg-muted/50 focus:ring-0 focus:ring-offset-0">
+      <SelectTrigger 
+        className={cn(
+          "w-auto min-w-[100px] h-12 min-h-touch bg-transparent border-0",
+          "font-medium text-base hover:bg-muted/50",
+          "focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          "transition-colors duration-200 haptic"
+        )}
+        aria-label={`${type === "source" ? "원본" : "대상"} 언어 선택: ${selectedLang?.label}`}
+      >
         <SelectValue>
-          <span>{selectedLang?.label || value}</span>
+          <span className="text-base">{selectedLang?.label || value}</span>
         </SelectValue>
       </SelectTrigger>
-      <SelectContent className="max-h-[300px]">
+      <SelectContent className="max-h-[300px] bg-popover z-50">
         {languages.map((lang) => (
-          <SelectItem key={lang.code} value={lang.code} className="text-sm">
+          <SelectItem 
+            key={lang.code} 
+            value={lang.code} 
+            className="text-base min-h-touch py-3"
+          >
             {lang.label}
           </SelectItem>
         ))}

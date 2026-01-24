@@ -126,6 +126,7 @@ export const TranslationInterface = () => {
   const [alternatives, setAlternatives] = useState<Array<{text: string; tags: string[]; note?: string}>>([]);
   const [usageCards, setUsageCards] = useState<Array<{type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string}>>([]);
   const [usageExample, setUsageExample] = useState<{source: string; target: string} | null>(null);
+  const [isContextLoading, setIsContextLoading] = useState(false);
   const [sourceLang, setSourceLang] = useState<"ko" | "ja" | "en" | "zh" | "es" | "fr" | "de" | "pt" | "it" | "ru" | "ar" | "th" | "vi" | "id" | "hi" | "tr">(() => {
     const saved = localStorage.getItem('lastSourceLang');
     return saved as any || "ko";
@@ -595,11 +596,63 @@ export const TranslationInterface = () => {
       setExampleSentence(cached.example || "");
       
       // Restore context cards from cache
-      setAlternatives((cached as any).alternatives || []);
-      setUsageCards((cached as any).usageCards || []);
-      setUsageExample((cached as any).usageExample || null);
+      const cachedAlternatives = (cached as any).alternatives || [];
+      const cachedUsageCards = (cached as any).usageCards || [];
+      const cachedUsageExample = (cached as any).usageExample || null;
       
+      setAlternatives(cachedAlternatives);
+      setUsageCards(cachedUsageCards);
+      setUsageExample(cachedUsageExample);
       setHasTranslated(true);
+      
+      // If cache has no context cards, load them in background
+      const hasContextCards = cachedAlternatives.length > 0 || cachedUsageCards.length > 0 || cachedUsageExample;
+      if (!hasContextCards && isOnline) {
+        setIsContextLoading(true);
+        // Background load context cards
+        (async () => {
+          try {
+            const { data: contextData, error: contextError } = await supabase.functions.invoke("translate-context", {
+              body: {
+                sourceText,
+                targetText: cached.translation,
+                sourceLang,
+                targetLang
+              }
+            });
+            
+            if (currentTranslationIdRef.current !== translationId) return;
+            
+            if (!contextError && contextData) {
+              const respAlternatives = contextData.alternatives || [];
+              const respUsageCards = (contextData.usageCards || []).filter(
+                (card: any) => ["situation", "tone", "recommend", "caution"].includes(card.type)
+              );
+              const respExample = contextData.example || null;
+              
+              setAlternatives(respAlternatives);
+              setUsageCards(respUsageCards);
+              setUsageExample(respExample);
+              
+              // Update cache with context cards
+              saveToCache(cacheKey, {
+                ...cached,
+                alternatives: respAlternatives,
+                usageCards: respUsageCards,
+                usageExample: respExample
+              });
+            }
+          } catch (err) {
+            console.warn("[Cache] Failed to load context cards:", err);
+          } finally {
+            if (currentTranslationIdRef.current === translationId) {
+              setIsContextLoading(false);
+            }
+          }
+        })();
+      } else {
+        setIsContextLoading(false);
+      }
       
       // Save to session state for persistence
       sessionStorage.setItem('translationSessionState', JSON.stringify({
@@ -781,21 +834,14 @@ export const TranslationInterface = () => {
         tgtRomanization = usedLiteralAsMain ? (rawLiteralRom || rawTargetRom) : rawTargetRom;
         example = data.exampleSentence || "";
         
-        // Extract new usage context data
-        const respAlternatives = data.alternatives || [];
-        const respUsageCards = (data.usageCards || []).filter(
-          (card: any) => ["situation", "tone", "recommend", "caution"].includes(card.type)
-        ) as Array<{type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string}>;
-        const respExample = data.example || null;
-        
-        // Update usage cards state
-        setAlternatives(respAlternatives);
-        setUsageCards(respUsageCards);
-        setUsageExample(respExample);
+        // Clear previous context cards and start loading new ones
+        setAlternatives([]);
+        setUsageCards([]);
+        setUsageExample(null);
+        setIsContextLoading(true);
       }
 
-      // Cache result using optimized cache utility (handles size management automatically)
-      // Include context cards in cache for full restoration
+      // Cache core translation immediately (context cards will be added later)
       saveToCache(cacheKey, {
         translation,
         literal,
@@ -803,9 +849,9 @@ export const TranslationInterface = () => {
         tgtRom: tgtRomanization,
         litRom: litRomanization,
         example,
-        alternatives,
-        usageCards,
-        usageExample
+        alternatives: [],
+        usageCards: [],
+        usageExample: null
       });
       
       // Remove from pending requests
@@ -852,6 +898,57 @@ export const TranslationInterface = () => {
         literal_translation: literal
       };
       scheduleSave(newTranslation);
+
+      // Background load context cards (non-blocking)
+      const loadContextCards = async () => {
+        try {
+          const { data: contextData, error: contextError } = await supabase.functions.invoke("translate-context", {
+            body: {
+              sourceText,
+              targetText: translation,
+              sourceLang,
+              targetLang
+            }
+          });
+
+          // Check if still the current translation
+          if (currentTranslationIdRef.current !== translationId) return;
+
+          if (!contextError && contextData) {
+            const respAlternatives = contextData.alternatives || [];
+            const respUsageCards = (contextData.usageCards || []).filter(
+              (card: any) => ["situation", "tone", "recommend", "caution"].includes(card.type)
+            ) as Array<{type: "situation" | "tone" | "recommend" | "caution"; title: string; items?: string[]; text?: string}>;
+            const respExample = contextData.example || null;
+
+            setAlternatives(respAlternatives);
+            setUsageCards(respUsageCards);
+            setUsageExample(respExample);
+
+            // Update cache with context cards
+            saveToCache(cacheKey, {
+              translation,
+              literal,
+              srcRom: srcRomanization,
+              tgtRom: tgtRomanization,
+              litRom: litRomanization,
+              example,
+              alternatives: respAlternatives,
+              usageCards: respUsageCards,
+              usageExample: respExample
+            });
+          }
+        } catch (err) {
+          console.warn("[Context] Failed to load context cards:", err);
+        } finally {
+          if (currentTranslationIdRef.current === translationId) {
+            setIsContextLoading(false);
+          }
+        }
+      };
+
+      // Start context loading in background (don't await)
+      loadContextCards();
     } catch (error: any) {
       console.error("Translation error:", error);
 
@@ -1658,6 +1755,7 @@ export const TranslationInterface = () => {
                         usageCards={usageCards}
                         example={usageExample}
                         onAlternativeSpeak={(text) => handleSpeak(text, targetLang, "")}
+                        isContextLoading={isContextLoading}
                       />
                     </div>
                   </div>

@@ -19,15 +19,15 @@ export const AuthHeader = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    // Listen for auth changes
+    // Set up auth state listener FIRST (critical order for session persistence)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
 

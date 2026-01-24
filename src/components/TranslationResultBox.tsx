@@ -6,6 +6,7 @@ import { TappableWords } from "./TappableWords";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { UsageCards, Alternative, UsageCard, UsageExample } from "./UsageCards";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 interface TranslationResultBoxProps {
   naturalTranslation: string;
@@ -105,7 +106,7 @@ export const TranslationResultBox = memo(({
   const hasContextCards = alternatives.length > 0 || usageCards.length > 0 || example;
   
   return (
-    <div className="relative h-full min-h-[160px] flex flex-col bg-muted/30 rounded-lg">
+    <div className="relative h-full min-h-[160px] flex flex-col bg-muted/30 rounded-lg animate-page-transition">
       {/* Main Translation Area - Fixed at top (메인 번역 신성불가침) */}
       <div 
         ref={mainTranslationRef}
@@ -113,21 +114,22 @@ export const TranslationResultBox = memo(({
       >
         {isTranslating ? (
           <div className="space-y-3">
-            <Skeleton className="h-5 w-full" />
-            <Skeleton className="h-5 w-4/5" />
-            <Skeleton className="h-5 w-3/5" />
+            <Skeleton className="h-5 w-full animate-shimmer" />
+            <Skeleton className="h-5 w-4/5 animate-shimmer" />
+            <Skeleton className="h-5 w-3/5 animate-shimmer" />
           </div>
         ) : naturalTranslation ? (
           <div className="space-y-3">
             {/* Word save hint - dismissible */}
             {onWordSave && showWordHint && (
-              <div 
-                className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted transition-colors" 
+              <button 
+                className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1.5 rounded-md hover:bg-muted transition-colors min-h-touch" 
                 onClick={() => setShowWordHint(false)}
+                aria-label="힌트 닫기"
               >
-                <Sparkles className="h-3 w-3 text-primary" />
+                <Sparkles className="h-3 w-3 text-primary" aria-hidden="true" />
                 <span>단어를 탭하면 학습 목록에 저장됩니다</span>
-              </div>
+              </button>
             )}
 
             {/* Main translation with tappable words */}
@@ -149,13 +151,18 @@ export const TranslationResultBox = memo(({
               <div className="pt-2 border-t border-border/50">
                 <button 
                   onClick={handleToggleLiteral} 
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors min-h-touch py-1"
+                  aria-expanded={showLiteral}
+                  aria-controls="literal-translation"
                 >
-                  {showLiteral ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {showLiteral ? <ChevronUp className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />}
                   직역
                 </button>
                 {showLiteral && (
-                  <p className="mt-2 text-sm text-muted-foreground pl-3 border-l-2 border-primary/30">
+                  <p 
+                    id="literal-translation"
+                    className="mt-2 text-sm text-muted-foreground pl-3 border-l-2 border-primary/30"
+                  >
                     {literalTranslation}
                   </p>
                 )}
@@ -170,9 +177,10 @@ export const TranslationResultBox = memo(({
                   variant="ghost" 
                   size="icon" 
                   onClick={() => onFeedback('positive')} 
-                  className="h-7 w-7 rounded-full hover:bg-accent hover:text-accent-foreground"
+                  className="h-10 w-10 rounded-full min-h-touch min-w-touch hover:bg-accent hover:text-accent-foreground haptic"
+                  aria-label="좋아요"
                 >
-                  <ThumbsUp className="h-3.5 w-3.5" />
+                  <ThumbsUp className="h-4 w-4" />
                 </Button>
               </div>
             )}
@@ -181,23 +189,31 @@ export const TranslationResultBox = memo(({
           <span className="text-muted-foreground">{placeholder}</span>
         )}
         
-        {/* Action buttons - Fixed position */}
+        {/* Action buttons - Fixed position with improved touch targets */}
         {!isTranslating && naturalTranslation && (
           <div className="absolute top-3 right-3 flex items-center gap-1">
             {/* Speed selector */}
             {onSpeedChange && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-10 px-3 min-h-touch text-xs text-muted-foreground hover:text-foreground haptic"
+                    aria-label={`재생 속도: ${currentSpeedLabel}`}
+                  >
                     {currentSpeedLabel}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[80px]">
+                <DropdownMenuContent align="end" className="min-w-[80px] bg-popover z-50">
                   {SPEED_OPTIONS.map(option => (
                     <DropdownMenuItem 
                       key={option.value} 
                       onClick={() => onSpeedChange(option.value)} 
-                      className={speechSpeed === option.value ? "bg-accent" : ""}
+                      className={cn(
+                        "min-h-touch",
+                        speechSpeed === option.value && "bg-accent"
+                      )}
                     >
                       {option.label}
                     </DropdownMenuItem>
@@ -208,18 +224,20 @@ export const TranslationResultBox = memo(({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" 
+              className="h-10 w-10 rounded-full min-h-touch min-w-touch text-muted-foreground hover:text-foreground haptic" 
               onClick={onSpeak}
+              aria-label="번역 결과 듣기"
             >
-              <Volume2 className="h-4 w-4" />
+              <Volume2 className="h-5 w-5" />
             </Button>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" 
+              className="h-10 w-10 rounded-full min-h-touch min-w-touch text-muted-foreground hover:text-foreground haptic" 
               onClick={onCopy}
+              aria-label="번역 결과 복사"
             >
-              <Copy className="h-4 w-4" />
+              <Copy className="h-5 w-5" />
             </Button>
           </div>
         )}
@@ -228,7 +246,7 @@ export const TranslationResultBox = memo(({
       {/* Context Cards Area - Scrollable (Progressive Disclosure) */}
       {/* Always render the area when there's a translation, show loading indicator if no cards yet */}
       {naturalTranslation && (
-        <ScrollArea className="flex-1 max-h-[350px]">
+        <ScrollArea className="flex-1 max-h-[350px] custom-scrollbar">
           <div className="px-4 pb-32">
             {hasContextCards ? (
               <UsageCards
@@ -240,10 +258,10 @@ export const TranslationResultBox = memo(({
                 showCards={showCards}
               />
             ) : (
-              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
-                <div className="h-1 w-1 rounded-full bg-foreground/40 animate-bounce" />
-                <div className="h-1 w-1 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '100ms' }} />
-                <div className="h-1 w-1 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '200ms' }} />
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground animate-pulse-soft">
+                <div className="h-1 w-1 rounded-full bg-foreground/40 animate-bounce-soft" />
+                <div className="h-1 w-1 rounded-full bg-foreground/40 animate-bounce-soft" style={{ animationDelay: '100ms' }} />
+                <div className="h-1 w-1 rounded-full bg-foreground/40 animate-bounce-soft" style={{ animationDelay: '200ms' }} />
                 <span className="ml-1">문맥 정보 불러오는 중...</span>
               </div>
             )}

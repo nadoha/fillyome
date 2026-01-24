@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { 
-  ArrowLeft, ChevronRight, RefreshCw
+  ArrowLeft, ChevronRight, RefreshCw, BookOpen, Target, Zap, RotateCcw
 } from "lucide-react";
 import { toast } from "sonner";
 import { DynamicLearningSection } from "@/components/learn/DynamicLearningSection";
@@ -16,6 +16,7 @@ import { GuestModeBanner } from "@/components/GuestModeBanner";
 import { useStreak } from "@/hooks/useStreak";
 import { useLearningUnlock } from "@/hooks/useLearningUnlock";
 import { useTargetLanguage } from "@/hooks/useTargetLanguage";
+import { cn } from "@/lib/utils";
 
 interface DailyStats {
   wordsToReview: number;
@@ -75,7 +76,6 @@ const Learn = () => {
     if (user) {
       loadDailyStats();
     } else {
-      // Load from local storage for non-logged-in users
       loadLocalStats();
     }
   };
@@ -168,7 +168,7 @@ const Learn = () => {
   if (isLoading || isUnlockLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="spinner" />
         <p className="text-sm text-muted-foreground">불러오는 중...</p>
       </div>
     );
@@ -178,11 +178,17 @@ const Learn = () => {
   if (!isUnlocked) {
     return (
       <div className="flex flex-col h-screen bg-background">
-        <div className="flex-1 overflow-y-auto pb-24">
-          <div className="container max-w-lg mx-auto px-5 py-6">
+        <div className="flex-1 overflow-y-auto pb-24 custom-scrollbar">
+          <div className="container max-w-lg mx-auto px-5 py-6 animate-page-transition">
             <header className="flex items-center gap-3 mb-8">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 -ml-2">
-                <ArrowLeft className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate("/")} 
+                className="shrink-0 -ml-2 min-h-touch min-w-touch haptic"
+                aria-label="뒤로 가기"
+              >
+                <ArrowLeft className="h-6 w-6" />
               </Button>
               <h1 className="text-xl font-semibold">학습</h1>
             </header>
@@ -205,13 +211,19 @@ const Learn = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <div className="flex-1 overflow-y-auto pb-24">
-        <div className="container max-w-lg mx-auto px-5 py-6 space-y-8">
+      <div className="flex-1 overflow-y-auto pb-24 custom-scrollbar">
+        <div className="container max-w-lg mx-auto px-5 py-6 space-y-8 animate-page-transition">
           {/* Header - Clean and minimal */}
           <header className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 -ml-2">
-                <ArrowLeft className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate("/")} 
+                className="shrink-0 -ml-2 min-h-touch min-w-touch haptic"
+                aria-label="뒤로 가기"
+              >
+                <ArrowLeft className="h-6 w-6" />
               </Button>
               <h1 className="text-xl font-semibold">{t("learn")}</h1>
             </div>
@@ -230,7 +242,7 @@ const Learn = () => {
           )}
 
           {/* Current Level - Subtle, informational */}
-          <div className="flex items-center justify-between py-3 border-b border-border">
+          <div className="flex items-center justify-between py-3 border-b border-border animate-stagger-1">
             <div>
               <p className="text-xs text-muted-foreground mb-0.5">{t("currentLevel")}</p>
               <p className="text-sm font-medium">{currentLevel} · {
@@ -246,15 +258,15 @@ const Learn = () => {
             </div>
           </div>
 
-          {/* Today's Progress - Clean card */}
-          <section>
+          {/* Today's Progress - Clean card with gradient progress */}
+          <section className="animate-stagger-2">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-medium text-muted-foreground">{t("todaysLearning")}</h2>
               {todayCompleted && (
-                <span className="text-xs text-primary font-medium">{t("goalAchieved")}</span>
+                <span className="text-xs text-primary font-medium animate-bounce-soft">{t("goalAchieved")}</span>
               )}
             </div>
-            <Card className="border-border shadow-none">
+            <Card className="border-border shadow-none hover-lift">
               <CardContent className="p-5">
                 <div className="flex items-end justify-between mb-4">
                   <div>
@@ -263,24 +275,38 @@ const Learn = () => {
                   </div>
                   <p className="text-sm text-muted-foreground">{t("dailyGoal")} {stats.dailyGoal}</p>
                 </div>
-                <Progress value={progress} className="h-1.5" />
+                <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="absolute inset-y-0 left-0 progress-gradient rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </CardContent>
             </Card>
           </section>
 
           {/* Primary Action - Most prominent, stable design */}
-          <section>
+          <section className="animate-stagger-3">
             <p className="text-xs text-muted-foreground mb-3">{t("myTranslationBased")}</p>
             <Card 
-              className="cursor-pointer border-border hover:bg-muted/30 active:bg-muted/50 transition-colors shadow-none"
+              className="cursor-pointer border-border hover:bg-muted/30 active:bg-muted/50 transition-all duration-200 shadow-none hover-lift ripple"
               onClick={() => navigate("/micro-lesson")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && navigate("/micro-lesson")}
+              aria-label="맞춤 학습 시작하기"
             >
               <CardContent className="p-5 flex items-center justify-between">
-                <div>
-                  <p className="font-medium mb-1">{t("customLearningStart")}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("recentTranslationBased")}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Zap className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium mb-1">{t("customLearningStart")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("recentTranslationBased")}
+                    </p>
+                  </div>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
               </CardContent>
@@ -290,67 +316,90 @@ const Learn = () => {
           {/* Dynamic Personalized Learning Section */}
           <DynamicLearningSection />
 
-          {/* Secondary Options - Lower visual hierarchy */}
-          <section>
+          {/* Secondary Options - Grid layout with icons */}
+          <section className="animate-stagger-4">
             <h2 className="text-sm font-medium text-muted-foreground mb-3">{t("moreExercise")}</h2>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
               <Card
-                className="cursor-pointer border-border/60 hover:bg-muted/30 active:bg-muted/50 transition-colors shadow-none"
+                className="cursor-pointer border-border/60 hover:bg-muted/30 active:bg-muted/50 transition-all duration-200 shadow-none hover-lift ripple"
                 onClick={() => navigate("/quiz")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && navigate("/quiz")}
+                aria-label="저장한 단어 복습"
               >
-                <CardContent className="p-4 flex items-center justify-between">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                  <div className="h-10 w-10 rounded-full bg-info/10 flex items-center justify-center">
+                    <BookOpen className="h-5 w-5 text-info" />
+                  </div>
                   <div>
                     <p className="text-sm font-medium">{t("reviewSavedWords")}</p>
-                    <p className="text-xs text-muted-foreground">{t("checkSavedExpressions")}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("checkSavedExpressions")}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardContent>
               </Card>
 
               <Card
-                className="cursor-pointer border-border/60 hover:bg-muted/30 active:bg-muted/50 transition-colors shadow-none"
+                className="cursor-pointer border-border/60 hover:bg-muted/30 active:bg-muted/50 transition-all duration-200 shadow-none hover-lift ripple"
                 onClick={() => navigate("/flashcards")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && navigate("/flashcards")}
+                aria-label="플래시카드"
               >
-                <CardContent className="p-4 flex items-center justify-between">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                  <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
+                    <Target className="h-5 w-5 text-success" />
+                  </div>
                   <div>
                     <p className="text-sm font-medium">{t("flashcards")}</p>
-                    <p className="text-xs text-muted-foreground">{t("quickReviewFlashcards")}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("quickReviewFlashcards")}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardContent>
               </Card>
+            </div>
 
-              {stats.wrongAnswerCount > 0 && (
-                <Card
-                  className="cursor-pointer border-border/60 hover:bg-muted/30 active:bg-muted/50 transition-colors shadow-none"
-                  onClick={() => navigate("/wrong-answers")}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
+            {stats.wrongAnswerCount > 0 && (
+              <Card
+                className="cursor-pointer border-border/60 hover:bg-muted/30 active:bg-muted/50 transition-all duration-200 shadow-none hover-lift ripple mt-3"
+                onClick={() => navigate("/wrong-answers")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && navigate("/wrong-answers")}
+                aria-label="틀린 문제 다시 풀기"
+              >
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
+                      <RotateCcw className="h-5 w-5 text-warning" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium">{t("retryWrongAnswers")}</p>
                       <p className="text-xs text-muted-foreground">{stats.wrongAnswerCount}{t("waitingReview")}</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </CardContent>
+              </Card>
+            )}
           </section>
 
           {/* Tertiary Actions - Minimal presence */}
-          <section className="pt-2">
+          <section className="pt-2 animate-stagger-5">
             <div className="flex gap-3">
               <Button 
                 variant="ghost" 
-                className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 min-h-touch haptic"
                 onClick={() => navigate("/vocabulary")}
+                aria-label="나의 단어장"
               >
                 {t("myWordbook")}
               </Button>
               <Button 
                 variant="ghost" 
-                className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 min-h-touch haptic"
                 onClick={() => navigate("/stats")}
+                aria-label="학습 기록"
               >
                 {t("learningRecord")}
               </Button>

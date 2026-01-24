@@ -224,19 +224,53 @@ HIGH-CONTEXT LANGUAGE RULES:
 - NEVER stop mid-sentence or output incomplete translations
 - Do NOT refuse to translate due to ambiguity - pick the safest general interpretation` : '';
 
+    // FORMALITY LEVEL DETECTION GUIDE
+    // Maps source language formality patterns to appropriate target language expressions
+    const formalityDetectionGuide = `
+FORMALITY LEVEL DETECTION & MAPPING (CRITICAL):
+Analyze the source text's formality level and match it appropriately in the target language.
+
+Korean → Japanese formality mapping:
+- 반말/casual (해, 야, 뭐해, 미안해, 고마워) → タメ口 (ごめん, ありがとう, 何してる)
+- 해요체/polite-casual (미안해요, 고마워요, 뭐해요) → です/ます丁寧 (ごめんなさい, すみません, 何してますか)
+- 합쇼체/formal (죄송합니다, 감사합니다) → 敬語 but NATURAL first (すみません > 申し訳ありません)
+- 비즈니스/극존칭 → 申し訳ございません (only for clearly business/very formal context)
+
+Korean → English formality mapping:
+- 반말 (미안해, 고마워) → casual (sorry, thanks)
+- 해요체 (미안해요, 감사해요) → polite (I'm sorry, thank you)
+- 합쇼체 (죄송합니다) → formal but natural (I'm sorry, I apologize)
+
+Japanese → Korean formality mapping:
+- タメ口 (ごめん, ありがと) → 반말 (미안해, 고마워)
+- です/ます (すみません, ありがとうございます) → 해요체/합쇼체 (죄송해요, 감사합니다)
+- 敬語 (申し訳ございません) → 극존칭 (대단히 죄송합니다)
+
+CRITICAL EXAMPLES:
+- "미안해" → "ごめん" or "ごめんね" (NOT すみません)
+- "미안해요" → "ごめんなさい" or "すみません" (NOT 申し訳ありません)  
+- "죄송합니다" → "すみません" (default) or "申し訳ありません" (only if clearly business)
+- "고마워" → "ありがとう" (NOT ありがとうございます)
+- "감사합니다" → "ありがとうございます"
+
+ALWAYS prioritize natural, commonly-used expressions over overly formal ones.
+Match the SOURCE text's formality level - don't upgrade or downgrade unnecessarily.`;
+
     // OPTIMIZED: Focused system prompt for fast core translation only
     // Context cards are now loaded separately via translate-context endpoint
     const systemPrompt = `You are a professional translator. Translate from ${langNames[sourceLang]} to ${langNames[targetLang]}.
 
+${formalityDetectionGuide}
+
 CRITICAL OUTPUT RULES:
-1. MAIN TRANSLATION: For apologies/polite expressions, use FORMAL/POLITE form first.
+1. MAIN TRANSLATION: Match source text's formality level. Use natural, commonly-used expressions.
 2. LITERAL TRANSLATION: Output ONLY in ${langNames[targetLang]}. NO source language text.
 3. ALWAYS complete sentences - no truncation.
 ${highContextGuidelines}
 
 TRANSLATION APPROACH:
 - Default is NATURAL translation - prioritize fluency and native expression
-- Main translation = most universally appropriate (usually polite/formal)${styleInstructions}
+- Match formality level of source text accurately${styleInstructions}
 
 Output ${langNames[targetLang]} only. Focus on speed and accuracy.`;
 

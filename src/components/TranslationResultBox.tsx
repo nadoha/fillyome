@@ -104,6 +104,17 @@ export const TranslationResultBox = memo(({
   
   const hasContextCards = alternatives.length > 0 || usageCards.length > 0 || example;
   
+  // Debug logging for context cards
+  console.log('[TranslationResultBox] Context cards debug:', {
+    alternativesCount: alternatives.length,
+    usageCardsCount: usageCards.length,
+    hasExample: !!example,
+    hasContextCards,
+    showCards,
+    alternatives: alternatives.slice(0, 2),
+    usageCards: usageCards.slice(0, 2)
+  });
+  
   return (
     <div className="relative h-full min-h-[160px] flex flex-col bg-muted/30 rounded-lg">
       {/* Main Translation Area - Fixed at top (메인 번역 신성불가침) */}
@@ -226,17 +237,27 @@ export const TranslationResultBox = memo(({
       </div>
 
       {/* Context Cards Area - Scrollable (Progressive Disclosure) */}
-      {naturalTranslation && hasContextCards && (
-        <ScrollArea className="flex-1 max-h-[280px]">
-          <div className="px-4 pb-24">
-            <UsageCards
-              alternatives={alternatives}
-              usageCards={usageCards}
-              example={example}
-              onAlternativeSpeak={onAlternativeSpeak}
-              isLoading={isContextLoading}
-              showCards={showCards}
-            />
+      {/* Always render the area when there's a translation, show loading indicator if no cards yet */}
+      {naturalTranslation && (
+        <ScrollArea className="flex-1 max-h-[350px]">
+          <div className="px-4 pb-32">
+            {hasContextCards ? (
+              <UsageCards
+                alternatives={alternatives}
+                usageCards={usageCards}
+                example={example}
+                onAlternativeSpeak={onAlternativeSpeak}
+                isLoading={isContextLoading}
+                showCards={showCards}
+              />
+            ) : (
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                <div className="h-1 w-1 rounded-full bg-foreground/40 animate-bounce" />
+                <div className="h-1 w-1 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '100ms' }} />
+                <div className="h-1 w-1 rounded-full bg-foreground/40 animate-bounce" style={{ animationDelay: '200ms' }} />
+                <span className="ml-1">문맥 정보 불러오는 중...</span>
+              </div>
+            )}
           </div>
         </ScrollArea>
       )}

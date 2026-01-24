@@ -1469,14 +1469,16 @@ export const TranslationInterface = () => {
       toast.error("번역 결과가 없습니다.");
       return;
     }
+    // Save the translated text (targetText) to vocabulary with targetLang
+    // The definition shows the original text (sourceText) as the meaning
     const definition = {
       pos: "phrase",
-      definitions: [targetText],
+      definitions: [sourceText], // Original text as meaning
       romanization: targetRomanization || undefined,
-      example: literalTranslation || targetText
+      example: literalTranslation || sourceText
     };
-    await addWord(sourceText, sourceLang, definition);
-  }, [sourceText, targetText, sourceLang, targetRomanization, literalTranslation, addWord]);
+    await addWord(targetText, targetLang, definition);
+  }, [sourceText, targetText, targetLang, targetRomanization, literalTranslation, addWord]);
 
   // Handle saving word from translation result with one tap
   const handleWordSaveFromTranslation = useCallback(async (word: string) => {

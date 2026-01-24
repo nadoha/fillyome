@@ -22,6 +22,7 @@ import JapaneseLearning from "./pages/JapaneseLearning";
 import MicroLesson from "./pages/MicroLesson";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
+import { AuthBootstrap } from "@/components/AuthBootstrap";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AuthBootstrap />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />

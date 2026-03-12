@@ -366,7 +366,7 @@ const Learn = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && navigate("/wrong-answers")}
-                aria-label="틀린 문제 다시 풀기"
+                aria-label={t("retryWrongAnswers")}
               >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">

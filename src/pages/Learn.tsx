@@ -169,7 +169,7 @@ const Learn = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <div className="spinner" />
-        <p className="text-sm text-muted-foreground">불러오는 중...</p>
+        <p className="text-sm text-muted-foreground">{t("loadingText")}</p>
       </div>
     );
   }
@@ -186,11 +186,11 @@ const Learn = () => {
                 size="icon" 
                 onClick={() => navigate("/")} 
                 className="shrink-0 -ml-2 min-h-touch min-w-touch haptic"
-                aria-label="뒤로 가기"
+                aria-label={t("goBack")}
               >
                 <ArrowLeft className="h-6 w-6" />
               </Button>
-              <h1 className="text-xl font-semibold">학습</h1>
+              <h1 className="text-xl font-semibold">{t("learn")}</h1>
             </header>
             <LearningLockedScreen
               translationCount={unlockTransCount}
@@ -221,7 +221,7 @@ const Learn = () => {
                 size="icon" 
                 onClick={() => navigate("/")} 
                 className="shrink-0 -ml-2 min-h-touch min-w-touch haptic"
-                aria-label="뒤로 가기"
+                aria-label={t("goBack")}
               >
                 <ArrowLeft className="h-6 w-6" />
               </Button>
@@ -238,7 +238,7 @@ const Learn = () => {
 
           {/* Guest Mode Banner */}
           {isGuestMode && (
-            <GuestModeBanner message="로그인하면 학습 기록을 저장할 수 있어요" />
+            <GuestModeBanner message={t("loginForLearningRecord")} />
           )}
 
           {/* Current Level - Subtle, informational */}
@@ -294,7 +294,7 @@ const Learn = () => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && navigate("/micro-lesson")}
-              aria-label="맞춤 학습 시작하기"
+              aria-label={t("customLearningStart")}
             >
               <CardContent className="p-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -326,7 +326,7 @@ const Learn = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && navigate("/quiz")}
-                aria-label="저장한 단어 복습"
+                aria-label={t("reviewSavedWords")}
               >
                 <CardContent className="p-4 flex flex-col items-center text-center gap-2">
                   <div className="h-10 w-10 rounded-full bg-info/10 flex items-center justify-center">
@@ -345,7 +345,7 @@ const Learn = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && navigate("/flashcards")}
-                aria-label="플래시카드"
+                aria-label={t("flashcards")}
               >
                 <CardContent className="p-4 flex flex-col items-center text-center gap-2">
                   <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
@@ -366,7 +366,7 @@ const Learn = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && navigate("/wrong-answers")}
-                aria-label="틀린 문제 다시 풀기"
+                aria-label={t("retryWrongAnswers")}
               >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -391,7 +391,7 @@ const Learn = () => {
                 variant="ghost" 
                 className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 min-h-touch haptic"
                 onClick={() => navigate("/vocabulary")}
-                aria-label="나의 단어장"
+                aria-label={t("myWordbook")}
               >
                 {t("myWordbook")}
               </Button>
@@ -399,7 +399,7 @@ const Learn = () => {
                 variant="ghost" 
                 className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 min-h-touch haptic"
                 onClick={() => navigate("/stats")}
-                aria-label="학습 기록"
+                aria-label={t("learningRecord")}
               >
                 {t("learningRecord")}
               </Button>

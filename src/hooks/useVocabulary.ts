@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface DictionaryEntry {
   pos: string;
@@ -19,6 +20,7 @@ interface VocabularyItem {
 }
 
 export const useVocabulary = () => {
+  const { t } = useTranslation();
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -51,15 +53,15 @@ export const useVocabulary = () => {
       setVocabulary(typedData);
     } catch (error) {
       console.error("Failed to load vocabulary:", error);
-      toast.error("단어장을 불러오는데 실패했습니다.");
+      toast.error(t("vocabLoadFailed"));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const addWord = useCallback(async (word: string, language: string, definition: DictionaryEntry) => {
     if (!user) {
-      toast.error("로그인이 필요합니다.");
+      toast.error(t("loginRequiredAction"));
       return false;
     }
 
@@ -75,25 +77,25 @@ export const useVocabulary = () => {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error("이미 단어장에 추가된 단어입니다.");
+          toast.error(t("wordAlreadyAdded"));
           return false;
         }
         throw error;
       }
 
       await loadVocabulary();
-      toast.success("단어장에 추가되었습니다.");
+      toast.success(t("wordAdded"));
       return true;
     } catch (error) {
       console.error("Failed to add word:", error);
-      toast.error("단어 추가에 실패했습니다.");
+      toast.error(t("wordAddFailed"));
       return false;
     }
-  }, [user, loadVocabulary]);
+  }, [user, loadVocabulary, t]);
 
   const removeWord = useCallback(async (id: string) => {
     if (!user) {
-      toast.error("로그인이 필요합니다.");
+      toast.error(t("loginRequiredAction"));
       return false;
     }
 
@@ -106,18 +108,18 @@ export const useVocabulary = () => {
       if (error) throw error;
 
       await loadVocabulary();
-      toast.success("단어장에서 삭제되었습니다.");
+      toast.success(t("wordDeleted"));
       return true;
     } catch (error) {
       console.error("Failed to remove word:", error);
-      toast.error("단어 삭제에 실패했습니다.");
+      toast.error(t("wordDeleteFailed"));
       return false;
     }
-  }, [user, loadVocabulary]);
+  }, [user, loadVocabulary, t]);
 
   const updateNotes = useCallback(async (id: string, notes: string) => {
     if (!user) {
-      toast.error("로그인이 필요합니다.");
+      toast.error(t("loginRequiredAction"));
       return false;
     }
 
@@ -130,14 +132,14 @@ export const useVocabulary = () => {
       if (error) throw error;
 
       await loadVocabulary();
-      toast.success("메모가 저장되었습니다.");
+      toast.success(t("noteSaved"));
       return true;
     } catch (error) {
       console.error("Failed to update notes:", error);
-      toast.error("메모 저장에 실패했습니다.");
+      toast.error(t("noteSaveFailed"));
       return false;
     }
-  }, [user, loadVocabulary]);
+  }, [user, loadVocabulary, t]);
 
   const isWordInVocabulary = useCallback((word: string, language: string) => {
     return vocabulary.some(item => item.word === word && item.language === language);

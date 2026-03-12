@@ -251,7 +251,7 @@ export const TranslationInterface = () => {
       const updated = [newPair, ...filtered].slice(0, 3);
       localStorage.setItem(key, JSON.stringify(updated));
       setRecentLangPairs(updated);
-      toast.success(`언어 자동 전환: ${detectedLangFromSpeech.toUpperCase()} → ${newTargetLang.toUpperCase()}`, {
+      toast.success(t("langAutoSwitch", { from: detectedLangFromSpeech.toUpperCase(), to: newTargetLang.toUpperCase() }), {
         duration: 2500
       });
 
@@ -290,8 +290,7 @@ export const TranslationInterface = () => {
       resetTranscript();
       setSourceText("");
       startListening();
-      const msg = noiseCancellation ? "음성 인식 시작 (노이즈 캔슬링 활성화)" : "음성 인식 시작";
-      toast.success(t("listeningStarted") || msg);
+      toast.success(noiseCancellation ? t("listeningStartedWithNc") : t("listeningStarted"));
     }
   }, [isListening, isSupported, startListening, stopListening, resetTranscript, noiseCancellation, t]);
 
@@ -954,14 +953,13 @@ export const TranslationInterface = () => {
 
       // Handle timeout or network errors with retry
       if ((error.name === 'AbortError' || error.message?.includes('network')) && retryCount < 2) {
-        toast.error(`네트워크 연결이 느립니다. 재시도 중... (${retryCount + 1}/2)`);
         setTimeout(() => handleTranslate(retryCount + 1), 1000);
         return;
       }
       if (error.name === 'AbortError') {
-        toast.error("번역 요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.");
+        toast.error(t("translationTimeout"));
       } else {
-        toast.error("번역 실패. 다시 시도해주세요.");
+        toast.error(t("translationFailed"));
       }
     } finally {
       setIsTranslating(false);
@@ -1563,7 +1561,7 @@ export const TranslationInterface = () => {
   }, [addWord]);
   const handleAddTranslationToVocabulary = useCallback(async () => {
     if (!sourceText || !targetText) {
-      toast.error("번역 결과가 없습니다.");
+      toast.error(t("noTranslationResult"));
       return;
     }
     // Save the translated text (targetText) to vocabulary with targetLang

@@ -24,7 +24,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      toast.success(t("logoutSuccess") || "로그아웃되었습니다");
+      toast.success(t("logoutSuccess"));
       onUserChange(null);
       setOpen(false);
     } catch (error: any) {
@@ -42,10 +42,10 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
   };
 
   const menuItems = [
-    { icon: FileText, label: t("documentTranslation") || "문서 번역", path: "/document" },
-    { icon: BookOpen, label: t("dictionarySearch") || "사전 검색", path: "/dictionary" },
-    { icon: Coins, label: "환율 계산기", path: "/currency" },
-    { icon: Settings, label: t("settings") || "설정", path: "/settings" },
+    { icon: FileText, label: t("documentTranslation"), path: "/document" },
+    { icon: BookOpen, label: t("dictionarySearch"), path: "/dictionary" },
+    { icon: Coins, label: t("currencyExchange"), path: "/currency" },
+    { icon: Settings, label: t("settings"), path: "/settings" },
   ];
 
   return (
@@ -55,7 +55,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
           variant="ghost" 
           size="icon"
           className="h-10 w-10 rounded-full hover:bg-accent shrink-0"
-          aria-label={t("menu") || "메뉴"}
+          aria-label={t("menu")}
         >
           <Menu className="h-5 w-5" />
         </Button>
@@ -64,7 +64,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="p-5 pb-4">
-            <SheetTitle className="text-lg">{t("menu") || "메뉴"}</SheetTitle>
+            <SheetTitle className="text-lg">{t("menu")}</SheetTitle>
           </div>
 
           {/* User profile */}
@@ -76,7 +76,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
-                    {t("loggedIn") || "로그인됨"}
+                    {t("loggedIn")}
                   </p>
                   <p className="text-sm font-medium truncate mt-0.5">{user.email}</p>
                 </div>
@@ -111,7 +111,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
               ) : (
                 <Moon className="h-[18px] w-[18px] text-muted-foreground group-hover:text-foreground transition-colors" />
               )}
-              <span>{theme === "dark" ? (t("lightMode") || "라이트 모드") : (t("darkMode") || "다크 모드")}</span>
+              <span>{theme === "dark" ? t("lightMode") : t("darkMode")}</span>
             </button>
           </div>
 
@@ -124,7 +124,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
-                <span>{t("logout") || "로그아웃"}</span>
+                <span>{t("logout")}</span>
               </Button>
             ) : (
               <Button
@@ -132,7 +132,7 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
                 onClick={() => handleNav("/auth")}
               >
                 <LogIn className="h-4 w-4" />
-                <span>{t("login") || "로그인"}</span>
+                <span>{t("login")}</span>
               </Button>
             )}
           </div>

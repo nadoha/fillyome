@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Upload, Loader2, Download, ArrowRight, Camera, X, ImagePlus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,16 +33,17 @@ export const ImageTranslationTab = ({
   onTargetLangChange,
   recentPairs
 }: ImageTranslationTabProps) => {
+  const { t } = useTranslation();
   const [image, setImage] = useState<string | null>(null);
   const [translatedImage, setTranslatedImage] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [isCameraMode, setIsCameraMode] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -53,7 +55,7 @@ export const ImageTranslationTab = ({
           const file = items[i].getAsFile();
           if (file) {
             processImageFile(file);
-            toast.success("이미지가 붙여넣기되었습니다");
+            toast.success(t("imagePasted"));
           }
           break;
         }
@@ -62,7 +64,7 @@ export const ImageTranslationTab = ({
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     return () => {
@@ -83,7 +85,7 @@ export const ImageTranslationTab = ({
         videoRef.current.srcObject = mediaStream;
       }
     } catch (error) {
-      toast.error("카메라에 접근할 수 없습니다");
+      toast.error(t("cameraAccessFailed"));
     }
   };
 
@@ -96,30 +98,53 @@ export const ImageTranslationTab = ({
   };
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0);
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
-            processImageFile(file);
-            stopCamera();
-          }
-        }, 'image/jpeg');
-      }
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+      const imageData = canvas.toDataURL('image/jpeg', 0.9);
+      setImage(imageData);
+      stopCamera();
     }
   };
 
   const processImageFile = (file: File) => {
+    const maxSize = 4 * 1024 * 1024;
     const reader = new FileReader();
-    reader.onload = (event) => {
-      setImage(event.target?.result as string);
-      setTranslatedImage(null);
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (file.size > maxSize) {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDimension = 1920;
+          let { width, height } = img;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension;
+              width = maxDimension;
+            } else {
+              width = (width / height) * maxDimension;
+              height = maxDimension;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          setImage(canvas.toDataURL('image/jpeg', 0.85));
+          setTranslatedImage(null);
+        };
+        img.src = result;
+      } else {
+        setImage(result);
+        setTranslatedImage(null);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -129,7 +154,7 @@ export const ImageTranslationTab = ({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error("이미지 파일만 업로드 가능합니다");
+      toast.error(t("imageOnlyUpload"));
       return;
     }
 
@@ -151,7 +176,6 @@ export const ImageTranslationTab = ({
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Only set to false if we're leaving the drop zone itself, not child elements
     if (e.currentTarget === e.target) {
       setIsDragging(false);
     }
@@ -164,165 +188,88 @@ export const ImageTranslationTab = ({
 
     const file = e.dataTransfer.files?.[0];
     if (!file) {
-      toast.error("파일을 찾을 수 없습니다");
+      toast.error(t("fileNotFound"));
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      toast.error("이미지 파일만 업로드 가능합니다");
+      toast.error(t("imageOnlyUpload"));
       return;
     }
 
     processImageFile(file);
-    toast.success("이미지가 업로드되었습니다");
+    toast.success(t("imageUploaded"));
   };
 
   const drawTranslatedImage = (imageDataUrl: string, textRegions: TextRegion[]) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
     const img = new Image();
     img.onload = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
       canvas.width = img.width;
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Draw original image
       ctx.drawImage(img, 0, 0);
 
-      textRegions.forEach((region) => {
-        const x = region.x * img.width;
-        const y = region.y * img.height;
-        const width = region.width * img.width;
-        const height = region.height * img.height;
-
-        // Calculate font size based on OCR data or estimate from region height
-        const estimatedFontSize = region.fontSize 
-          ? region.fontSize * img.height 
-          : height * 0.7;
-        const fontSize = Math.max(12, Math.min(estimatedFontSize, 120));
-        
-        // Determine background and text colors
+      textRegions.forEach(region => {
+        // Background
         const bgColor = region.bgColor || '#ffffff';
-        const isDarkBg = region.isDarkBg ?? false;
-        const textColor = isDarkBg ? '#ffffff' : '#1a1a1a';
-        
-        // Text alignment
-        const textAlign = region.textAlign || 'center';
-
-        // Step 1: Inpaint - Cover original text with matching background
-        // Sample background color from edges and create smooth cover
-        ctx.save();
-        
-        // Create a slightly larger cover area for clean edges
-        const padding = Math.max(2, fontSize * 0.1);
-        const coverX = x - padding;
-        const coverY = y - padding;
-        const coverWidth = width + padding * 2;
-        const coverHeight = height + padding * 2;
-
-        // Draw background cover with slight blur effect
-        ctx.filter = 'blur(1px)';
         ctx.fillStyle = bgColor;
-        ctx.fillRect(coverX, coverY, coverWidth, coverHeight);
-        ctx.filter = 'none';
-        
-        // Draw solid background on top for crisp text
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(x, y, width, height);
-        
-        ctx.restore();
+        const padding = 4;
+        ctx.fillRect(
+          region.x - padding, 
+          region.y - padding, 
+          region.width + padding * 2, 
+          region.height + padding * 2
+        );
 
-        // Step 2: Render translated text
-        ctx.save();
-        
-        // Set up font - use system fonts that work well for all languages
-        const fontWeight = '500';
-        ctx.font = `${fontWeight} ${fontSize}px "Pretendard", "Noto Sans JP", "Noto Sans KR", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-        ctx.fillStyle = textColor;
-        ctx.textBaseline = 'top';
+        // Text
+        const fontSize = region.fontSize || Math.max(12, Math.min(region.height * 0.7, 48));
+        ctx.font = `bold ${fontSize}px "Noto Sans KR", "Noto Sans JP", sans-serif`;
+        ctx.fillStyle = region.isDarkBg ? '#ffffff' : '#000000';
+        ctx.textAlign = region.textAlign || 'center';
+        ctx.textBaseline = 'middle';
 
-        // Word wrap for translated text
-        const text = region.translated;
-        const maxWidth = width * 0.95;
-        const lines: string[] = [];
-        
-        // Split by characters for CJK languages, by words for others
-        const isCJK = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]/.test(text);
-        
-        if (isCJK) {
-          // Character-based wrapping for CJK
-          let currentLine = '';
-          for (const char of text) {
-            const testLine = currentLine + char;
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && currentLine) {
-              lines.push(currentLine);
-              currentLine = char;
-            } else {
-              currentLine = testLine;
-            }
-          }
-          if (currentLine) lines.push(currentLine);
-        } else {
-          // Word-based wrapping for other languages
-          const words = text.split(' ');
-          let currentLine = '';
-          for (const word of words) {
-            const testLine = currentLine + (currentLine ? ' ' : '') + word;
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && currentLine) {
-              lines.push(currentLine);
-              currentLine = word;
-            } else {
-              currentLine = testLine;
-            }
-          }
-          if (currentLine) lines.push(currentLine);
-        }
+        const centerX = region.x + region.width / 2;
+        const centerY = region.y + region.height / 2;
 
-        // Calculate line height and vertical centering
-        const lineHeight = fontSize * 1.15;
-        const totalTextHeight = lines.length * lineHeight;
-        const startY = y + Math.max(0, (height - totalTextHeight) / 2);
+        // Word wrap
+        const words = region.translated.split('');
+        let lines: string[] = [];
+        let currentLine = '';
 
-        // Draw each line with proper alignment
-        lines.forEach((line, i) => {
-          const metrics = ctx.measureText(line);
-          let lineX: number;
-          
-          if (textAlign === 'left') {
-            ctx.textAlign = 'left';
-            lineX = x + fontSize * 0.1;
-          } else if (textAlign === 'right') {
-            ctx.textAlign = 'right';
-            lineX = x + width - fontSize * 0.1;
+        for (const char of words) {
+          const testLine = currentLine + char;
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > region.width - padding * 2 && currentLine) {
+            lines.push(currentLine);
+            currentLine = char;
           } else {
-            ctx.textAlign = 'center';
-            lineX = x + width / 2;
+            currentLine = testLine;
           }
-          
-          // Draw text shadow for better readability
-          ctx.shadowColor = isDarkBg ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.8)';
-          ctx.shadowBlur = 2;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-          
-          ctx.fillText(line, lineX, startY + i * lineHeight);
+        }
+        if (currentLine) lines.push(currentLine);
+
+        const lineHeight = fontSize * 1.2;
+        const startY = centerY - (lines.length - 1) * lineHeight / 2;
+
+        lines.forEach((line, i) => {
+          ctx.fillText(line, centerX, startY + i * lineHeight);
         });
-        
-        ctx.restore();
       });
 
       setTranslatedImage(canvas.toDataURL('image/png'));
+      setShowOriginal(false);
     };
     img.src = imageDataUrl;
   };
 
   const handleTranslate = async () => {
     if (!image) {
-      toast.error("이미지를 먼저 업로드해주세요");
+      toast.error(t("uploadImageFirst"));
       return;
     }
 
@@ -340,13 +287,13 @@ export const ImageTranslationTab = ({
 
       if (data?.textRegions && Array.isArray(data.textRegions)) {
         drawTranslatedImage(image, data.textRegions);
-        toast.success("번역이 완료되었습니다");
+        toast.success(t("translationComplete"));
       } else {
-        toast.error("텍스트를 찾을 수 없습니다");
+        toast.error(t("textNotFound"));
       }
     } catch (error: any) {
       console.error('Translation error:', error);
-      toast.error(error.message || "번역에 실패했습니다");
+      toast.error(error.message || t("translationFailed"));
     } finally {
       setIsTranslating(false);
     }
@@ -359,7 +306,12 @@ export const ImageTranslationTab = ({
     link.href = translatedImage;
     link.download = `translated-${Date.now()}.png`;
     link.click();
-    toast.success("이미지가 다운로드되었습니다");
+    toast.success(t("imageDownloaded"));
+  };
+
+  // i18n helper for language display in camera mode
+  const getLangDisplay = (code: string) => {
+    return t(code === 'ko' ? 'korean' : code === 'ja' ? 'japanese' : code === 'en' ? 'english' : code === 'zh' ? 'chinese' : code);
   };
 
   if (isCameraMode) {
@@ -385,11 +337,11 @@ export const ImageTranslationTab = ({
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
           <div className="flex gap-2 mb-4">
             <div className="flex-1 bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white text-sm text-center">
-              {sourceLang === 'ko' ? '한국어' : sourceLang === 'ja' ? '日本語' : sourceLang === 'en' ? 'English' : sourceLang === 'zh' ? '中文' : sourceLang}
+              {getLangDisplay(sourceLang)}
             </div>
             <ArrowRight className="h-5 w-5 text-white mt-2" />
             <div className="flex-1 bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white text-sm text-center">
-              {targetLang === 'ko' ? '한국어' : targetLang === 'ja' ? '日本語' : targetLang === 'en' ? 'English' : targetLang === 'zh' ? '中文' : targetLang}
+              {getLangDisplay(targetLang)}
             </div>
           </div>
           
@@ -398,7 +350,7 @@ export const ImageTranslationTab = ({
             className="w-full h-14 rounded-full bg-white text-black hover:bg-white/90 font-semibold"
           >
             <Camera className="mr-2 h-5 w-5" />
-            촬영
+            {t("imageTranslation")}
           </Button>
         </div>
       </div>
@@ -411,7 +363,6 @@ export const ImageTranslationTab = ({
     setShowOriginal(false);
   };
 
-  // Get the displayed image (translated or original based on toggle)
   const displayedImage = translatedImage && !showOriginal ? translatedImage : image;
 
   return (
@@ -424,10 +375,8 @@ export const ImageTranslationTab = ({
         className="hidden"
       />
 
-      {/* Initial Upload State - Clean and prominent */}
       {!image ? (
         <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
-          {/* Main Drop Zone */}
           <div
             onDragOver={handleDragOver}
             onDragEnter={handleDragEnter}
@@ -445,15 +394,14 @@ export const ImageTranslationTab = ({
             </div>
             <div className="text-center px-4">
               <p className="text-base font-medium text-foreground mb-1">
-                이미지를 업로드하세요
+                {t("imageTranslation")}
               </p>
               <p className="text-sm text-muted-foreground">
-                드래그 앤 드롭, 클릭, 또는 <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Ctrl+V</kbd>
+                Drag & Drop · Click · <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Ctrl+V</kbd>
               </p>
             </div>
           </div>
 
-          {/* Quick Action Buttons */}
           <div className="px-4 pb-4 flex gap-2">
             <Button
               variant="outline"
@@ -464,7 +412,7 @@ export const ImageTranslationTab = ({
               }}
             >
               <Camera className="mr-2 h-4 w-4" />
-              카메라로 촬영
+              📷
             </Button>
             <Button
               variant="outline"
@@ -475,13 +423,12 @@ export const ImageTranslationTab = ({
               }}
             >
               <Upload className="mr-2 h-4 w-4" />
-              파일 선택
+              📁
             </Button>
           </div>
         </div>
       ) : (
         <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
-          {/* Language Selector */}
           <div className="p-3 border-b border-border/50">
             <div className="flex items-center gap-2">
               <div className="flex-1">
@@ -504,7 +451,6 @@ export const ImageTranslationTab = ({
             </div>
           </div>
 
-          {/* Image Preview with Overlay */}
           <div className="relative">
             <img 
               src={displayedImage || image} 
@@ -512,7 +458,6 @@ export const ImageTranslationTab = ({
               className="w-full max-h-[45vh] object-contain bg-muted/20" 
             />
             
-            {/* Top Controls */}
             <div className="absolute top-2 right-2 flex gap-1.5">
               {translatedImage && (
                 <Button
@@ -521,7 +466,7 @@ export const ImageTranslationTab = ({
                   className="h-8 px-3 bg-background/90 backdrop-blur-sm hover:bg-background text-xs font-medium"
                   onClick={() => setShowOriginal(!showOriginal)}
                 >
-                  {showOriginal ? "번역 보기" : "원본 보기"}
+                  {showOriginal ? "🔄" : "📄"}
                 </Button>
               )}
               <Button
@@ -534,27 +479,24 @@ export const ImageTranslationTab = ({
               </Button>
             </div>
 
-            {/* Translation Status Badge */}
             {translatedImage && !showOriginal && (
               <div className="absolute top-2 left-2">
                 <span className="px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-full">
-                  번역됨
+                  ✓
                 </span>
               </div>
             )}
 
-            {/* Loading Overlay */}
             {isTranslating && (
               <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="text-sm font-medium">번역 중...</span>
+                  <span className="text-sm font-medium">{t("translating")}</span>
                 </div>
               </div>
             )}
           </div>
           
-          {/* Bottom Action Bar */}
           <div className="p-3 border-t border-border/50 flex gap-2">
             <Button
               variant="outline"
@@ -563,7 +505,7 @@ export const ImageTranslationTab = ({
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="mr-1.5 h-4 w-4" />
-              다른 이미지
+              📁
             </Button>
             
             {translatedImage ? (
@@ -573,7 +515,7 @@ export const ImageTranslationTab = ({
                 onClick={handleDownload}
               >
                 <Download className="mr-1.5 h-4 w-4" />
-                번역 이미지 저장
+                💾
               </Button>
             ) : (
               <Button
@@ -582,14 +524,13 @@ export const ImageTranslationTab = ({
                 disabled={isTranslating}
                 className="flex-[2]"
               >
-                번역하기
+                {t("translate")}
               </Button>
             )}
           </div>
         </div>
       )}
 
-      {/* Hidden canvas for rendering */}
       <canvas ref={canvasRef} className="hidden" />
     </div>
   );

@@ -953,14 +953,13 @@ export const TranslationInterface = () => {
 
       // Handle timeout or network errors with retry
       if ((error.name === 'AbortError' || error.message?.includes('network')) && retryCount < 2) {
-        toast.error(`네트워크 연결이 느립니다. 재시도 중... (${retryCount + 1}/2)`);
         setTimeout(() => handleTranslate(retryCount + 1), 1000);
         return;
       }
       if (error.name === 'AbortError') {
-        toast.error("번역 요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.");
+        toast.error(t("translationTimeout"));
       } else {
-        toast.error("번역 실패. 다시 시도해주세요.");
+        toast.error(t("translationFailed"));
       }
     } finally {
       setIsTranslating(false);

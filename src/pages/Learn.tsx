@@ -345,7 +345,7 @@ const Learn = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && navigate("/flashcards")}
-                aria-label="플래시카드"
+                aria-label={t("flashcards")}
               >
                 <CardContent className="p-4 flex flex-col items-center text-center gap-2">
                   <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">

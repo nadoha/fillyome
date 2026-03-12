@@ -251,7 +251,7 @@ export const TranslationInterface = () => {
       const updated = [newPair, ...filtered].slice(0, 3);
       localStorage.setItem(key, JSON.stringify(updated));
       setRecentLangPairs(updated);
-      toast.success(`언어 자동 전환: ${detectedLangFromSpeech.toUpperCase()} → ${newTargetLang.toUpperCase()}`, {
+      toast.success(t("langAutoSwitch", { from: detectedLangFromSpeech.toUpperCase(), to: newTargetLang.toUpperCase() }), {
         duration: 2500
       });
 

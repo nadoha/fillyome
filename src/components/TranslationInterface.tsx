@@ -290,8 +290,7 @@ export const TranslationInterface = () => {
       resetTranscript();
       setSourceText("");
       startListening();
-      const msg = noiseCancellation ? "음성 인식 시작 (노이즈 캔슬링 활성화)" : "음성 인식 시작";
-      toast.success(t("listeningStarted") || msg);
+      toast.success(noiseCancellation ? t("listeningStartedWithNc") : t("listeningStarted"));
     }
   }, [isListening, isSupported, startListening, stopListening, resetTranscript, noiseCancellation, t]);
 

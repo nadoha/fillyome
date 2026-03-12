@@ -18,7 +18,6 @@ export default function Settings() {
   const [user, setUser] = useState<any>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   
-  // DB-based setting for save translation history (default OFF)
   const [saveTranslationHistory, setSaveTranslationHistory] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(false);
   
@@ -41,7 +40,6 @@ export default function Settings() {
       setUser(user);
       setIsLoadingUser(false);
       
-      // Load DB-based settings if user is logged in
       if (user) {
         const { data: settings } = await supabase
           .from("learning_settings")
@@ -56,10 +54,8 @@ export default function Settings() {
     loadUserAndSettings();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      // CRITICAL: Only synchronous state updates here to prevent deadlock
       setUser(session?.user ?? null);
       
-      // Defer Supabase calls with setTimeout to prevent auth deadlock
       if (session?.user) {
         setTimeout(async () => {
           const { data: settings } = await supabase
@@ -84,13 +80,11 @@ export default function Settings() {
     toast.success(checked ? t("noiseCancelOn") : t("noiseCancelOff"));
   };
 
-  // Handle save translation history toggle (DB-based, requires login)
   const handleSaveTranslationHistory = async (checked: boolean) => {
     if (!user) return;
     
     setIsLoadingSettings(true);
     try {
-      // Check if settings exist
       const { data: existing } = await supabase
         .from("learning_settings")
         .select("id")
@@ -112,7 +106,7 @@ export default function Settings() {
       }
       
       setSaveTranslationHistory(checked);
-      toast.success(checked ? "번역 기록 저장이 활성화되었습니다" : "번역 기록 저장이 비활성화되었습니다");
+      toast.success(checked ? t("translationHistoryEnabled") : t("translationHistoryDisabled"));
     } catch (error) {
       console.error("Failed to update setting:", error);
     } finally {
@@ -134,23 +128,23 @@ export default function Settings() {
 
   const clearCache = () => {
     const count = clearTranslationCache();
-    toast.success(`${count}개의 번역 캐시가 삭제되었습니다`);
+    toast.success(t("cachesDeleted", { count }));
   };
 
   const optimizeCache = () => {
     cleanAllCaches();
     const stats = getCacheStats();
-    toast.success(`캐시 최적화 완료 (총 ${stats.total}개 항목)`);
+    toast.success(t("cacheOptimized", { count: stats.total }));
   };
 
   const clearHistory = () => {
     localStorage.removeItem('translations');
-    toast.success(t("historyCleared") || "번역 기록이 삭제되었습니다");
+    toast.success(t("historyCleared"));
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast.success("로그아웃 되었습니다");
+    toast.success(t("logoutSuccess"));
   };
 
   return (
@@ -164,10 +158,11 @@ export default function Settings() {
                 size="icon"
                 onClick={() => navigate("/")}
                 className="-ml-2"
+                aria-label={t("goBack")}
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-xl font-semibold">설정</h1>
+              <h1 className="text-xl font-semibold">{t("settings")}</h1>
             </div>
           </div>
         </header>
@@ -175,11 +170,11 @@ export default function Settings() {
         <main className="max-w-lg mx-auto px-5 py-6 space-y-6">
           {/* Account Section */}
           <section>
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">계정</h2>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">{t("accountSection")}</h2>
             <Card className="border-border shadow-none">
               <CardContent className="p-0">
                 {isLoadingUser ? (
-                  <div className="p-4 text-sm text-muted-foreground">불러오는 중...</div>
+                  <div className="p-4 text-sm text-muted-foreground">{t("loadingText")}</div>
                 ) : user ? (
                   <>
                     <div className="p-4 flex items-center justify-between">
@@ -189,7 +184,7 @@ export default function Settings() {
                         </div>
                         <div>
                           <p className="text-sm font-medium">{user.email}</p>
-                          <p className="text-xs text-muted-foreground">Google 계정 연결됨</p>
+                          <p className="text-xs text-muted-foreground">{t("googleAccountLinked")}</p>
                         </div>
                       </div>
                     </div>
@@ -200,7 +195,7 @@ export default function Settings() {
                       onClick={handleLogout}
                     >
                       <LogOut className="h-4 w-4 mr-3" />
-                      로그아웃
+                      {t("logout")}
                     </Button>
                   </>
                 ) : (
@@ -209,9 +204,9 @@ export default function Settings() {
                     onClick={() => navigate("/auth")}
                   >
                     <div>
-                      <p className="text-sm font-medium">Google 계정 연결 (선택)</p>
+                      <p className="text-sm font-medium">{t("googleAccountLinkOptional")}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        다른 기기에서 학습 기록을 이어갈 수 있어요
+                        {t("googleAccountLinkDesc")}
                       </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -223,14 +218,14 @@ export default function Settings() {
 
           {/* Voice Settings */}
           <section>
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">음성</h2>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">{t("voiceSection")}</h2>
             <Card className="border-border shadow-none">
               <CardContent className="p-0">
                 <div className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">노이즈 캔슬링</p>
+                    <p className="text-sm font-medium">{t("noiseCancellation")}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      배경 소음을 제거하여 정확도를 높입니다
+                      {t("noiseCancelDesc")}
                     </p>
                   </div>
                   <Switch
@@ -241,9 +236,9 @@ export default function Settings() {
                 <Separator />
                 <div className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">효과음</p>
+                    <p className="text-sm font-medium">{t("soundEffects")}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      버튼 클릭 및 알림 소리
+                      {t("soundEffectsDesc")}
                     </p>
                   </div>
                   <Switch
@@ -257,17 +252,16 @@ export default function Settings() {
 
           {/* Data Settings */}
           <section>
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">데이터</h2>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">{t("dataSection")}</h2>
             <Card className="border-border shadow-none">
               <CardContent className="p-0">
-                {/* DB-based translation history toggle - only for logged in users */}
                 {user && (
                   <>
                     <div className="p-4 flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium">번역 기록 저장</p>
+                        <p className="text-sm font-medium">{t("translationHistorySaveLabel")}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          번역한 내용을 서버에 저장합니다
+                          {t("translationHistorySaveDesc")}
                         </p>
                       </div>
                       <Switch
@@ -281,9 +275,9 @@ export default function Settings() {
                 )}
                 <div className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">자동 저장 (로컬)</p>
+                    <p className="text-sm font-medium">{t("autoSaveLocal")}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      번역 결과를 기기에 임시 저장합니다
+                      {t("autoSaveLocalDesc")}
                     </p>
                   </div>
                   <Switch
@@ -297,7 +291,7 @@ export default function Settings() {
                   className="w-full justify-start h-12 px-4 text-sm"
                   onClick={optimizeCache}
                 >
-                  캐시 최적화
+                  {t("cacheOptimize")}
                 </Button>
                 <Separator />
                 <Button
@@ -305,7 +299,7 @@ export default function Settings() {
                   className="w-full justify-start h-12 px-4 text-sm"
                   onClick={clearCache}
                 >
-                  번역 캐시 삭제
+                  {t("translateCacheDelete")}
                 </Button>
                 <Separator />
                 <Button
@@ -313,7 +307,7 @@ export default function Settings() {
                   className="w-full justify-start h-12 px-4 text-sm text-destructive hover:text-destructive"
                   onClick={clearHistory}
                 >
-                  번역 기록 삭제
+                  {t("translateHistoryDelete")}
                 </Button>
               </CardContent>
             </Card>
@@ -321,10 +315,10 @@ export default function Settings() {
 
           {/* Language Settings */}
           <section>
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">언어</h2>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">{t("languageSection")}</h2>
             <Card className="border-border shadow-none">
               <CardContent className="p-4">
-                <p className="text-sm font-medium mb-3">앱 표시 언어</p>
+                <p className="text-sm font-medium mb-3">{t("appDisplayLanguage")}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {["ko", "ja", "en", "zh"].map((lang) => (
                     <Button
@@ -334,7 +328,7 @@ export default function Settings() {
                       className="h-10"
                       onClick={() => {
                         i18n.changeLanguage(lang);
-                        toast.success("언어가 변경되었습니다");
+                        toast.success(t("languageChanged"));
                       }}
                     >
                       {lang === "ko" && "한국어"}
@@ -358,7 +352,7 @@ export default function Settings() {
                 >
                   <div className="flex items-center gap-3">
                     <Database className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-medium">개인정보 처리방침</p>
+                    <p className="text-sm font-medium">{t("privacyPolicy")}</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -368,8 +362,7 @@ export default function Settings() {
 
           {/* Privacy notice */}
           <p className="text-xs text-muted-foreground text-center pt-2 leading-relaxed">
-            이 앱은 번역 및 학습 서비스 제공을 위해<br />
-            최소한의 데이터만 수집합니다
+            {t("privacyNotice")}
           </p>
         </main>
       </div>

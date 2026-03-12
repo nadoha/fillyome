@@ -1561,7 +1561,7 @@ export const TranslationInterface = () => {
   }, [addWord]);
   const handleAddTranslationToVocabulary = useCallback(async () => {
     if (!sourceText || !targetText) {
-      toast.error("번역 결과가 없습니다.");
+      toast.error(t("noTranslationResult"));
       return;
     }
     // Save the translated text (targetText) to vocabulary with targetLang

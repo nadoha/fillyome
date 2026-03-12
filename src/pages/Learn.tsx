@@ -238,7 +238,7 @@ const Learn = () => {
 
           {/* Guest Mode Banner */}
           {isGuestMode && (
-            <GuestModeBanner message="로그인하면 학습 기록을 저장할 수 있어요" />
+            <GuestModeBanner message={t("loginForLearningRecord")} />
           )}
 
           {/* Current Level - Subtle, informational */}

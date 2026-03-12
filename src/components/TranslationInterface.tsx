@@ -1778,7 +1778,9 @@ export const TranslationInterface = () => {
                     <LanguageSelector value={targetLang} onChange={newLang => setTargetLang(newLang as any)} />
                   </div>
 
-                  <ImageTranslationTab sourceLang={sourceLang} targetLang={targetLang} onSourceLangChange={setSourceLang} onTargetLangChange={setTargetLang} recentPairs={recentLangPairs} />
+                  <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="spinner" /></div>}>
+                    <ImageTranslationTab sourceLang={sourceLang} targetLang={targetLang} onSourceLangChange={setSourceLang} onTargetLangChange={setTargetLang} recentPairs={recentLangPairs} />
+                  </Suspense>
                 </TabsContent>
               </Tabs>
             </div>

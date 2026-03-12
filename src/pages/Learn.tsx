@@ -186,7 +186,7 @@ const Learn = () => {
                 size="icon" 
                 onClick={() => navigate("/")} 
                 className="shrink-0 -ml-2 min-h-touch min-w-touch haptic"
-                aria-label="뒤로 가기"
+                aria-label={t("goBack")}
               >
                 <ArrowLeft className="h-6 w-6" />
               </Button>

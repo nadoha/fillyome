@@ -169,7 +169,7 @@ const Learn = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <div className="spinner" />
-        <p className="text-sm text-muted-foreground">불러오는 중...</p>
+        <p className="text-sm text-muted-foreground">{t("loadingText")}</p>
       </div>
     );
   }

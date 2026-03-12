@@ -294,7 +294,7 @@ const Learn = () => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && navigate("/micro-lesson")}
-              aria-label="맞춤 학습 시작하기"
+              aria-label={t("customLearningStart")}
             >
               <CardContent className="p-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">

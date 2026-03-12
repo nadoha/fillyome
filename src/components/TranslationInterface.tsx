@@ -173,8 +173,8 @@ export const TranslationInterface = () => {
     return saved ? parseFloat(saved) : 1.0;
   });
   const lastRecommendationTextRef = useRef<string>("");
-  const translateTimeoutRef = useRef<NodeJS.Timeout>();
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const translateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastSavedTextRef = useRef<string>("");
   const pendingTranslationRef = useRef<Translation | null>(null);
   

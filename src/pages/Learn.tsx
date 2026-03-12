@@ -399,7 +399,7 @@ const Learn = () => {
                 variant="ghost" 
                 className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 min-h-touch haptic"
                 onClick={() => navigate("/stats")}
-                aria-label="학습 기록"
+                aria-label={t("learningRecord")}
               >
                 {t("learningRecord")}
               </Button>

@@ -10,6 +10,13 @@ interface LanguageSelectorProps {
   type?: "source" | "target";
 }
 
+const FLAG_MAP: Record<string, string> = {
+  ko: "🇰🇷", ja: "🇯🇵", en: "🇺🇸", zh: "🇨🇳",
+  es: "🇪🇸", fr: "🇫🇷", de: "🇩🇪", pt: "🇵🇹",
+  it: "🇮🇹", ru: "🇷🇺", ar: "🇸🇦", th: "🇹🇭",
+  vi: "🇻🇳", id: "🇮🇩", hi: "🇮🇳", tr: "🇹🇷",
+};
+
 export const LanguageSelector = memo(({
   value,
   onChange,
@@ -43,25 +50,31 @@ export const LanguageSelector = memo(({
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger 
         className={cn(
-          "w-auto min-w-[100px] h-12 min-h-touch bg-transparent border-0",
-          "font-medium text-base hover:bg-muted/50",
-          "focus:ring-2 focus:ring-ring focus:ring-offset-2",
-          "transition-colors duration-200 haptic"
+          "w-auto min-w-[110px] h-10 min-h-touch bg-muted/50 border-0 rounded-xl",
+          "font-medium text-sm hover:bg-muted",
+          "focus:ring-2 focus:ring-ring focus:ring-offset-1",
+          "transition-colors duration-200 haptic gap-1.5"
         )}
         aria-label={`${type === "source" ? "원본" : "대상"} 언어 선택: ${selectedLang?.label}`}
       >
         <SelectValue>
-          <span className="text-base">{selectedLang?.label || value}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-base">{FLAG_MAP[value] || ""}</span>
+            <span className="text-sm">{selectedLang?.label || value}</span>
+          </span>
         </SelectValue>
       </SelectTrigger>
-      <SelectContent className="max-h-[300px] bg-popover z-50">
+      <SelectContent className="max-h-[300px] bg-popover z-50 rounded-xl">
         {languages.map((lang) => (
           <SelectItem 
             key={lang.code} 
             value={lang.code} 
-            className="text-base min-h-touch py-3"
+            className="text-sm min-h-touch py-2.5 rounded-lg"
           >
-            {lang.label}
+            <span className="flex items-center gap-2">
+              <span>{FLAG_MAP[lang.code] || ""}</span>
+              <span>{lang.label}</span>
+            </span>
           </SelectItem>
         ))}
       </SelectContent>

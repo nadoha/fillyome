@@ -36,15 +36,13 @@ export const BottomNavigation = () => {
   ];
 
   const isActive = (path: string) => {
-    if (path === "/") {
-      return location.pathname === "/";
-    }
+    if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
   };
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border shadow-lg md:hidden pb-safe"
+      className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/30 md:hidden pb-safe"
       role="navigation"
       aria-label="메인 네비게이션"
     >
@@ -58,26 +56,31 @@ export const BottomNavigation = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 min-h-touch transition-all duration-200 ripple",
+                "flex-1 flex flex-col items-center justify-center gap-1 min-h-touch transition-all duration-200",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
                 active 
-                  ? "text-primary bg-primary/10" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 active:bg-muted"
+                  ? "text-primary" 
+                  : "text-muted-foreground hover:text-foreground active:bg-muted/50"
               )}
               aria-label={item.ariaLabel}
               aria-current={active ? "page" : undefined}
               tabIndex={0}
             >
-              <Icon 
-                className={cn(
-                  "h-6 w-6 transition-all duration-200",
-                  active && "scale-110"
-                )} 
-                aria-hidden="true"
-              />
+              <div className={cn(
+                "relative flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200",
+                active && "bg-primary/10"
+              )}>
+                <Icon 
+                  className={cn(
+                    "h-5 w-5 transition-all duration-200",
+                    active && "scale-105"
+                  )} 
+                  aria-hidden="true"
+                />
+              </div>
               <span 
                 className={cn(
-                  "text-xs",
+                  "text-[11px] leading-tight",
                   active ? "font-semibold" : "font-medium"
                 )}
               >

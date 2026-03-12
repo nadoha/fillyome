@@ -190,7 +190,7 @@ const Learn = () => {
               >
                 <ArrowLeft className="h-6 w-6" />
               </Button>
-              <h1 className="text-xl font-semibold">학습</h1>
+              <h1 className="text-xl font-semibold">{t("learn")}</h1>
             </header>
             <LearningLockedScreen
               translationCount={unlockTransCount}

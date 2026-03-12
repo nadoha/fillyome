@@ -1,4 +1,4 @@
-import { Menu, LogIn, LogOut, Moon, Sun, Settings, User as UserIcon, FileText, BookOpen, BookMarked, Coins } from "lucide-react";
+import { Menu, LogIn, LogOut, Moon, Sun, Settings, User as UserIcon, FileText, BookOpen, Coins, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
@@ -32,13 +32,8 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
     }
   };
 
-  const handleLogin = () => {
-    navigate("/auth");
-    setOpen(false);
-  };
-
-  const handleSettings = () => {
-    navigate("/settings");
+  const handleNav = (path: string) => {
+    navigate(path);
     setOpen(false);
   };
 
@@ -46,119 +41,100 @@ export const HamburgerMenu = ({ user, onUserChange }: HamburgerMenuProps) => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  const menuItems = [
+    { icon: FileText, label: t("documentTranslation") || "문서 번역", path: "/document" },
+    { icon: BookOpen, label: t("dictionarySearch") || "사전 검색", path: "/dictionary" },
+    { icon: Coins, label: "환율 계산기", path: "/currency" },
+    { icon: Settings, label: t("settings") || "설정", path: "/settings" },
+  ];
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button 
           variant="ghost" 
           size="icon"
-          className="h-10 w-10 sm:h-11 sm:w-11 rounded-full hover:bg-accent shrink-0"
+          className="h-10 w-10 rounded-full hover:bg-accent shrink-0"
           aria-label={t("menu") || "메뉴"}
         >
-          <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
+          <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-2/3">
-        <SheetHeader>
-          <SheetTitle>{t("menu") || "메뉴"}</SheetTitle>
-        </SheetHeader>
-        
-        <div className="mt-6 space-y-4">
+      <SheetContent side="right" className="w-[280px] sm:w-[320px] p-0">
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-5 pb-4">
+            <SheetTitle className="text-lg">{t("menu") || "메뉴"}</SheetTitle>
+          </div>
+
+          {/* User profile */}
           {user && (
-            <>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="rounded-full bg-primary/10 p-2">
-                  <UserIcon className="w-5 h-5 text-primary" />
+            <div className="px-5 pb-4">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                <div className="rounded-full bg-primary/10 p-2.5">
+                  <UserIcon className="w-4 h-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">{t("loggedIn") || "로그인됨"}</p>
-                  <p className="text-sm font-semibold truncate">{user.email}</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                    {t("loggedIn") || "로그인됨"}
+                  </p>
+                  <p className="text-sm font-medium truncate mt-0.5">{user.email}</p>
                 </div>
               </div>
-              <Separator />
-            </>
+            </div>
           )}
 
-          <div className="space-y-2">
+          <Separator />
+
+          {/* Navigation */}
+          <div className="flex-1 py-2 overflow-y-auto">
+            {menuItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => handleNav(item.path)}
+                className="w-full flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-accent/50 transition-colors text-left group"
+              >
+                <item.icon className="h-[18px] w-[18px] text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="flex-1">{item.label}</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+              </button>
+            ))}
+
+            <Separator className="my-2" />
+
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-accent/50 transition-colors text-left group"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-[18px] w-[18px] text-muted-foreground group-hover:text-foreground transition-colors" />
+              ) : (
+                <Moon className="h-[18px] w-[18px] text-muted-foreground group-hover:text-foreground transition-colors" />
+              )}
+              <span>{theme === "dark" ? (t("lightMode") || "라이트 모드") : (t("darkMode") || "다크 모드")}</span>
+            </button>
+          </div>
+
+          {/* Footer auth action */}
+          <div className="p-4 border-t border-border/50">
             {user ? (
               <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 h-12"
+                variant="outline"
+                className="w-full justify-center gap-2 h-11 rounded-xl text-sm"
                 onClick={handleLogout}
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4 w-4" />
                 <span>{t("logout") || "로그아웃"}</span>
               </Button>
             ) : (
               <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 h-12"
-                onClick={handleLogin}
+                className="w-full justify-center gap-2 h-11 rounded-xl text-sm"
+                onClick={() => handleNav("/auth")}
               >
-                <LogIn className="h-5 w-5" />
+                <LogIn className="h-4 w-4" />
                 <span>{t("login") || "로그인"}</span>
               </Button>
             )}
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12"
-              onClick={toggleTheme}
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-              <span>{theme === "dark" ? (t("lightMode") || "라이트 모드") : (t("darkMode") || "다크 모드")}</span>
-            </Button>
-
-            <Separator />
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12"
-              onClick={handleSettings}
-            >
-              <Settings className="h-5 w-5" />
-              <span>{t("settings") || "설정"}</span>
-            </Button>
-            
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12"
-              onClick={() => {
-                navigate("/document");
-                setOpen(false);
-              }}
-            >
-              <FileText className="h-5 w-5" />
-              <span>{t("documentTranslation") || "문서 번역"}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12"
-              onClick={() => {
-                navigate("/dictionary");
-                setOpen(false);
-              }}
-            >
-              <BookOpen className="h-5 w-5" />
-              <span>{t("dictionarySearch") || "사전 검색"}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12"
-              onClick={() => {
-                navigate("/currency");
-                setOpen(false);
-              }}
-            >
-              <Coins className="h-5 w-5" />
-              <span>환율 계산기</span>
-            </Button>
           </div>
         </div>
       </SheetContent>

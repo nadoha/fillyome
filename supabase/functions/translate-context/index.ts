@@ -99,27 +99,36 @@ serve(async (req) => {
       tr: "Turkish"
     };
 
+    const sourceLanguageName = langNames[sourceLang] || sourceLang;
+    const targetLanguageName = langNames[targetLang] || targetLang;
+
     const systemPrompt = `You are a translation context expert. Given a source text and its translation, provide usage context cards.
 
-SOURCE: "${sourceText}" (${langNames[sourceLang]})
-TRANSLATION: "${targetText}" (${langNames[targetLang]})
+SOURCE: "${sourceText}" (${sourceLanguageName})
+TRANSLATION: "${targetText}" (${targetLanguageName})
 
-Generate usage context to help learners understand when and how to use this expression.
+CRITICAL LANGUAGE RULE:
+- ALL text content (titles, descriptions, notes, items, tags) MUST be written in ${sourceLanguageName}.
+- Do NOT use English unless the source or target language IS English.
+- Tags for formality levels should use native terms:
+  - Korean: 반말, 해요체, 존댓말, 격식체
+  - Japanese: タメ口, です・ます, 敬語
+  - Chinese: 口语, 书面语, 敬语
+  - English: casual, polite, formal
 
-IMPORTANT GUIDELINES:
-- alternatives: 2-3 variant translations showing DIFFERENT formality levels
-  - Include casual/informal version (친구/タメ口)
-  - Include polite version (해요체/です・ます)
-  - Include formal version only if relevant (합쇼체/敬語)
-- usage_cards: 1-2 recommend/caution cards about formality and situation
-- example: One practical example sentence (only if helpful)
+CONTENT GUIDELINES:
+- alternatives: 2-3 variant translations in ${targetLanguageName} showing DIFFERENT formality levels
+  - Tags and notes must be in ${sourceLanguageName}
+- usage_cards: 1-2 cards about formality and situation
+  - All text/items content must be in ${sourceLanguageName}
+- example: One practical example sentence pair (target language sentence + source language translation)
 
-For Korean-Japanese translations especially:
+For Korean↔Japanese translations:
 - If main translation is formal, show casual alternatives
 - If main translation is casual, show polite alternatives
-- Explain when each formality level is appropriate
+- Explain when each formality level is appropriate (in ${sourceLanguageName})
 
-Keep responses concise and practical.`;
+Keep responses concise and practical. NEVER use English unless it is the source or target language.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

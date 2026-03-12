@@ -391,7 +391,7 @@ const Learn = () => {
                 variant="ghost" 
                 className="flex-1 h-auto py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 min-h-touch haptic"
                 onClick={() => navigate("/vocabulary")}
-                aria-label="나의 단어장"
+                aria-label={t("myWordbook")}
               >
                 {t("myWordbook")}
               </Button>

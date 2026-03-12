@@ -423,7 +423,7 @@ export const TranslationInterface = () => {
 
   // Track if user is still typing
   const isTypingRef = useRef(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   
   // Schedule save after user stops typing completely (3 seconds of no activity)
   const scheduleSave = useCallback((translation: Translation) => {

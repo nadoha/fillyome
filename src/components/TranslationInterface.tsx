@@ -1611,11 +1611,17 @@ export const TranslationInterface = () => {
         <AppSidebar recentTranslations={recentTranslations} selectedIds={selectedIds} showLiteral={showLiteral} onToggleSelect={toggleSelect} onToggleLiteral={toggleLiteral} onToggleFavorite={toggleFavorite} onDelete={handleDelete} onBulkDelete={handleBulkDelete} onCopy={handleCopy} onSpeak={handleSpeak} onTextSelect={handleTextSelection} onFeedback={handleFeedback} noRomanizationLangs={noRomanizationLangs} />
 
         <div className="h-full flex-1 flex flex-col overflow-hidden">
-          <header className="border-b border-border/50 bg-background sticky top-0 z-10 pt-safe">
+          <header className="glass border-b border-border/30 sticky top-0 z-10 pt-safe">
             <div className="px-4 py-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <SidebarTrigger className="h-9 w-9" />
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+                      <span className="text-primary-foreground font-bold text-sm">F</span>
+                    </div>
+                    <span className="font-semibold text-base tracking-tight hidden sm:block">Fillyome</span>
+                  </div>
                 </div>
                 <HamburgerMenu user={user} onUserChange={setUser} />
               </div>

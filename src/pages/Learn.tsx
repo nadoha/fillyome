@@ -326,7 +326,7 @@ const Learn = () => {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && navigate("/quiz")}
-                aria-label="저장한 단어 복습"
+                aria-label={t("reviewSavedWords")}
               >
                 <CardContent className="p-4 flex flex-col items-center text-center gap-2">
                   <div className="h-10 w-10 rounded-full bg-info/10 flex items-center justify-center">
